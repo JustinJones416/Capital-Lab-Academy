@@ -259,6 +259,47 @@ h1,h2,h3{font-family:var(--font-head);}
 .student-score.low{color:var(--red);}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--c2);border:1px solid var(--c4);color:var(--t1);padding:12px 20px;border-radius:var(--r);font-size:13px;z-index:400;opacity:0;visibility:hidden;transition:all .25s;display:flex;align-items:center;gap:9px;max-width:90vw;}
+
+/* ───── MODAL DE EXPORTACIÓN ───── */
+.export-modal-overlay{position:fixed;inset:0;background:rgba(4,7,12,.75);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+.export-modal{background:var(--bg2);border:1px solid var(--c3);border-radius:var(--r3);padding:28px 26px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;}
+.export-modal h2{font-size:20px;font-family:var(--font-head);margin-bottom:6px;}
+.export-modal p{font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.55;}
+.export-options{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+.export-opt{display:flex;align-items:center;gap:13px;padding:13px 16px;border-radius:var(--r);background:var(--c1);border:1px solid var(--c3);cursor:pointer;}
+.export-opt:hover{border-color:var(--ac);}
+.export-opt i{font-size:22px;color:var(--ac);flex-shrink:0;}
+.export-opt b{display:block;font-size:13.5px;margin-bottom:2px;}
+.export-opt span{font-size:11.5px;color:var(--t3);}
+
+/* ───── CSS DE IMPRESIÓN PARA PDF ───── */
+@media print{
+  body{background:#fff!important;color:#111!important;font-family:Georgia,serif;font-size:11pt;line-height:1.65;}
+  .topbar,.sidebar,.shell,.nav-backdrop,.toast,.btn,.btn-row,.stage-pill,.mode-toggle,.nav-toggle,.export-modal-overlay{display:none!important;}
+  .wrap{padding:0!important;max-width:100%!important;}
+  .card{border:1px solid #ccc!important;background:#fff!important;margin-bottom:14pt;page-break-inside:avoid;}
+  .card-title{color:#1a1a6e!important;font-size:13pt;}
+  .summary-box{color:#222!important;font-size:11pt;}
+  .summary-box b{color:#1a1a6e!important;}
+  .databox{background:#f5f5f5!important;border:1px solid #ccc!important;}
+  .databox td{color:#111!important;border-bottom:1px solid #ddd!important;}
+  .glossary-list .gloss-item{border-bottom:1px solid #ddd;}
+  .gloss-q{color:#1a1a6e!important;font-weight:700;}
+  .gloss-a{max-height:none!important;color:#333!important;padding-bottom:10pt!important;}
+  .mentor-bar{border:1px solid #ccc!important;background:#f9f9f9!important;}
+  .mentor-quote{color:#333!important;}
+  .hero h1{color:#1a1a6e!important;font-size:20pt;}
+  .hero .eyebrow{color:#666!important;}
+  .hero p,.brief{color:#333!important;}
+  h1,h2,h3{color:#1a1a6e!important;}
+  .section-label{color:#555!important;border-bottom:1px solid #ccc;}
+  .fc-deck,.fc-controls,.quiz-progress,#subj-tool-quiz,#subj-tab-quiz,#subj-tab-flash,#subj-tab-gloss,#subj-tab-summary,.tool-tabs{display:none!important;}
+  #subj-tool-gloss,#subj-tool-summary{display:block!important;}
+  #subj-tool-flash{display:none!important;}
+  .gloss-a{display:block!important;}
+  .case-card,.case-grid{display:none!important;}
+  @page{margin:1.8cm 2cm;size:A4;}
+}
 .toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
 .toast i{color:var(--green);}
 </style></head><body>
@@ -271,6 +312,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <button id="mode-student" class="active" onclick="setMode('student')"><i class="ti ti-school"></i> <span>Estudiante</span></button>
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
   </div>
+  <button class="btn btn-ghost btn-sm" onclick="openExportModal()" style="flex-shrink:0;" title="Exportar material"><i class="ti ti-package-export"></i></button>
 </div>
 
 <div class="nav-backdrop" id="nav-backdrop" onclick="closeSidebar()"></div>
@@ -342,6 +384,35 @@ h1,h2,h3{font-family:var(--font-head);}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="export-modal-overlay hidden" id="export-modal-overlay">
+  <div class="export-modal">
+    <h2><i class="ti ti-package-export" style="color:var(--gold)"></i> Exportar material</h2>
+    <p>Selecciona qué deseas exportar. El PDF imprime la vista actual de la materia (resumen, glosario y datos); el TXT consolida todo el banco de contenido del proyecto.</p>
+    <div class="export-options">
+      <div class="export-opt" onclick="exportPDFCurrentSubject()">
+        <i class="ti ti-file-type-pdf"></i>
+        <div><b>PDF — Materia actual</b><span>Imprime el material de estudio de la materia que estás viendo (resumen + glosario).</span></div>
+      </div>
+      <div class="export-opt" onclick="exportAllGlossaries()">
+        <i class="ti ti-books"></i>
+        <div><b>TXT — Todos los glosarios</b><span>Exporta en un solo archivo los glosarios completos de las 10 materias.</span></div>
+      </div>
+      <div class="export-opt" onclick="exportAllSummaries()">
+        <i class="ti ti-file-description"></i>
+        <div><b>TXT — Todos los resúmenes</b><span>Exporta en un solo archivo los resúmenes didácticos de las 10 materias.</span></div>
+      </div>
+      <div class="export-opt" onclick="exportFullBank()">
+        <i class="ti ti-database-export"></i>
+        <div><b>TXT — Banco completo del proyecto</b><span>Todo el contenido: resúmenes, glosarios, flashcards, preguntas y respuestas de los 10 casos.</span></div>
+      </div>
+      <div class="export-opt" onclick="exportMyAnalysis()">
+        <i class="ti ti-user-check"></i>
+        <div><b>TXT — Mis análisis completados</b><span>Exporta todos los casos que hayas finalizado con tus respuestas y decisiones.</span></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="closeExportModal()"><i class="ti ti-x"></i> Cerrar</button>
+  </div>
+</div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -458,7 +529,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.banmer.studyMaterial = {
-  summary:'Mercado Bancario estudia cómo se evalúa la <b>solidez de un banco</b> desde la perspectiva del supervisor y del analista financiero. Los conceptos centrales giran en torno a tres pilares: <b>solvencia</b> (la capacidad del banco de absorber pérdidas con su propio capital, medida con el Índice de Adecuación de Capital), <b>calidad de cartera</b> (qué tan sana está la cartera de préstamos, medida con morosidad y cobertura de provisiones), y <b>liquidez</b> (la capacidad de cubrir obligaciones de corto plazo). Ningún indicador aislado cuenta la historia completa: un banco puede ser solvente y aun así enfrentar problemas de liquidez, o tener buena liquidez con una cartera deteriorándose. Las pruebas de estrés completan el panorama, simulando cómo reaccionaría el banco ante escenarios adversos plausibles, como una salida acelerada de depósitos.',
+  summary:'<b>Mercado Bancario</b> desarrolla la capacidad de evaluar la solidez de una entidad bancaria utilizando los mismos indicadores que emplea un supervisor o un analista financiero institucional. El punto de partida es entender que un banco opera con dinero de terceros (los depositantes), por lo que la regulación prudencial existe para proteger esa confianza del público en el sistema.<br><br>El primer pilar es la <b>solvencia</b>, medida con el Índice de Adecuación de Capital (IAC): refleja cuánto capital propio tiene el banco para absorber pérdidas antes de afectar a sus depositantes. En Panamá, la Superintendencia de Bancos (SBP) exige un mínimo de 8%, pero un banco bien gestionado operará por encima de ese umbral. El segundo pilar es la <b>calidad de cartera</b>: no todos los préstamos otorgados se recuperan, y el índice de morosidad mide qué porcentaje ya tiene problemas de pago. Las provisiones son las reservas que el banco constituye anticipando esas pérdidas; una cobertura de provisiones superior al 100% indica que el banco ya separó fondos suficientes para cubrir toda su cartera vencida. El tercer pilar es la <b>liquidez</b>: un banco puede ser solvente y aun así enfrentar una crisis si no puede convertir activos en efectivo rápidamente para atender retiros. La razón de liquidez legal que exige la SBP es solo el piso mínimo; el margen por encima de ese piso es lo que determina la verdadera resiliencia.<br><br>La <b>prueba de estrés</b> conecta los tres pilares: simula escenarios adversos plausibles (caída de cartera, salida de depósitos, subida de tasas) para verificar si el banco resistiría sin intervención regulatoria. Un banco que cumple todos los indicadores en condiciones normales pero no tiene margen de maniobra en escenarios de estrés es un banco frágil, aunque sus cifras actuales parezcan adecuadas.',
   flashcards:[
     {q:'¿Qué mide el Índice de Adecuación de Capital (IAC)?', a:'La proporción del capital de un banco frente a sus activos ponderados por riesgo; mide la capacidad del banco para absorber pérdidas inesperadas. En Panamá, el mínimo regulatorio de la SBP es 8%.'},
     {q:'¿Qué es el índice de morosidad?', a:'La proporción de la cartera de préstamos en mora (generalmente más de 90 días) frente a la cartera bruta total.'},
@@ -556,7 +627,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.bancred.studyMaterial = {
-  summary:'Negociación y Evaluación Crediticia se organiza alrededor del marco clásico de las <b>5 C del crédito</b>: Carácter, Capacidad, Capital, Colateral y Condiciones. El <b>Carácter</b> evalúa el historial de pago del solicitante; la <b>Capacidad</b> mide si el flujo de caja del negocio sostiene la nueva deuda; el <b>Capital</b> revisa cuánto tiene invertido el propio dueño; el <b>Colateral</b> son las garantías que respaldan el crédito; y las <b>Condiciones</b> son el contexto del sector y la economía. Un buen análisis de crédito no evalúa estos elementos por separado: los integra en una propuesta estructurada, con monto, plazo, tasa y garantías coherentes con el perfil de riesgo identificado.',
+  summary:'<b>Negociación y Evaluación Crediticia</b> es la materia que enseña a decidir con rigor si una empresa o persona merece un crédito, en qué condiciones y con qué garantías. La herramienta central es el marco de las <b>5 C del crédito</b>, que estructuran el análisis de forma que ningún elemento quede sin evaluar.<br><br>El <b>Carácter</b> responde la pregunta más importante: ¿ha cumplido esta persona o empresa sus compromisos en el pasado? Se analiza el historial en el buró de crédito, la relación con proveedores y la reputación en el mercado. Un solicitante con buenas cifras pero historial de incumplimientos es más riesgoso que uno con cifras moderadas pero trayectoria impecable. La <b>Capacidad</b> cuantifica si el flujo de caja del negocio puede pagar la cuota del nuevo crédito; una cobertura de flujo sobre cuota de al menos 1.5x a 2x suele considerarse el umbral mínimo aceptable en banca comercial panameña. El <b>Capital</b> mide qué tanto tiene en juego el propio dueño: una empresa con alta razón Deuda/Patrimonio ya está apalancada y añadir más deuda incrementa el riesgo de insolvencia. El <b>Colateral</b> no reemplaza las otras cuatro C, sino que actúa como respaldo de último recurso; su valor debe cubrir el crédito más los costos de ejecución. Las <b>Condiciones</b> del sector y la macroeconomía pueden hacer que un crédito viable hoy se torne problemático mañana, por eso un buen analista no evalúa la empresa en aislamiento sino en su contexto sectorial.<br><br>El resultado del análisis no es solo un sí o un no: es una <b>propuesta estructurada</b> con monto, plazo, tasa y condiciones de monitoreo (como reportes periódicos) que equilibran el riesgo identificado con el potencial del negocio.',
   flashcards:[
     {q:'¿Cuáles son las 5 C del crédito?', a:'Carácter, Capacidad, Capital, Colateral y Condiciones.'},
     {q:'¿Qué evalúa específicamente el "Carácter"?', a:'La disposición histórica del solicitante a cumplir sus obligaciones de pago, más allá de su capacidad numérica.'},
@@ -652,7 +723,7 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.aeef.studyMaterial = {
-  summary:'Análisis Económico de Estados Financieros enseña a distinguir entre la <b>utilidad contable</b> que reporta una empresa y el <b>efectivo real</b> que genera su operación. El recorrido parte de la <b>UAII</b> (utilidad operativa, antes de intereses e impuestos), continúa a la <b>UONDI</b> (ajustada por impuestos, sin restar intereses), de ahí al <b>FEO</b> (sumando de vuelta la depreciación, que no es salida de efectivo), y finalmente al <b>FEL</b> (restando la inversión necesaria en activos fijos y corrientes). El hallazgo central de esta materia es que una empresa puede mostrar utilidad neta creciente y, al mismo tiempo, tener un flujo de efectivo libre mucho más ajustado si su inversión en activos es intensiva, lo cual es crítico para decisiones de financiamiento.',
+  summary:'<b>Análisis Económico de Estados Financieros</b> enseña a leer más allá de la utilidad neta reportada y llegar al efectivo real que genera un negocio, que es lo que realmente determina su capacidad de pagar deudas e invertir en crecimiento.<br><br>El recorrido parte de la <b>UAII</b> (Utilidad Antes de Intereses e Impuestos), que mide el desempeño operativo puro del negocio antes de que la estructura de financiamiento o el régimen fiscal distorsionen la imagen. A partir de ahí, la <b>UONDI</b> (Utilidad Operativa Neta Después de Impuestos) incorpora el impacto fiscal pero excluye los gastos financieros, permitiendo comparar empresas con distinto nivel de deuda sobre la misma base operativa. El paso siguiente es el <b>FEO</b> (Flujo de Efectivo Operativo): se suma de vuelta la depreciación y amortización porque, aunque reducen la utilidad contable, no implican una salida real de efectivo en ese período. El resultado es el efectivo que genera la operación antes de considerar inversiones.<br><br>El indicador más revelador es el <b>FEL</b> (Flujo de Efectivo Libre): al restar del FEO el Incremento de Activos Fijos Netos (IAFN) y el Incremento de Activos Corrientes Netos (IACN), se obtiene el efectivo que queda disponible después de que la empresa reinvierte lo necesario para sostener y hacer crecer su operación. Una empresa con utilidad neta creciente pero FEL negativo o muy ajustado puede estar en una trampa de crecimiento: crece en papel pero consume más efectivo del que genera, lo que la hace dependiente de financiamiento externo continuo. Esa es la "lectura forense" que esta materia desarrolla.',
   flashcards:[
     {q:'¿Qué es la UAII?', a:'Utilidad Antes de Intereses e Impuestos: mide el desempeño operativo del negocio, sin el efecto de cómo se financia ni del régimen fiscal.'},
     {q:'¿Qué es la UONDI?', a:'Utilidad Operativa Neta Después de Impuestos: UAII ajustada por impuestos, pero sin restar los gastos financieros.'},
@@ -745,7 +816,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.mdofin.studyMaterial = {
-  summary:'Mercados Financieros estudia cómo se <b>valoran y estructuran</b> instrumentos de inversión negociados en la Bolsa de Valores de Panamá. El eje central de esta materia es la emisión de deuda corporativa: leer un <b>prospecto</b> de emisión, evaluar el <b>riesgo crediticio</b> del emisor (calificación, cobertura de intereses, concentración de clientes), calcular el <b>rendimiento al vencimiento (YTM)</b> y someter el análisis a <b>pruebas de estrés</b> sectoriales. Un principio que se repite en distintos instrumentos financieros es la relación inversa entre precio y rendimiento: comprar un instrumento con descuento sobre su valor nominal incrementa el rendimiento efectivo para el inversionista por encima del cupón nominal.',
+  summary:'<b>Mercados Financieros</b> estudia cómo se emiten, negocian y valoran instrumentos financieros en mercados organizados, con especial énfasis en la Bolsa de Valores de Panamá (BVP). La materia cubre dos grandes clases de activos: la <b>renta variable</b> (acciones) y la <b>renta fija</b> (bonos y valores de deuda), y entrena al analista a leer la relación entre precio, riesgo y rendimiento en cada una.<br><br>En renta fija, el principio más importante es la <b>relación inversa entre precio y tasas de interés</b>: cuando las tasas del mercado suben, el precio de los bonos existentes baja, porque sus cupones fijos resultan menos atractivos frente a los nuevos instrumentos. El <b>rendimiento al vencimiento (YTM)</b> es el indicador central para comparar bonos con distintos precios de compra: incorpora el cupón, la ganancia o pérdida de capital al vencimiento y el plazo restante en una sola tasa. Un bono comprado con descuento sobre su valor nominal siempre tendrá un YTM superior a su cupón nominal.<br><br>El análisis de emisiones corporativas agrega la dimensión del <b>riesgo crediticio</b>: la calificación del emisor, la cobertura de intereses, la concentración de clientes y la ciclicidad del sector son factores que determinan el spread sobre la tasa libre de riesgo que el mercado exigirá. Las <b>pruebas de estrés</b> de una emisión simulan escenarios sectoriales adversos para verificar si el emisor mantiene capacidad de pago antes de recomendar la inversión. En el mercado accionario, los múltiplos como P/E y P/B permiten comparar si una acción está cara o barata relativa a su sector y a su propio historial de valoración.',
   flashcards:[
     {q:'¿Qué es un fideicomiso de flujos como garantía de un bono?', a:'Un mecanismo que separa los ingresos de una operación específica para destinarlos al pago del bono, dando a los tenedores una fuente de repago identificada.'},
     {q:'¿Qué mide la cobertura de intereses (EBITDA/Intereses)?', a:'Cuántas veces el EBITDA de la empresa cubre su gasto en intereses; un valor más alto indica mayor margen de seguridad para el pago de deuda.'},
@@ -836,7 +907,7 @@ SUBJECT_DATA.proy = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.proy.studyMaterial = {
-  summary:'Formulación y Evaluación Financiera de Proyectos enseña a determinar si un proyecto de inversión <b>crea o destruye valor</b>. El proceso parte de definir la <b>inversión inicial (CAPEX)</b> y los supuestos operativos, proyecta los <b>flujos de caja</b> incorporando el efecto del escudo fiscal de la depreciación, y calcula los dos indicadores centrales: el <b>VAN (Valor Actual Neto)</b>, que descuenta los flujos futuros a valor presente y resta la inversión inicial, y la <b>TIR (Tasa Interna de Retorno)</b>, la tasa que hace el VAN igual a cero. Un proyecto es viable cuando su VAN es positivo y su TIR supera la tasa de descuento exigida. El <b>análisis de sensibilidad</b> completa la evaluación, identificando qué supuestos son más críticos para la viabilidad final.',
+  summary:'<b>Formulación y Evaluación Financiera de Proyectos</b> desarrolla el proceso completo para determinar si una inversión crea o destruye valor económico, recorriendo cada paso desde la concepción del proyecto hasta la recomendación al comité de inversión.<br><br>El punto de partida es la <b>inversión inicial (CAPEX)</b> y los supuestos operativos: precio de venta, capacidad instalada, factor de planta, costos de operación. De estos supuestos se construye la <b>proyección de flujos de caja libres</b>, que incluye el escudo fiscal de la depreciación (un gasto contable que reduce el impuesto a pagar sin salir de caja, mejorando el flujo neto). Con los flujos proyectados y la tasa de descuento (que representa el costo de capital exigido por los inversionistas), se calculan los dos indicadores centrales: el <b>VAN</b>, que trae todos los flujos futuros a valor presente y resta la inversión inicial (un VAN positivo significa que el proyecto genera más de lo que cuesta financiarlo), y la <b>TIR</b>, la tasa a la que el VAN sería cero (si la TIR supera la tasa de descuento, el proyecto es viable).<br><br>Un aspecto crítico que separa una evaluación rigurosa de una superficial es el <b>análisis de sensibilidad</b>: identificar cuáles supuestos, si se deterioran moderadamente, podrían hacer negativo el VAN. En proyectos de energía renovable en Panamá (como el caso de Chiriquí), el precio de venta de energía contratado y el factor de planta suelen ser las variables más sensibles. El <b>payback</b> (período de recuperación) complementa el análisis aportando una medida intuitiva del tiempo hasta recuperar la inversión, útil para comunicar el riesgo a inversionistas no técnicos.',
   flashcards:[
     {q:'¿Qué es el VAN (Valor Actual Neto)?', a:'La suma de los flujos de caja futuros de un proyecto, descontados a valor presente, menos la inversión inicial; un VAN positivo indica creación de valor.'},
     {q:'¿Qué es la TIR (Tasa Interna de Retorno)?', a:'La tasa de descuento que hace que el VAN de un proyecto sea exactamente cero; se compara contra el costo de capital para decidir viabilidad.'},
@@ -929,7 +1000,7 @@ SUBJECT_DATA.macro = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.macro.studyMaterial = {
-  summary:'Macroeconomía I desarrolla la capacidad de leer el <b>ciclo económico panameño</b> a partir de indicadores agregados. Se parte de descomponer el <b>PIB</b> en sus componentes de demanda (consumo, inversión, gasto público) para identificar qué está impulsando el crecimiento, se calcula la <b>Propensión Marginal a Consumir</b> y el <b>multiplicador del gasto</b> para proyectar el efecto de estímulos económicos, y se evalúa el efecto de la <b>inflación</b> sobre el poder adquisitivo real. El <b>modelo de la línea de 45 grados</b> formaliza el equilibrio entre gasto agregado e ingreso nacional. Una particularidad central de la economía panameña, presente en toda la materia, es que al estar <b>dolarizada y sin banco central emisor</b>, no cuenta con política monetaria propia.',
+  summary:'<b>Macroeconomía I</b> desarrolla la capacidad de leer el estado de la economía panameña usando indicadores agregados, y de anticipar cómo esas condiciones afectan las decisiones financieras de empresas, bancos e individuos.<br><br>El análisis parte de descomponer el <b>Producto Interno Bruto (PIB)</b> en sus componentes de demanda: consumo privado, inversión, gasto público y exportaciones netas. Identificar cuál componente está creciendo más rápido que los demás permite diagnosticar el motor del ciclo actual: un consumo que crece más que el PIB sugiere una economía impulsada por el gasto de los hogares; una inversión débil anticipa limitaciones futuras de capacidad productiva. El concepto de <b>Propensión Marginal a Consumir (PMgC)</b> cuantifica qué fracción de cada dólar adicional de ingreso se destina al consumo, y el <b>multiplicador del gasto</b> (1 / 1−PMgC) estima cuánto se amplifica un estímulo inicial sobre el ingreso nacional total a través de sucesivas rondas de gasto.<br><br>Una característica estructural que atraviesa toda la materia aplicada a Panamá es la <b>dolarización</b>: al no tener banco central emisor, el país no puede usar política monetaria propia para moderar el ciclo económico. Las tasas de interés panameñas se mueven en línea con las decisiones de la Reserva Federal de EE.UU., y el tipo de cambio no existe como mecanismo de ajuste. Esto hace que la <b>política fiscal</b> sea el único instrumento macroeconómico interno disponible, y que la lectura del ciclo externo (especialmente EE.UU.) sea indispensable para proyectar el entorno doméstico. El <b>modelo de la línea de 45 grados</b> formaliza el equilibrio entre el gasto agregado planeado y el ingreso, y permite calcular el ingreso de equilibrio ante distintos supuestos de gasto autónomo.',
   flashcards:[
     {q:'¿Qué es la Propensión Marginal a Consumir (PMgC)?', a:'La proporción de cada dólar adicional de ingreso que los hogares destinan a consumo, en lugar de ahorro.'},
     {q:'¿Cómo se calcula el multiplicador del gasto?', a:'Multiplicador = 1 / (1 − PMgC). Indica cuánto se amplifica un cambio en el gasto autónomo sobre el ingreso nacional total.'},
@@ -1018,7 +1089,7 @@ SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.inv1.studyMaterial = {
-  summary:'Inversión I se centra en la <b>construcción de portafolios diversificados</b> ajustados al perfil de riesgo del inversionista. El proceso parte de un <b>perfilamiento de riesgo</b> formal (horizonte de tiempo, tolerancia a pérdidas, necesidad de liquidez), continúa con la <b>selección de activos</b> que combinen distintas clases (bonos soberanos, corporativos, acciones, liquidez), y calcula el <b>retorno esperado ponderado</b> del portafolio combinado. El principio central de la materia es la <b>diversificación</b>: cuando los activos no están perfectamente correlacionados entre sí, el riesgo del portafolio combinado es menor a la suma ponderada simple de los riesgos individuales, lo cual se confirma con pruebas de estrés ante caídas de mercado.',
+  summary:'<b>Inversión I</b> enseña a construir portafolios que equilibren el retorno esperado con el nivel de riesgo que el inversionista puede y quiere asumir, aplicando los principios de la teoría moderna de portafolios a activos disponibles en el mercado panameño e internacional.<br><br>El proceso parte siempre del <b>perfilamiento del inversionista</b>: su horizonte de tiempo, su capacidad real de tolerar pérdidas temporales sin vender en pánico, su necesidad de liquidez y sus metas específicas. No existe el portafolio óptimo en abstracto; existe el portafolio óptimo para ese inversionista en esa etapa de su vida. Un inversionista a 20 años del retiro puede sostener mayor proporción de renta variable que uno a 3 años, porque tiene tiempo de recuperarse de una corrección.<br><br>El principio central de la materia es la <b>diversificación</b>: al combinar activos cuya correlación entre sí es menor que 1, el riesgo del portafolio combinado es menor a la suma ponderada de los riesgos individuales. Esto significa que se puede reducir el riesgo total sin sacrificar proporcionalmente el retorno esperado, simplemente eligiendo activos que no se mueven exactamente igual. El <b>retorno esperado ponderado</b> del portafolio se calcula sumando el retorno de cada activo multiplicado por su peso. La <b>volatilidad del portafolio</b> requiere considerar las correlaciones entre activos, no solo las volatilidades individuales. Las <b>pruebas de estrés</b> ante caídas de mercado permiten verificar si el diseño del portafolio es coherente con la tolerancia al riesgo declarada por el cliente, antes de comprometer el capital real.',
   flashcards:[
     {q:'¿Qué es la diversificación de un portafolio?', a:'La estrategia de combinar activos con comportamientos distintos (baja correlación entre sí) para reducir el riesgo total sin sacrificar proporcionalmente el retorno esperado.'},
     {q:'¿Por qué la volatilidad de un portafolio combinado suele ser menor a la suma ponderada de sus partes?', a:'Porque los activos no están perfectamente correlacionados; cuando uno cae, otro puede mantenerse estable o subir, amortiguando el riesgo conjunto.'},
@@ -1105,7 +1176,7 @@ SUBJECT_DATA.bancint = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.bancint.studyMaterial = {
-  summary:'Banca Internacional aborda la <b>estructuración de operaciones de comercio exterior</b> desde la perspectiva de los tres riesgos centrales que enfrenta un exportador o importador panameño. Primero, el <b>instrumento de pago</b>: la carta de crédito irrevocable confirmada, que da seguridad de cobro al exportador mediante la garantía conjunta de un banco emisor y uno confirmador. Segundo, el <b>riesgo cambiario</b>: la exposición a variaciones del tipo de cambio entre la moneda de la operación y el dólar (moneda de Panamá) durante el plazo de la transacción. Tercero, el <b>costo de financiamiento</b> internacional y las herramientas de <b>cobertura cambiaria</b>, como los contratos forward, que sacrifican un margen pequeño de tipo de cambio a cambio de eliminar la incertidumbre.',
+  summary:'<b>Banca Internacional</b> aborda la estructuración y el financiamiento de operaciones de comercio exterior, con especial atención a los riesgos que distinguen una transacción transfronteriza de una doméstica: el riesgo de pago, el riesgo cambiario y el costo de financiamiento en divisas.<br><br>El instrumento de pago más relevante en la materia es la <b>carta de crédito</b>: un mecanismo por el cual un banco (el emisor, en el país del comprador) garantiza al exportador que recibirá el pago si presenta los documentos acordados en los términos estipulados. Cuando la carta de crédito es "confirmada", un banco en el país del exportador añade su propia garantía, eliminando la dependencia del exportador respecto al banco extranjero y al riesgo soberano del país del comprador. Comprender los documentos requeridos (factura comercial, conocimiento de embarque, certificado de origen) y los INCOTERMS que definen responsabilidades logísticas es parte esencial de la estructuración.<br><br>El <b>riesgo cambiario</b> aparece en cualquier operación denominada en una moneda distinta al dólar, que es la moneda de Panamá. Un exportador panameño que vende en euros queda expuesto a que el tipo de cambio EUR/USD se mueva desfavorablemente antes del cobro. Los <b>contratos forward de divisas</b> permiten fijar hoy el tipo de cambio para la fecha de cobro futura, eliminando esa incertidumbre a cambio de renunciar a una eventual ganancia cambiaria. El <b>descuento de carta de crédito</b> (o financiamiento pre-exportación) añade una tercera dimensión: el exportador puede monetizar el derecho de cobro antes de su vencimiento, asumiendo un costo financiero a cambio de liquidez inmediata.',
   flashcards:[
     {q:'¿Qué es una carta de crédito irrevocable confirmada?', a:'Un instrumento de pago internacional en el que tanto el banco emisor como un banco confirmador (generalmente local al exportador) garantizan el pago, siempre que se cumplan los documentos exigidos.'},
     {q:'¿Qué es el riesgo cambiario en una exportación?', a:'La posibilidad de que el tipo de cambio entre la moneda de la operación y la moneda del exportador varíe entre la fecha de la venta y la fecha de cobro, afectando el monto final recibido.'},
@@ -1192,7 +1263,7 @@ SUBJECT_DATA.corredor = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.corredor.studyMaterial = {
-  summary:'Corredor de Bolsa entrena las habilidades operativas de la <b>ejecución de órdenes</b> en la Bolsa de Valores de Panamá, bajo el principio de <b>mejor ejecución</b> para el cliente. Antes de tocar el mercado, se verifica la viabilidad de fondos de la orden. Luego se interpreta el <b>libro de órdenes</b>, que muestra las posturas de compra (bid) y venta (ask) disponibles, y el <b>spread bid-ask</b> entre ellas. Con esa lectura, se decide entre una <b>orden a mercado</b> (prioriza ejecución inmediata) y una <b>orden limitada</b> (prioriza control de precio), según el objetivo explícito del cliente. La ejecución puede ser parcial si no hay suficiente volumen al precio deseado, lo que exige comunicación transparente con el cliente sobre el estado de su orden.',
+  summary:'El rol de <b>Corredor de Bolsa</b> en la Bolsa de Valores de Panamá combina conocimiento técnico del mercado con una responsabilidad fiduciaria clara: actuar siempre en el mejor interés del cliente. A diferencia de un analista de inversiones, el corredor no decide si invertir: ejecuta la decisión del cliente con la máxima eficiencia posible, bajo el principio de <b>mejor ejecución</b>.<br><br>El punto de partida de cualquier operación es la verificación de fondos y la comprobación de que la orden es viable antes de tocar el mercado. Luego viene la lectura del <b>libro de órdenes</b>: una pantalla en tiempo real que muestra las posturas de compra (bid) y venta (ask) disponibles para cada instrumento, con sus precios y cantidades. El <b>spread bid-ask</b> es la diferencia entre el mejor precio de compra y el mejor precio de venta; un spread estrecho indica un mercado líquido y eficiente, mientras uno amplio señala baja liquidez o mayor incertidumbre.<br><br>La decisión entre <b>orden a mercado</b> (ejecuta de inmediato al precio disponible) y <b>orden limitada</b> (solo ejecuta al precio especificado o mejor) depende del objetivo del cliente: si la prioridad es certeza de precio, se usa una orden limitada aunque implique riesgo de ejecución parcial o tardía; si la prioridad es completar la posición de inmediato, se usa una orden a mercado aunque el precio final pueda variar al consumir varios niveles del libro. En un mercado con profundidad limitada como la BVP, una orden a mercado de gran volumen puede moverse significativamente del precio de referencia.',
   flashcards:[
     {q:'¿Qué es el spread bid-ask?', a:'La diferencia entre el mejor precio de compra (bid) y el mejor precio de venta (ask) disponibles en el mercado para un activo en un momento dado.'},
     {q:'¿Cuál es la diferencia entre una orden a mercado y una orden limitada?', a:'La orden a mercado prioriza la ejecución inmediata al mejor precio disponible, mientras la orden limitada prioriza el control de precio, aceptando el riesgo de no ejecutarse de inmediato o por completo.'},
@@ -1279,7 +1350,7 @@ SUBJECT_DATA.asesor = { casesPlanned:3, cases:[
 ]};
 
 SUBJECT_DATA.asesor.studyMaterial = {
-  summary:'Asesor Financiero desarrolla la <b>planificación financiera por metas</b>: el diseño de estrategias de ahorro e inversión diferenciadas para cada objetivo del cliente, según su horizonte y prioridad. El proceso parte de un <b>perfilamiento</b> que traduce las circunstancias de la familia en metas concretas, continúa con un <b>diagnóstico de capacidad de ahorro real</b>, y diseña una estrategia donde el <b>horizonte de tiempo determina la tolerancia al riesgo apropiada</b> para cada meta: las metas de corto plazo exigen instrumentos conservadores y líquidos, mientras las de largo plazo (como el retiro) pueden sostener mayor proporción de renta variable. Un buen plan financiero identifica brechas con honestidad y presenta opciones concretas, no las oculta.',
+  summary:'El rol de <b>Asesor Financiero</b> combina conocimiento técnico de finanzas personales con habilidades de comunicación y empatía: el reto no es solo calcular el plan correcto sino diseñar uno que el cliente realmente entienda y mantenga en el tiempo. Un plan técnicamente perfecto que el cliente abandona a los seis meses vale menos que uno más sencillo que se sostiene durante décadas.<br><br>El proceso parte de un <b>diagnóstico financiero honesto</b>: identificar las metas del cliente (educación de hijos, retiro, fondo de emergencia, compra de vivienda), cuantificarlas en tiempo y monto, y contrastarlas con la capacidad de ahorro real. La brecha entre lo que el cliente quiere lograr y lo que su flujo de caja actual permite es el problema de diseño que el asesor debe resolver. La <b>planificación por metas</b> estructura este proceso: cada meta tiene su propio horizonte de tiempo, y ese horizonte determina el nivel de riesgo apropiado para los recursos destinados a ella. Los fondos para la educación universitaria de un hijo que ingresa en dos años deben estar en instrumentos conservadores y líquidos; los fondos para el retiro dentro de 18 años pueden tolerar más volatilidad de corto plazo a cambio de mayor crecimiento esperado.<br><br>El rol del asesor incluye también <b>gestionar el comportamiento del cliente</b>: evitar que venda en pánico durante caídas de mercado o que asuma riesgos excesivos en períodos alcistas. La comunicación periódica, la actualización del plan ante cambios de vida y la educación financiera continua son parte integral del servicio. En el contexto panameño, el asesor debe conocer los instrumentos disponibles localmente (depósitos a plazo, bonos de la BVP, fondos de inversión, planes de pensión voluntaria) para construir estrategias que el cliente pueda implementar sin fricciones operativas.',
   flashcards:[
     {q:'¿Qué es la planificación financiera por metas?', a:'Un enfoque que diseña estrategias de ahorro e inversión diferenciadas para cada objetivo financiero del cliente, según su horizonte de tiempo y prioridad.'},
     {q:'¿Por qué el horizonte de tiempo determina la tolerancia al riesgo apropiada para una meta?', a:'Porque un horizonte más largo permite absorber la volatilidad de corto plazo de activos como las acciones, mientras que un horizonte corto exige instrumentos más conservadores y líquidos.'},
@@ -1909,6 +1980,64 @@ function exportCase(caseId){
 }
 
 // ───── Modo profesor ─────
+// ───── Modo profesor ─────
+let teacherCases = JSON.parse(localStorage.getItem('academy_teacher_cases_v1')||'[]');
+
+function saveTeacherCase(){
+  const title=$('t-title').value.trim();
+  const subject=$('t-subject').value;
+  const role=$('t-role').value.trim();
+  const brief=$('t-brief').value.trim();
+  const character=$('t-character').value.trim();
+  const facts=$('t-facts').value.trim();
+  const openprompt=$('t-openprompt').value.trim();
+  if(!title){ toast('El título del caso es obligatorio.'); return; }
+  if(!brief){ toast('Completa el contexto del caso antes de guardar.'); return; }
+  const subjName = SUBJECTS.find(s=>s.id===subject)?.title || subject;
+  const newCase = {
+    id:'teacher-'+Date.now(), subject, subjName, title, role, brief, character, facts, openprompt,
+    createdAt:new Date().toLocaleDateString('es-PA'), status:'Pendiente de revisión'
+  };
+  teacherCases.unshift(newCase);
+  localStorage.setItem('academy_teacher_cases_v1', JSON.stringify(teacherCases));
+  $('t-title').value=''; $('t-brief').value=''; $('t-facts').value='';
+  $('t-openprompt').value=''; $('t-character').value=''; $('t-role').value='';
+  toast('Caso guardado correctamente en el banco.');
+  renderTeacherCaseBank();
+}
+
+function deleteTeacherCase(id){
+  teacherCases = teacherCases.filter(c=>c.id!==id);
+  localStorage.setItem('academy_teacher_cases_v1', JSON.stringify(teacherCases));
+  renderTeacherCaseBank();
+  toast('Caso eliminado del banco.');
+}
+
+function renderTeacherCaseBank(){
+  const bank=$('teacher-case-bank');
+  if(!bank) return;
+  if(teacherCases.length===0){
+    bank.innerHTML='<div class="card-sub" style="padding:14px 0;"><i class="ti ti-inbox"></i> No hay casos importados aún. Completa el formulario de arriba para añadir el primero.</div>';
+    return;
+  }
+  bank.innerHTML = teacherCases.map(c=>`
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);margin-bottom:4px;">${c.subjName} · ${c.createdAt} · <span style="color:var(--amber)">${c.status}</span></div>
+          <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${c.title}</div>
+          ${c.role ? `<div style="font-size:12px;color:var(--ac);margin-bottom:5px;">${c.role}</div>` : ''}
+          ${c.character ? `<div style="font-size:12px;color:var(--t3);margin-bottom:5px;"><i class="ti ti-user"></i> ${c.character}</div>` : ''}
+          ${c.brief ? `<div style="font-size:12px;color:var(--t2);line-height:1.5;">${c.brief.slice(0,180)}${c.brief.length>180?'…':''}</div>` : ''}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteTeacherCase('${c.id}')" style="flex-shrink:0;" title="Eliminar caso"><i class="ti ti-trash"></i></button>
+      </div>
+      ${c.facts ? `<div class="databox" style="margin-top:10px;">${c.facts.split('\n').filter(Boolean).map(l=>{const[k,...v]=l.split(':');return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 4px;border-bottom:1px solid var(--c3);"><span style="color:var(--t2)">${k}</span><span style="font-family:var(--font-mono);font-weight:700">${v.join(':')}</span></div>`;}).join('')}</div>` : ''}
+      ${c.openprompt ? `<div style="font-size:11.5px;color:var(--t3);margin-top:8px;font-style:italic;"><i class="ti ti-pencil"></i> ${c.openprompt}</div>` : ''}
+    </div>
+  `).join('');
+}
+
 function renderTeacherView(){
   const demoStudents=[
     {name:'Dustin Jones', cases:9, avg:88},
@@ -1923,49 +2052,228 @@ function renderTeacherView(){
     <div class="hero" style="padding-top:18px;">
       <div class="eyebrow"><i class="ti ti-chalkboard"></i> Modo profesor</div>
       <h1>Gestión de casos — CapitalLab Academy</h1>
-      <p>Importa nuevos casos para cualquier materia del plan de estudio y revisa el avance de los estudiantes.</p>
+      <p>Importa nuevos casos para cualquier materia del plan de estudio. Los casos guardados se muestran en el banco a continuación del formulario.</p>
     </div>
     <div class="prof-grid">
-      <div class="card">
-        <div class="card-title"><i class="ti ti-file-upload"></i> Importar un caso nuevo</div>
-        <div class="card-sub">Selecciona la materia y completa la ficha del caso. Los casos se revisan antes de publicarse.</div>
-        <div class="form-field"><label>Materia</label><select id="t-subject">${SUBJECTS.map(s=>`<option value="${s.id}">${s.title}</option>`).join('')}</select></div>
-        <div class="form-field"><label>Título del caso</label><input type="text" id="t-title" placeholder="Ej: Análisis de un fondo de inversión panameño"></div>
-        <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="t-role" placeholder="Ej: Analista de Inversiones"></div>
-        <div class="form-field"><label>Contexto del caso</label><textarea id="t-brief" placeholder="Describe la situación que el estudiante debe analizar…"></textarea></div>
-        <div class="form-field"><label>Nombre y rol de la contraparte (personaje)</label><input type="text" id="t-character" placeholder="Ej: Marta Solís, Gerente de Tesorería"></div>
-        <div class="form-field"><label>Datos / cifras clave (uno por línea: dato: valor)</label><textarea id="t-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%"></textarea></div>
-        <div class="form-field"><label>Espacio de análisis abierto (consigna final)</label><textarea id="t-openprompt" placeholder="¿Qué debe argumentar el estudiante?"></textarea></div>
-        <button class="btn" onclick="saveTeacherCase()"><i class="ti ti-device-floppy"></i> Guardar caso en el banco</button>
+      <div>
+        <div class="card">
+          <div class="card-title"><i class="ti ti-file-upload"></i> Importar un caso nuevo</div>
+          <div class="card-sub">Los campos marcados con * son obligatorios.</div>
+          <div class="form-field"><label>Materia *</label><select id="t-subject">${SUBJECTS.map(s=>`<option value="${s.id}">${s.title}</option>`).join('')}</select></div>
+          <div class="form-field"><label>Título del caso *</label><input type="text" id="t-title" placeholder="Ej: Análisis de fondo de inversión panameño"></div>
+          <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="t-role" placeholder="Ej: Analista de Inversiones"></div>
+          <div class="form-field"><label>Contexto del caso *</label><textarea id="t-brief" placeholder="Describe la situación que el estudiante debe analizar…"></textarea></div>
+          <div class="form-field"><label>Nombre y rol de la contraparte</label><input type="text" id="t-character" placeholder="Ej: Marta Solís, Gerente de Tesorería"></div>
+          <div class="form-field"><label>Datos / cifras clave (un dato por línea, formato: etiqueta: valor)</label><textarea id="t-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%&#10;Plazo: 5 años"></textarea></div>
+          <div class="form-field"><label>Consigna de análisis abierto</label><textarea id="t-openprompt" placeholder="¿Qué debe argumentar el estudiante en su análisis final?"></textarea></div>
+          <button class="btn" onclick="saveTeacherCase()"><i class="ti ti-device-floppy"></i> Guardar caso en el banco</button>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span><i class="ti ti-database"></i> Banco de casos importados</span>
+            <span class="nav-badge" id="teacher-count-badge">${teacherCases.length}</span>
+          </div>
+          <div id="teacher-case-bank"></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title"><i class="ti ti-users"></i> Avance de estudiantes</div>
-        <div class="card-sub">Materias completadas y calificación automática promedio.</div>
+        <div class="card-sub">Materias completadas y calificación automática promedio. El seguimiento real entre dispositivos requeriría una base de datos compartida del curso.</div>
         ${[...localList,...demoStudents].map(s=>{
           const initials=s.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
           const avgCls = s.avg===null?'':(s.avg>=80?'high':s.avg>=65?'mid':'low');
-          return `<div class="student-row" onclick="${s.local?'reviewLocalStudent()':"toast('Vista de detalle disponible al integrar la base de datos del curso.')"}">
+          return `<div class="student-row" onclick="${s.local?'reviewLocalStudent()':"toast('Vista de detalle disponible al integrar la base de datos compartida del curso.')"}">
             <div class="student-avatar">${initials}</div>
             <div class="student-info"><div class="name">${s.name}</div><div class="meta">${s.cases}/10 materias con caso completado</div></div>
             <div class="student-score ${avgCls}">${s.avg!==null?s.avg+'%':'—'}</div>
           </div>`;
         }).join('')}
-        <div class="card-sub" style="margin-top:14px;margin-bottom:0;"><i class="ti ti-info-circle"></i> Vista demostrativa del flujo. El seguimiento real entre dispositivos requeriría una base de datos compartida del curso.</div>
       </div>
     </div>
   `;
+  renderTeacherCaseBank();
 }
-function saveTeacherCase(){
-  const title=$('t-title').value.trim();
-  if(!title){ toast('Completa al menos el título del caso.'); return; }
-  toast('Caso guardado en el banco. Quedará disponible tras tu revisión final.');
-  $('t-title').value=''; $('t-brief').value=''; $('t-facts').value=''; $('t-openprompt').value=''; $('t-character').value=''; $('t-role').value='';
-}
+
 function reviewLocalStudent(){
   const lines=[`Materias con caso completado por ${studentName}:`];
   SUBJECTS.forEach(s=>{ const p=subjectProgress(s.id); if(p.done>=p.total&&p.total>0) lines.push('• '+s.title); });
   if(lines.length===1) lines.push('(Aún no hay materias completadas en este dispositivo.)');
   alert(lines.join('\n'));
+}
+
+
+// ───── Exportación masiva y modal ─────
+function openExportModal(){ $('export-modal-overlay').classList.remove('hidden'); }
+function closeExportModal(){ $('export-modal-overlay').classList.add('hidden'); }
+
+function exportPDFCurrentSubject(){
+  closeExportModal();
+  if(!currentSubjectId){ toast('Navega a una materia antes de exportar a PDF.'); return; }
+  navSubject(currentSubjectId);
+  // Abrir todos los términos del glosario antes de imprimir
+  document.querySelectorAll('.gloss-item').forEach(el=>el.classList.add('open'));
+  setTimeout(()=>{
+    window.print();
+  }, 300);
+}
+
+function downloadTxt(filename, content){
+  const blob=new Blob([content], {type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportAllGlossaries(){
+  closeExportModal();
+  let lines=['CAPITALLAB ACADEMY — GLOSARIOS COMPLETOS DE LAS 10 MATERIAS'];
+  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
+  lines.push('');
+  SUBJECTS.forEach(s=>{
+    const data=SUBJECT_DATA[s.id];
+    if(!data?.studyMaterial?.glossary) return;
+    lines.push('════════════════════════════════════════');
+    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
+    lines.push('════════════════════════════════════════');
+    data.studyMaterial.glossary.forEach(g=>{
+      lines.push('► '+g.t);
+      lines.push('  '+g.d);
+      lines.push('');
+    });
+  });
+  downloadTxt('CapitalLab_Academy_Glosarios_Completos.txt', lines.join('\n'));
+  toast('Glosarios exportados correctamente.');
+}
+
+function exportAllSummaries(){
+  closeExportModal();
+  let lines=['CAPITALLAB ACADEMY — RESÚMENES DE ESTUDIO POR MATERIA'];
+  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
+  lines.push('');
+  lines.push('NOTA: Los resúmenes están redactados para lectura didáctica rápida.');
+  lines.push('Estudia cada uno antes de abrir los casos de la materia correspondiente.');
+  lines.push('');
+  SUBJECTS.forEach(s=>{
+    const data=SUBJECT_DATA[s.id];
+    if(!data?.studyMaterial?.summary) return;
+    lines.push('════════════════════════════════════════');
+    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
+    lines.push('════════════════════════════════════════');
+    // Limpiar etiquetas HTML para texto plano
+    const clean = data.studyMaterial.summary.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+    lines.push(clean);
+    lines.push('');
+  });
+  downloadTxt('CapitalLab_Academy_Resumenes_Completos.txt', lines.join('\n'));
+  toast('Resúmenes exportados correctamente.');
+}
+
+function exportFullBank(){
+  closeExportModal();
+  let lines=['CAPITALLAB ACADEMY — BANCO COMPLETO DE CONTENIDO'];
+  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
+  lines.push('');
+  SUBJECTS.forEach(s=>{
+    const data=SUBJECT_DATA[s.id];
+    if(!data) return;
+    lines.push('════════════════════════════════════════');
+    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
+    lines.push('════════════════════════════════════════');
+    if(data.studyMaterial?.summary){
+      lines.push('── RESUMEN ──');
+      lines.push(data.studyMaterial.summary.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim());
+      lines.push('');
+    }
+    if(data.studyMaterial?.glossary?.length){
+      lines.push('── GLOSARIO ──');
+      data.studyMaterial.glossary.forEach(g=>{ lines.push('► '+g.t+': '+g.d); });
+      lines.push('');
+    }
+    if(data.studyMaterial?.flashcards?.length){
+      lines.push('── TARJETAS DIDÁCTICAS ──');
+      data.studyMaterial.flashcards.forEach((f,i)=>{ lines.push(`[${i+1}] P: ${f.q}`); lines.push(`     R: ${f.a}`); });
+      lines.push('');
+    }
+    if(data.studyMaterial?.quiz?.length){
+      lines.push('── QUIZ DE REPASO ──');
+      data.studyMaterial.quiz.forEach((q,i)=>{
+        lines.push(`${i+1}. ${q.q}`);
+        q.opts.forEach((o,oi)=>lines.push(`   ${oi===q.correct?'✓':'◦'} ${o}`));
+      });
+      lines.push('');
+    }
+    data.cases.forEach(c=>{
+      lines.push('── CASO: '+c.title+' ──');
+      lines.push('Expediente: '+c.expediente+' · '+c.role);
+      lines.push(c.brief);
+      c.stages.forEach(stage=>{
+        lines.push('  · '+stage.title);
+        if(stage.questions){
+          stage.questions.forEach((q,i)=>{
+            lines.push('    P'+(i+1)+': '+q.q);
+            if(q.type==='mc') lines.push('    R: '+q.opts[q.correct]+' — '+q.explain);
+            else lines.push('    R: '+q.correct+' — '+q.explain);
+          });
+        }
+        if(stage.verdictOptions){ lines.push('    Opciones de decisión: '+stage.verdictOptions.map(v=>v.label).join(' | ')); }
+      });
+      lines.push('');
+    });
+  });
+  downloadTxt('CapitalLab_Academy_Banco_Completo.txt', lines.join('\n'));
+  toast('Banco completo exportado correctamente.');
+}
+
+function exportMyAnalysis(){
+  closeExportModal();
+  const name = studentName || 'Estudiante';
+  let lines=['CAPITALLAB ACADEMY — MIS ANÁLISIS COMPLETADOS'];
+  lines.push('Estudiante: '+name);
+  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
+  lines.push('');
+  let hasAny=false;
+  SUBJECTS.forEach(s=>{
+    const data=SUBJECT_DATA[s.id];
+    if(!data) return;
+    data.cases.forEach(c=>{
+      const ans=studentAnswers[c.id];
+      if(!ans || ans.score===undefined) return;
+      hasAny=true;
+      lines.push('════════════════════════════════════════');
+      lines.push(s.title+' — '+c.title);
+      lines.push('Calificación automática: '+ans.score+'/'+ans.total+' preguntas correctas');
+      lines.push('Completado el: '+(ans.completedAt ? new Date(ans.completedAt).toLocaleDateString('es-PA') : 'fecha no registrada'));
+      lines.push('');
+      c.stages.forEach(st=>{
+        lines.push('  '+st.title);
+        const stAns=(ans.stages||{})[st.id]||{};
+        if(st.questions){
+          st.questions.forEach((q,i)=>{
+            const given=stAns[i];
+            const givenTxt = q.type==='mc' ? (given!==undefined?q.opts[given]:'(sin responder)') : (given!==undefined?given:'(sin responder)');
+            const correct = q.type==='mc' ? given===q.correct : (given!==undefined && Math.abs(parseFloat(given)-q.correct)<=q.tolerance);
+            lines.push('    P'+(i+1)+': '+q.q);
+            lines.push('    Mi respuesta: '+givenTxt+' '+(correct?'✓':'✗'));
+          });
+        }
+        if(st.verdictOptions && stAns.verdict){
+          const v=st.verdictOptions.find(x=>x.v===stAns.verdict);
+          lines.push('    Decisión: '+(v?v.label:'—'));
+          if(stAns.open) lines.push('    Justificación: '+stAns.open);
+        }
+        lines.push('');
+      });
+    });
+  });
+  if(!hasAny){ lines.push('No hay análisis completados aún. Finaliza al menos un caso para exportar tu registro.'); }
+  downloadTxt('CapitalLab_Academy_MisAnalisis_'+name.replace(/\s+/g,'_')+'.txt', lines.join('\n'));
+  toast('Análisis exportados correctamente.');
 }
 
 // ───── Inicio de la aplicación ─────
