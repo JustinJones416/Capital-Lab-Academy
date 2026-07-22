@@ -2737,6 +2737,15 @@ async function authBoot(){
         alert('Tu sesión expiró o se cerró en otro lugar. Vuelve a iniciar sesión.');
         location.reload();
       }
+      // Al volver de Google, Supabase todavía puede estar terminando de
+      // procesar el enlace justo cuando se hizo la revisión de arriba —
+      // este evento llega un instante después, cuando la sesión ya
+      // quedó establecida de verdad. Sin esto, alguien podía volver de
+      // Google y quedarse viendo la pantalla de inicio de sesión sin
+      // que pasara nada.
+      if(evento === 'SIGNED_IN' && !currentUser){
+        authLoadProfileAndEnter().catch(e => authMsg('No se pudo completar el inicio de sesión: ' + (e.message||e), 'error'));
+      }
     });
   } catch(e){
     authMsg('No se pudo conectar: ' + (e.message||e), 'error');
