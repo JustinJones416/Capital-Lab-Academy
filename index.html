@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root{
   --bg:#0a0e17; --bg2:#0e1420; --c1:#131a26; --c2:#18212f; --c3:#1f2a3a; --c4:#2a3850; --c5:#374863;
@@ -36,7 +37,8 @@ h1,h2,h3{font-family:var(--font-head);}
 /* ───── TOPBAR ───── */
 .topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;padding:13px 20px;background:rgba(13,18,28,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--c3);}
 .nav-toggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--r);background:var(--c2);border:1px solid var(--c3);color:var(--t1);font-size:20px;cursor:pointer;flex-shrink:0;}
-.brand{font-family:var(--font-head);font-weight:800;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
+.brand{font-family:var(--font-head);font-weight:800;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:1;min-width:0;max-width:min(220px,45vw);overflow:hidden;white-space:nowrap;}
+.brand span:not(.dot):not(.brand-sub){overflow:hidden;text-overflow:ellipsis;}
 .brand .dot{color:var(--gold);}
 .brand-sub{font-size:9.5px;color:var(--t3);font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;border-left:1px solid var(--c4);padding-left:11px;margin-left:1px;white-space:nowrap;}
 .topbar-spacer{flex:1;}
@@ -302,7 +304,124 @@ h1,h2,h3{font-family:var(--font-head);}
 }
 .toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
 .toast i{color:var(--green);}
+
+/* ═══════════════════ AUTENTICACIÓN ═══════════════════ */
+#auth-gate{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 600px at 80% -10%, rgba(232,185,74,.08), transparent), radial-gradient(900px 500px at 0% 0%, rgba(167,139,250,.08), transparent), var(--bg);overflow-y:auto;}
+#auth-gate.hidden{display:none;}
+#app-shell{display:none;}
+#app-shell.visible{display:block;}
+.auth-card{width:100%;max-width:420px;background:var(--c1);border:1px solid var(--c3);border-radius:var(--r3);padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto;}
+.auth-brand{font-family:var(--font-head);font-weight:800;font-size:22px;text-align:center;margin-bottom:4px;letter-spacing:-.4px;}
+.auth-brand .dot{color:var(--gold);}
+.auth-sub{text-align:center;color:var(--t3);font-size:12.5px;margin-bottom:22px;}
+.auth-tabs{display:flex;background:var(--c2);border-radius:30px;padding:3px;gap:2px;margin-bottom:20px;}
+.auth-tabs button{flex:1;padding:9px 10px;border-radius:20px;border:none;background:transparent;color:var(--t3);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;}
+.auth-tabs button.active{background:var(--gold);color:#1a1404;}
+.auth-view{display:none;}
+.auth-view.active{display:block;animation:fadeIn .3s ease;}
+.auth-field{margin-bottom:14px;}
+.auth-field label{display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin-bottom:6px;}
+.auth-field input,.auth-field select{width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13.5px;}
+.auth-field input:focus,.auth-field select:focus{outline:none;border-color:var(--gold);}
+.auth-role-row{display:flex;gap:8px;margin-bottom:14px;}
+.auth-role-opt{flex:1;padding:12px 8px;border-radius:var(--r);border:1px solid var(--c4);background:var(--c2);text-align:center;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--t2);transition:all .15s;}
+.auth-role-opt.active{border-color:var(--gold);background:rgba(232,185,74,.1);color:var(--gold);}
+.auth-role-opt i{display:block;font-size:19px;margin-bottom:4px;}
+.auth-submit{width:100%;padding:12px;border-radius:var(--r);border:none;background:var(--gold);color:#1a1404;font-family:var(--font-body);font-weight:800;font-size:13.5px;cursor:pointer;margin-top:6px;min-height:44px;transition:all .15s;}
+.auth-submit:disabled{opacity:.6;cursor:default;}
+.auth-forgot{display:block;text-align:center;font-size:11.5px;color:var(--t3);margin-top:14px;cursor:pointer;}
+.auth-forgot:hover{color:var(--gold);}
+.auth-msg{font-size:12px;padding:10px 12px;border-radius:var(--r);margin-bottom:14px;display:none;}
+.auth-msg.show{display:block;}
+.auth-msg.error{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+.auth-msg.success{background:rgba(0,208,132,.1);color:var(--green);border:1px solid rgba(0,208,132,.25);}
+.auth-hint{font-size:11px;color:var(--t3);margin-top:5px;line-height:1.5;}
+.auth-code-result{background:rgba(232,185,74,.08);border:1px solid var(--gold);border-radius:var(--r);padding:14px;text-align:center;margin-top:14px;}
+.auth-code-value{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:.1em;margin:6px 0;}
+.auth-spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.25);border-top-color:#1a1404;border-radius:50%;animation:authSpin .6s linear infinite;}
+@keyframes authSpin{to{transform:rotate(360deg);}}
+.user-chip{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;background:var(--c2);border:1px solid var(--c3);border-radius:30px;cursor:pointer;flex-shrink:0;}
+.user-chip .avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:11px;color:#1a1404;}
+.user-chip .chip-name{font-size:12px;font-weight:600;color:var(--t1);}
+@media(max-width:420px){.user-chip .chip-name{display:none;}}
+
 </style></head><body>
+
+<div id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-brand">CapitalLab<span class="dot">.</span>Academy</div>
+    <div class="auth-sub">Facultad de Economía · Universidad de Panamá</div>
+
+    <div class="auth-tabs">
+      <button id="tab-login" class="active" onclick="authSwitchView('login')">Iniciar sesión</button>
+      <button id="tab-signup" onclick="authSwitchView('signup')">Crear cuenta</button>
+    </div>
+
+    <div id="auth-msg" class="auth-msg"></div>
+
+    <!-- Vista: iniciar sesión -->
+    <div class="auth-view active" id="view-login">
+      <div class="auth-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="login-email" placeholder="nombre@correo.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="auth-submit" id="btn-login" onclick="authLogin()">Iniciar sesión</button>
+      <span class="auth-forgot" onclick="authSwitchView('reset')">¿Olvidaste tu contraseña?</span>
+    </div>
+
+    <!-- Vista: crear cuenta -->
+    <div class="auth-view" id="view-signup">
+      <div class="auth-role-row">
+        <div class="auth-role-opt active" id="role-estudiante" onclick="authSetRole('estudiante')"><i class="ti ti-school"></i>Estudiante</div>
+        <div class="auth-role-opt" id="role-profesor" onclick="authSetRole('profesor')"><i class="ti ti-chalkboard"></i>Profesor</div>
+      </div>
+      <div class="auth-field">
+        <label>Nombre completo</label>
+        <input type="text" id="signup-nombre" placeholder="Tu nombre y apellido">
+      </div>
+      <div class="auth-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="signup-email" placeholder="nombre@correo.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input type="password" id="signup-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="auth-field" id="field-grupo-codigo">
+        <label>Código de grupo de tu profesor</label>
+        <input type="text" id="signup-grupo-codigo" placeholder="Ej. AB12CD" style="text-transform:uppercase;font-family:var(--font-mono);letter-spacing:.08em;">
+        <div class="auth-hint">Te lo comparte tu profesor — así se unen al mismo grupo dentro de Academy.</div>
+      </div>
+      <div class="auth-field hidden" id="field-grupo-nombre">
+        <label>Nombre de tu grupo</label>
+        <input type="text" id="signup-grupo-nombre" placeholder='Ej. "Mercados Financieros — 2026-2"'>
+        <div class="auth-hint">Se crea un grupo nuevo del que serás responsable. Al terminar te damos un código para tus estudiantes.</div>
+      </div>
+      <button class="auth-submit" id="btn-signup" onclick="authSignup()">Crear cuenta</button>
+      <div class="auth-code-result" id="signup-code-result" style="display:none;">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;">Grupo creado — código para tus estudiantes</div>
+        <div class="auth-code-value" id="signup-code-value">——————</div>
+        <button class="auth-submit" onclick="authSwitchView('login')" style="margin-top:8px;">Ir a iniciar sesión</button>
+      </div>
+    </div>
+
+    <!-- Vista: recuperar contraseña -->
+    <div class="auth-view" id="view-reset">
+      <div class="auth-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="reset-email" placeholder="nombre@correo.com" autocomplete="email">
+      </div>
+      <button class="auth-submit" id="btn-reset" onclick="authResetPassword()">Enviar enlace de recuperación</button>
+      <span class="auth-forgot" onclick="authSwitchView('login')">Volver a iniciar sesión</span>
+    </div>
+  </div>
+</div>
+
+<div id="app-shell">
 
 <div class="topbar">
   <button class="nav-toggle" id="nav-toggle" onclick="toggleSidebar()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
@@ -313,6 +432,11 @@ h1,h2,h3{font-family:var(--font-head);}
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
   </div>
   <button class="btn btn-ghost btn-sm" onclick="openExportModal()" style="flex-shrink:0;" title="Exportar material"><i class="ti ti-package-export"></i></button>
+  <div class="user-chip" id="user-chip" onclick="authLogout()" title="Cerrar sesión">
+    <div class="avatar" id="user-avatar">—</div>
+    <span class="chip-name" id="user-chip-name">—</span>
+    <i class="ti ti-logout" style="font-size:14px;color:var(--t3);"></i>
+  </div>
 </div>
 
 <div class="nav-backdrop" id="nav-backdrop" onclick="closeSidebar()"></div>
@@ -415,6 +539,14 @@ h1,h2,h3{font-family:var(--font-head);}
 </div>
 
 <script>
+// ═══════════ Configuración de Supabase ═══════════
+// Reemplaza estos dos valores por los de tu propio proyecto en
+// supabase.com antes de publicar (Project Settings → API).
+const SUPABASE_URL = 'https://banzfcsggkoshsoiadry.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_sg-FW58VGNi9KDOVqsf5Ig_B8aLxw0i';
+let sb = null;
+let currentUser = null; // { usuario_id, auth_id, nombre, correo, rol, grupo_id, grupo_nombre, grupo_codigo }
+
 const $=id=>document.getElementById(id);
 function toast(msg){const t=$('toast');t.innerHTML='<i class="ti ti-circle-check"></i> '+msg;t.className='toast show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
 function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
@@ -1406,6 +1538,13 @@ function applyAccent(subjectId){
 }
 
 function setMode(mode){
+  // Aunque el botón ya se oculta para quien no es docente, esto evita
+  // que alguien entre al modo profesor llamando la función directo desde
+  // la consola del navegador.
+  if(mode==='teacher' && (!currentUser || currentUser.rol!=='docente')){
+    toast('El modo profesor es solo para cuentas de docente.');
+    return;
+  }
   currentMode=mode;
   $('mode-student').classList.toggle('active',mode==='student');
   $('mode-teacher').classList.toggle('active',mode==='teacher');
@@ -1938,7 +2077,7 @@ function answerSubjQuiz(oi){
 function exportCase(caseId){
   const found=findCase(caseId);
   const c=found.case;
-  const name = studentName || prompt('Nombre del estudiante para el archivo exportado:') || 'Estudiante';
+  const name = currentUser?.nombre || studentName || 'Estudiante';
   studentName=name; localStorage.setItem('academy_student_name',name);
   const ans=ensureAnswers(caseId);
   let lines=[];
@@ -2276,8 +2415,231 @@ function exportMyAnalysis(){
   toast('Análisis exportados correctamente.');
 }
 
+// ═══════════════════════════════════════════════════════
+// AUTENTICACIÓN — mismo patrón ya probado en el simulador principal de
+// CapitalLab (Supabase Auth + tabla de usuarios con rol), adaptado aquí
+// al concepto de "grupo" en vez de "sesión de mercado": un profesor crea
+// un grupo y recibe un código, sus estudiantes se unen con ese código.
+// ═══════════════════════════════════════════════════════
+function authConfigured(){
+  return SUPABASE_URL && !SUPABASE_URL.includes('TU-PROYECTO') && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('TU-CLAVE');
+}
+function authMsg(text, type){
+  const el = $('auth-msg');
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'auth-msg show ' + (type||'error');
+}
+function authMsgClear(){
+  const el = $('auth-msg');
+  if(el){ el.className = 'auth-msg'; el.textContent=''; }
+}
+let authRoleSeleccionado = 'estudiante';
+function authSetRole(rol){
+  authRoleSeleccionado = rol;
+  $('role-estudiante').classList.toggle('active', rol==='estudiante');
+  $('role-profesor').classList.toggle('active', rol==='profesor');
+  $('field-grupo-codigo').classList.toggle('hidden', rol!=='estudiante');
+  $('field-grupo-nombre').classList.toggle('hidden', rol!=='profesor');
+}
+function authSwitchView(view){
+  authMsgClear();
+  ['login','signup','reset'].forEach(v=>{
+    $('view-'+v).classList.toggle('active', v===view);
+  });
+  $('tab-login').classList.toggle('active', view==='login');
+  $('tab-signup').classList.toggle('active', view==='signup');
+  if(view==='signup') $('signup-code-result').style.display='none';
+}
+
+async function authLogin(){
+  if(!authConfigured()){ authMsg('Academy aún no está configurado en este archivo (faltan las credenciales de Supabase).', 'error'); return; }
+  const correo = $('login-email').value.trim();
+  const clave = $('login-password').value;
+  if(!correo || !clave){ authMsg('Ingresa tu correo y tu contraseña.'); return; }
+  const btn = $('btn-login');
+  btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Entrando…';
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
+    if(error) throw error;
+    await authLoadProfileAndEnter();
+  } catch(e){
+    authMsg('No se pudo iniciar sesión: ' + (e.message||e), 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Iniciar sesión';
+  }
+}
+
+async function authSignup(){
+  if(!authConfigured()){ authMsg('Academy aún no está configurado en este archivo (faltan las credenciales de Supabase).', 'error'); return; }
+  const nombre = $('signup-nombre').value.trim();
+  const correo = $('signup-email').value.trim();
+  const clave = $('signup-password').value;
+  if(!nombre || !correo || !clave){ authMsg('Completa tu nombre, correo y contraseña.'); return; }
+  if(clave.length < 6){ authMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
+  let grupoCodigo = null, grupoNombre = null;
+  if(authRoleSeleccionado === 'estudiante'){
+    grupoCodigo = $('signup-grupo-codigo').value.trim().toUpperCase();
+    if(!grupoCodigo){ authMsg('Ingresa el código de grupo que te dio tu profesor.'); return; }
+  } else {
+    grupoNombre = $('signup-grupo-nombre').value.trim();
+    if(!grupoNombre){ authMsg('Ponle un nombre a tu grupo.'); return; }
+  }
+  const btn = $('btn-signup');
+  btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Creando cuenta…';
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: correo, password: clave,
+      options: { data: {
+        pending_nombre: nombre, pending_rol: authRoleSeleccionado==='profesor'?'docente':'estudiante',
+        pending_grupo_codigo: grupoCodigo, pending_grupo_nombre: grupoNombre,
+      }}
+    });
+    if(error) throw error;
+    if(data.session){
+      const perfil = await completarRegistroPendiente(data.user, data.user.user_metadata);
+      if(authRoleSeleccionado === 'profesor' && perfil?.grupo_codigo){
+        $('signup-code-value').textContent = perfil.grupo_codigo;
+        $('signup-code-result').style.display = 'block';
+        btn.style.display = 'none';
+      } else {
+        await authLoadProfileAndEnter();
+      }
+    } else {
+      authMsg('Cuenta creada — revisa tu correo para confirmar antes de iniciar sesión.', 'success');
+      authSwitchView('login');
+    }
+  } catch(e){
+    authMsg('No se pudo crear la cuenta: ' + (e.message||e), 'error');
+  } finally {
+    btn.disabled = false; if(btn.style.display!=='none') btn.textContent = 'Crear cuenta';
+  }
+}
+
+// Segunda mitad del registro: ya hay sesión de autenticación real, así
+// que se puede crear el grupo (docente) o unirse a uno (estudiante) sin
+// chocar con las reglas de seguridad de la base de datos.
+async function completarRegistroPendiente(user, meta){
+  if(meta.pending_rol === 'docente'){
+    const codigo = Array.from({length:6}, ()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*33)]).join('');
+    const { data: gruposCreados, error: e1 } = await sb.from('academy_grupos').insert({
+      nombre: meta.pending_grupo_nombre, codigo, docente_id: user.id,
+    }).select();
+    if(e1) throw e1;
+    const grupo = gruposCreados[0];
+    const { data: perfilesCreados, error: e2 } = await sb.from('academy_usuarios').insert({
+      auth_id: user.id, nombre: meta.pending_nombre, correo: user.email, rol:'docente', grupo_id: grupo.id,
+    }).select();
+    if(e2) throw e2;
+    return { ...perfilesCreados[0], grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre };
+  } else {
+    const { data: grupo, error: eG } = await sb.from('academy_grupos').select('id,nombre,codigo').eq('codigo', meta.pending_grupo_codigo).maybeSingle();
+    if(eG) throw eG;
+    if(!grupo) throw new Error('No se encontró ningún grupo con ese código. Verifícalo con tu profesor.');
+    const { data: perfilesCreados, error: e2 } = await sb.from('academy_usuarios').insert({
+      auth_id: user.id, nombre: meta.pending_nombre, correo: user.email, rol:'estudiante', grupo_id: grupo.id,
+    }).select();
+    if(e2) throw e2;
+    return { ...perfilesCreados[0], grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre };
+  }
+}
+
+async function authResetPassword(){
+  if(!authConfigured()){ authMsg('Academy aún no está configurado en este archivo.', 'error'); return; }
+  const correo = $('reset-email').value.trim();
+  if(!correo){ authMsg('Ingresa tu correo electrónico.'); return; }
+  const btn = $('btn-reset');
+  btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Enviando…';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: window.location.origin + window.location.pathname });
+    if(error) throw error;
+    authMsg('Enlace de recuperación enviado a tu correo.', 'success');
+  } catch(e){
+    authMsg('No se pudo enviar el correo: ' + (e.message||e), 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar enlace de recuperación';
+  }
+}
+
+async function authLoadProfileAndEnter(){
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){ authMsg('No se encontró la sesión. Intenta iniciar sesión de nuevo.'); return; }
+
+  let { data: perfil, error } = await sb.from('academy_usuarios').select('*, academy_grupos(nombre,codigo)').eq('auth_id', user.id).maybeSingle();
+  if(error && error.code !== 'PGRST116') throw error;
+
+  if(!perfil){
+    const meta = user.user_metadata || {};
+    if(meta.pending_rol){
+      perfil = await completarRegistroPendiente(user, meta);
+    } else {
+      authMsg('Tu cuenta no tiene un perfil completo todavía. Contacta a quien administra Academy.', 'error');
+      return;
+    }
+  }
+
+  currentUser = {
+    usuario_id: perfil.id, auth_id: user.id, nombre: perfil.nombre, correo: perfil.correo, rol: perfil.rol,
+    grupo_id: perfil.grupo_id, grupo_nombre: perfil.academy_grupos?.nombre || perfil.grupo_nombre,
+    grupo_codigo: perfil.academy_grupos?.codigo || perfil.grupo_codigo,
+  };
+
+  studentName = currentUser.nombre;
+  localStorage.setItem('academy_student_name', currentUser.nombre);
+
+  $('auth-gate').classList.add('hidden');
+  $('app-shell').classList.add('visible');
+  $('user-avatar').textContent = currentUser.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  $('user-chip-name').textContent = currentUser.nombre;
+
+  // Un profesor sigue viendo el interruptor Estudiante/Profesor (puede
+  // querer previsualizar la vista de estudiante); un estudiante real no
+  // debería poder entrar nunca a la vista de profesor, así que se le
+  // oculta el interruptor por completo, en vez de solo confiar en que no
+  // lo toque.
+  if(currentUser.rol !== 'docente'){
+    document.querySelector('.mode-toggle').style.display = 'none';
+  }
+  $('brand-sub').textContent = currentUser.grupo_nombre || 'Portal de materias';
+
+  navPortal();
+}
+
+function authLogout(){
+  if(!confirm('¿Cerrar sesión de CapitalLab Academy?')) return;
+  sb.auth.signOut().then(()=>location.reload());
+}
+
+async function authBoot(){
+  if(!authConfigured()){
+    authMsg('Este archivo aún no tiene configuradas las credenciales de Supabase (SUPABASE_URL / SUPABASE_ANON_KEY). Edítalas antes de usar Academy.', 'error');
+    return;
+  }
+  if(typeof supabase === 'undefined'){
+    authMsg('No se pudo cargar la librería de Supabase — revisa tu conexión a internet.', 'error');
+    return;
+  }
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { session } } = await sb.auth.getSession();
+    if(session){ await authLoadProfileAndEnter(); }
+    sb.auth.onAuthStateChange((evento) => {
+      if(evento === 'SIGNED_OUT' && currentUser){
+        currentUser = null;
+        alert('Tu sesión expiró o se cerró en otro lugar. Vuelve a iniciar sesión.');
+        location.reload();
+      }
+    });
+  } catch(e){
+    authMsg('No se pudo conectar: ' + (e.message||e), 'error');
+  }
+}
+
 // ───── Inicio de la aplicación ─────
-navPortal();
+// (el arranque real ahora lo controla authBoot(), más abajo)
+authBoot();
 </script>
+
+</div><!-- /#app-shell -->
 
 </body></html>
