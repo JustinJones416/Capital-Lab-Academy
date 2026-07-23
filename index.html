@@ -429,6 +429,22 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="auth-submit" id="btn-reset" onclick="authResetPassword()">Enviar enlace de recuperación</button>
       <span class="auth-forgot" onclick="authSwitchView('login')">Volver a iniciar sesión</span>
     </div>
+
+    <!-- Vista: crear contraseña nueva — solo se llega aquí desde el
+         enlace del correo de recuperación, nunca haciendo clic normal. -->
+    <div class="auth-view" id="view-nueva-password">
+      <div class="auth-brand" style="font-size:17px;margin-bottom:4px;">Crea tu contraseña nueva</div>
+      <div class="auth-sub" style="margin-bottom:18px;">Escríbela una vez, confírmala, y listo.</div>
+      <div class="auth-field">
+        <label>Contraseña nueva</label>
+        <input type="password" id="nueva-password-1" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label>Confirmar contraseña nueva</label>
+        <input type="password" id="nueva-password-2" placeholder="Escríbela de nuevo" autocomplete="new-password">
+      </div>
+      <button class="auth-submit" id="btn-nueva-password" onclick="finalizarRecuperacionPassword()">Guardar y entrar</button>
+    </div>
   </div>
 </div>
 
@@ -443,10 +459,10 @@ h1,h2,h3{font-family:var(--font-head);}
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
   </div>
   <button class="btn btn-ghost btn-sm" onclick="openExportModal()" style="flex-shrink:0;" title="Exportar material"><i class="ti ti-package-export"></i></button>
-  <div class="user-chip" id="user-chip" onclick="authLogout()" title="Cerrar sesión">
+  <div class="user-chip" id="user-chip" onclick="abrirMenuCuenta()" title="Mi cuenta">
     <div class="avatar" id="user-avatar">—</div>
     <span class="chip-name" id="user-chip-name">—</span>
-    <i class="ti ti-logout" style="font-size:14px;color:var(--t3);"></i>
+    <i class="ti ti-chevron-down" style="font-size:12px;color:var(--t3);"></i>
   </div>
 </div>
 
@@ -1754,7 +1770,17 @@ function showSubjTool(which){
 
 // ───── Utilidades de respuestas ─────
 function ensureAnswers(caseId){ if(!studentAnswers[caseId]) studentAnswers[caseId]={stages:{}}; if(!studentAnswers[caseId].stages) studentAnswers[caseId].stages={}; return studentAnswers[caseId]; }
-function saveAnswers(){ localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers)); }
+function saveAnswers(){
+  localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
+  // Además de guardarlo en este navegador, se sincroniza a la cuenta —
+  // así el progreso lo puede ver el docente, y el estudiante lo
+  // conserva aunque entre desde otro dispositivo. Si falla (sin
+  // conexión, por ejemplo), no interrumpe nada — el localStorage ya
+  // guardó el avance de todas formas.
+  if(sb && currentUser){
+    sb.from('academy_usuarios').update({ progreso: studentAnswers }).eq('id', currentUser.usuario_id).then(()=>{}).catch(()=>{});
+  }
+}
 function findCase(caseId){ for(const subjId in SUBJECT_DATA){ const c=SUBJECT_DATA[subjId].cases.find(x=>x.id===caseId); if(c) return {subjId, case:c}; } return null; }
 
 // ───── Apertura de caso ─────
@@ -2455,11 +2481,15 @@ function authSetRole(rol){
 }
 function authSwitchView(view){
   authMsgClear();
-  ['login','signup','reset'].forEach(v=>{
+  ['login','signup','reset','nueva-password'].forEach(v=>{
     $('view-'+v).classList.toggle('active', v===view);
   });
   $('tab-login').classList.toggle('active', view==='login');
   $('tab-signup').classList.toggle('active', view==='signup');
+  // Mientras se está creando la contraseña nueva, no tiene sentido dejar
+  // ver las pestañas de iniciar sesión o crear cuenta.
+  const tabs = document.querySelector('.auth-tabs');
+  if(tabs) tabs.style.display = view==='nueva-password' ? 'none' : '';
   if(view==='signup') $('signup-code-result').style.display='none';
 }
 
@@ -2558,6 +2588,27 @@ async function completarRegistroPendiente(user, meta){
   }
 }
 
+async function finalizarRecuperacionPassword(){
+  const p1 = $('nueva-password-1').value;
+  const p2 = $('nueva-password-2').value;
+  if(!p1 || p1.length < 6){ authMsg('La contraseña nueva debe tener al menos 6 caracteres.', 'error'); return; }
+  if(p1 !== p2){ authMsg('Las dos contraseñas no coinciden.', 'error'); return; }
+  const btn = $('btn-nueva-password');
+  btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Guardando…';
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if(error) throw error;
+    // Limpia el token de la URL para que, si recarga por accidente, no
+    // vuelva a caer en esta misma pantalla.
+    history.replaceState(null, '', window.location.pathname);
+    authMsg('Contraseña actualizada. Entrando…', 'success');
+    await authLoadProfileAndEnter();
+  } catch(e){
+    authMsg('No se pudo actualizar la contraseña: ' + (e.message||e), 'error');
+    btn.disabled = false; btn.textContent = 'Guardar y entrar';
+  }
+}
+
 async function authResetPassword(){
   if(!authConfigured()){ authMsg('Academy aún no está configurado en este archivo.', 'error'); return; }
   const correo = $('reset-email').value.trim();
@@ -2600,6 +2651,14 @@ async function authLoadProfileAndEnter(){
 
   studentName = currentUser.nombre;
   localStorage.setItem('academy_student_name', currentUser.nombre);
+
+  // Si ya hay progreso guardado en la cuenta (de otro dispositivo, por
+  // ejemplo) y tiene más contenido que lo que hay en este navegador, se
+  // usa ese — así el progreso sigue a la persona, no solo al navegador.
+  if(perfil.progreso && Object.keys(perfil.progreso).length > Object.keys(studentAnswers).length){
+    studentAnswers = perfil.progreso;
+    localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
+  }
 
   $('auth-gate').classList.add('hidden');
   $('app-shell').classList.add('visible');
@@ -2713,6 +2772,102 @@ async function cpCancelar(){
   location.reload();
 }
 
+// ═══════════════════════════════════════════════════════
+// MI CUENTA — antes, tocar el chip de usuario cerraba la sesión de una
+// vez, sin ninguna forma de volver a ver el código del grupo (el
+// docente solo lo veía una vez, al crear la cuenta, y se perdía si no
+// lo copiaba a tiempo). Ahora abre un panel: el docente ve todos sus
+// grupos con su código, cuántos estudiantes tiene cada uno, y puede
+// crear grupos nuevos sin tener que crear otra cuenta. Un estudiante ve
+// su propio grupo, sin poder editarlo.
+// ═══════════════════════════════════════════════════════
+async function abrirMenuCuenta(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'cuenta-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-user-circle" style="color:var(--gold)"></i> Mi cuenta</h2>
+    <p>${currentUser.nombre} · ${currentUser.correo}</p>
+    <div id="cuenta-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:16px;" onclick="cerrarMenuCuenta()">Cerrar</button>
+    <button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="authLogout()"><i class="ti ti-logout"></i> Cerrar sesión</button>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const cont = $('cuenta-contenido');
+  if(currentUser.rol === 'docente'){
+    await renderMisGrupos(cont);
+  } else {
+    cont.innerHTML = `<div class="export-opt" style="cursor:default;">
+      <i class="ti ti-school"></i>
+      <div><b>${currentUser.grupo_nombre || 'Sin grupo'}</b><span>Código: ${currentUser.grupo_codigo || '—'}</span></div>
+    </div>`;
+  }
+}
+function cerrarMenuCuenta(){ $('cuenta-overlay')?.remove(); }
+
+async function renderMisGrupos(cont){
+  try {
+    const { data: grupos, error: e1 } = await sb.from('academy_grupos').select('id,nombre,codigo').eq('docente_id', currentUser.auth_id).order('creado_en',{ascending:false});
+    if(e1) throw e1;
+    const { data: estudiantes, error: e2 } = await sb.from('academy_usuarios').select('grupo_id').eq('rol','estudiante');
+    if(e2) throw e2;
+    const conteoPorGrupo = {};
+    (estudiantes||[]).forEach(e => { conteoPorGrupo[e.grupo_id] = (conteoPorGrupo[e.grupo_id]||0) + 1; });
+
+    cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Mis grupos</div>` +
+      (grupos||[]).map(g => `<div class="export-opt" style="cursor:default;align-items:flex-start;">
+        <i class="ti ti-school"></i>
+        <div style="flex:1;">
+          <b>${g.nombre}</b>
+          <span>${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em;">${g.codigo}</span>
+            <i class="ti ti-copy" style="cursor:pointer;font-size:14px;" title="Copiar código" onclick="navigator.clipboard.writeText('${g.codigo}');toast('Código copiado.');"></i>
+          </div>
+          <button class="auth-submit" style="margin-top:10px;padding:8px;font-size:11.5px;min-height:36px;" onclick="verEstudiantesDeGrupo('${g.id}','${g.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver estudiantes</button>
+        </div>
+      </div>`).join('') +
+      `<button class="auth-submit" style="margin-top:6px;" onclick="crearGrupoNuevo()"><i class="ti ti-plus"></i> Crear nuevo grupo</button>`;
+  } catch(e){
+    cont.innerHTML = `<div class="auth-msg show error">No se pudieron cargar tus grupos: ${e.message||e}</div>`;
+  }
+}
+
+async function crearGrupoNuevo(){
+  const nombre = prompt('Nombre del grupo nuevo (por ejemplo, "Mercados Financieros — 2026-2"):');
+  if(!nombre || !nombre.trim()) return;
+  try {
+    const codigo = Array.from({length:6}, ()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*33)]).join('');
+    const { error } = await sb.from('academy_grupos').insert({ nombre: nombre.trim(), codigo, docente_id: currentUser.auth_id });
+    if(error) throw error;
+    toast('Grupo creado — código: ' + codigo);
+    await renderMisGrupos($('cuenta-contenido'));
+  } catch(e){
+    alert('No se pudo crear el grupo: ' + (e.message||e));
+  }
+}
+
+async function verEstudiantesDeGrupo(grupoId, nombreGrupo){
+  const cont = $('cuenta-contenido');
+  cont.innerHTML = `<div class="auth-hint">Cargando estudiantes de ${nombreGrupo}…</div>`;
+  try {
+    const { data: estudiantes, error } = await sb.from('academy_usuarios').select('nombre,correo,progreso').eq('grupo_id', grupoId).eq('rol','estudiante').order('nombre');
+    if(error) throw error;
+    cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">${nombreGrupo} — ${(estudiantes||[]).length} estudiante${(estudiantes||[]).length===1?'':'s'}</div>` +
+      (estudiantes?.length ? estudiantes.map(e => {
+        const casosCompletados = Object.keys(e.progreso||{}).length;
+        return `<div class="export-opt" style="cursor:default;">
+          <i class="ti ti-user"></i>
+          <div><b>${e.nombre}</b><span>${e.correo} · ${casosCompletados} materia${casosCompletados===1?'':'s'} con avance</span></div>
+        </div>`;
+      }).join('') : '<div class="auth-hint">Todavía no hay estudiantes en este grupo.</div>') +
+      `<button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="renderMisGrupos($('cuenta-contenido'))"><i class="ti ti-arrow-left"></i> Volver a mis grupos</button>`;
+  } catch(e){
+    cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+
 function authLogout(){
   if(!confirm('¿Cerrar sesión de CapitalLab Academy?')) return;
   sb.auth.signOut().then(()=>location.reload());
@@ -2727,11 +2882,21 @@ async function authBoot(){
     authMsg('No se pudo cargar la librería de Supabase — revisa tu conexión a internet.', 'error');
     return;
   }
+  // Si se entra desde el enlace del correo de "recuperar contraseña",
+  // Supabase deja "type=recovery" en la URL. Sin revisar esto, la app
+  // entraba directo a la cuenta con la contraseña VIEJA todavía activa,
+  // sin darle nunca la oportunidad de poner una nueva.
+  const esEnlaceDeRecuperacion = window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery');
+  if(esEnlaceDeRecuperacion) authSwitchView('nueva-password');
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: { session } } = await sb.auth.getSession();
-    if(session){ await authLoadProfileAndEnter(); }
+    if(session && !esEnlaceDeRecuperacion){ await authLoadProfileAndEnter(); }
     sb.auth.onAuthStateChange((evento) => {
+      if(evento === 'PASSWORD_RECOVERY'){
+        authSwitchView('nueva-password');
+        return;
+      }
       if(evento === 'SIGNED_OUT' && currentUser){
         currentUser = null;
         alert('Tu sesión expiró o se cerró en otro lugar. Vuelve a iniciar sesión.');
@@ -2743,7 +2908,7 @@ async function authBoot(){
       // quedó establecida de verdad. Sin esto, alguien podía volver de
       // Google y quedarse viendo la pantalla de inicio de sesión sin
       // que pasara nada.
-      if(evento === 'SIGNED_IN' && !currentUser){
+      if(evento === 'SIGNED_IN' && !currentUser && !esEnlaceDeRecuperacion){
         authLoadProfileAndEnter().catch(e => authMsg('No se pudo completar el inicio de sesión: ' + (e.message||e), 'error'));
       }
     });
