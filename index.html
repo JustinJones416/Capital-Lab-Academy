@@ -2711,6 +2711,12 @@ async function authConGoogle(){
 // fila en academy_usuarios ni datos pendientes de un registro normal —
 // se le pide aquí lo que falta: nombre, rol, y el grupo correspondiente.
 function mostrarFormularioCompletarPerfilAcademy(user){
+  // Antes esto se quedaba tapado por completo detrás de la pantalla de
+  // inicio de sesión — esa pantalla nunca se ocultaba en este caso
+  // particular (solo se oculta cuando el inicio de sesión termina con
+  // éxito de forma normal), así que el formulario existía pero era
+  // completamente invisible. Ahora si se oculta aquí también.
+  $('auth-gate').classList.add('hidden');
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'completar-perfil-overlay';
