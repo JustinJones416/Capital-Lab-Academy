@@ -444,6 +444,7 @@ h1,h2,h3{font-family:var(--font-head);}
         <input type="password" id="nueva-password-2" placeholder="Escríbela de nuevo" autocomplete="new-password">
       </div>
       <button class="auth-submit" id="btn-nueva-password" onclick="finalizarRecuperacionPassword()">Guardar y entrar</button>
+      <button class="auth-submit" id="btn-cancelar-recuperacion" onclick="cancelarRecuperacionPassword()" style="background:var(--c3);color:var(--t2);margin-top:10px;">Cancelar y volver al inicio</button>
     </div>
   </div>
 </div>
@@ -2609,6 +2610,17 @@ async function finalizarRecuperacionPassword(){
   }
 }
 
+// Cancelar no basta con volver a la pantalla de inicio de sesión: en
+// este punto ya existe una sesión real (la que abrió el propio enlace
+// del correo), así que hay que cerrarla también — si no, la próxima
+// vez que entre podría caer otra vez aquí, o peor, quedar con una
+// sesión abierta a medias sin haber puesto contraseña nueva.
+async function cancelarRecuperacionPassword(){
+  history.replaceState(null, '', window.location.pathname);
+  try { await sb.auth.signOut(); } catch(e){}
+  location.reload();
+}
+
 async function authResetPassword(){
   if(!authConfigured()){ authMsg('Academy aún no está configurado en este archivo.', 'error'); return; }
   const correo = $('reset-email').value.trim();
@@ -2890,9 +2902,12 @@ async function authBoot(){
   if(esEnlaceDeRecuperacion) authSwitchView('nueva-password');
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data: { session } } = await sb.auth.getSession();
+    console.log('[CapitalLab Academy] URL al cargar:', window.location.href);
+    const { data: { session }, error: errSesion } = await sb.auth.getSession();
+    console.log('[CapitalLab Academy] ¿Hay sesión al cargar?:', !!session, errSesion ? ('Error: '+errSesion.message) : '');
     if(session && !esEnlaceDeRecuperacion){ await authLoadProfileAndEnter(); }
-    sb.auth.onAuthStateChange((evento) => {
+    sb.auth.onAuthStateChange((evento, sesionNueva) => {
+      console.log('[CapitalLab Academy] Evento de autenticación:', evento, '| ¿sesión?:', !!sesionNueva);
       if(evento === 'PASSWORD_RECOVERY'){
         authSwitchView('nueva-password');
         return;
@@ -2909,10 +2924,11 @@ async function authBoot(){
       // Google y quedarse viendo la pantalla de inicio de sesión sin
       // que pasara nada.
       if(evento === 'SIGNED_IN' && !currentUser && !esEnlaceDeRecuperacion){
-        authLoadProfileAndEnter().catch(e => authMsg('No se pudo completar el inicio de sesión: ' + (e.message||e), 'error'));
+        authLoadProfileAndEnter().catch(e => { console.error('[CapitalLab Academy] Error al completar el inicio de sesión:', e); authMsg('No se pudo completar el inicio de sesión: ' + (e.message||e), 'error'); });
       }
     });
   } catch(e){
+    console.error('[CapitalLab Academy] Error de conexión:', e);
     authMsg('No se pudo conectar: ' + (e.message||e), 'error');
   }
 }
