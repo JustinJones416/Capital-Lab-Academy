@@ -477,13 +477,18 @@ h1,h2,h3{font-family:var(--font-head);}
 
 <div class="topbar">
   <button class="nav-toggle" id="nav-toggle" onclick="toggleSidebar()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
-  <div class="brand" onclick="navPortal()">CapitalLab<span class="dot">.</span>Academy <span class="brand-sub" id="brand-sub">Portal de materias</span></div>
+  <div class="brand" onclick="irAInicioSegunSesion()">CapitalLab<span class="dot">.</span>Academy <span class="brand-sub" id="brand-sub">Portal de materias</span></div>
   <div class="topbar-spacer"></div>
   <div class="mode-toggle">
     <button id="mode-student" class="active" onclick="setMode('student')"><i class="ti ti-school"></i> <span>Estudiante</span></button>
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
   </div>
   <button class="btn btn-ghost btn-sm" onclick="openExportModal()" style="flex-shrink:0;" title="Exportar material"><i class="ti ti-package-export"></i></button>
+  <button class="btn btn-ghost btn-sm" onclick="abrirCompaneros()" title="Compañeros de clase" style="flex-shrink:0;"><i class="ti ti-users"></i></button>
+  <div style="position:relative;flex-shrink:0;">
+    <button class="btn btn-ghost btn-sm" onclick="abrirNotificaciones()" title="Notificaciones"><i class="ti ti-bell"></i></button>
+    <span id="notif-badge" class="hidden" style="position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 3px;">0</span>
+  </div>
   <div class="user-chip" id="user-chip" onclick="abrirMenuCuenta()" title="Mi cuenta">
     <div class="avatar" id="user-avatar">—</div>
     <span class="chip-name" id="user-chip-name">—</span>
@@ -709,9 +714,24 @@ async function guardarContenidoEditado(subjectId){
     $('editor-contenido-overlay').remove();
     toast('Contenido actualizado para tu clase.');
     navSubject(subjectId);
+    notificarEstudiantesDeContenidoNuevo(subjectId);
   } catch(e){
     msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e);
   }
+}
+// Avisa a cada estudiante del grupo que el material de su materia se
+// actualizó — no bloquea nada si falla, es un aviso, no una operación
+// crítica.
+async function notificarEstudiantesDeContenidoNuevo(subjectId){
+  try {
+    const s = SUBJECTS.find(x=>x.id===subjectId);
+    const { data: membresias } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    const notifs = (membresias||[]).map(m => ({
+      usuario_id: m.academy_usuarios.id, tipo:'contenido_editado',
+      mensaje: `Tu profesor actualizó el material de "${s?.title||subjectId}".`, referencia_materia: subjectId,
+    }));
+    if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
+  } catch(e){ /* silencioso */ }
 }
 async function restaurarContenidoOriginal(subjectId){
   if(!confirm('¿Restaurar el resumen y glosario originales de esta materia para tu clase? Se perderán tus ediciones.')) return;
@@ -2641,8 +2661,22 @@ function guardarApunte(id, subjectId){
     if(!n) return;
     try {
       await sb.from('academy_apuntes').update({ titulo:n.titulo, contenido:n.contenido, actualizado_en:new Date().toISOString() }).eq('id', id);
+      notificarSeguidoresDeApunteNuevo(subjectId, n.titulo);
     } catch(e){ /* se reintentará la próxima vez que edite */ }
   }, 500);
+}
+// Avisa a quien me sigue que escribí o actualicé un apunte — se
+// consulta quién me sigue A MÍ (no a quién sigo yo), y se les notifica.
+async function notificarSeguidoresDeApunteNuevo(subjectId, tituloApunte){
+  try {
+    const s = SUBJECTS.find(x=>x.id===subjectId);
+    const { data: seguidores } = await sb.from('academy_seguidores').select('seguidor_id').eq('seguido_id', currentUser.usuario_id);
+    const notifs = (seguidores||[]).map(f => ({
+      usuario_id: f.seguidor_id, tipo:'apunte_seguido',
+      mensaje: `${currentUser.nombre} escribió un apunte en ${s?.title||subjectId}: "${tituloApunte}".`, referencia_materia: subjectId,
+    }));
+    if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
+  } catch(e){ /* silencioso */ }
 }
 async function borrarApunte(id, subjectId){
   if(!confirm('¿Eliminar este apunte? No se puede deshacer.')) return;
@@ -3231,6 +3265,7 @@ async function entrarConSesion(membresia){
   } else {
     navPortal();
   }
+  cargarNotificaciones();
 }
 
 // Oculta el portal completo y la lista de las diez materias — a un
@@ -3244,6 +3279,18 @@ function restringirNavegacionAMateria(materiaId){
   if(grupoMaterias) grupoMaterias.style.display = restringir ? 'none' : '';
   const grupoRoles = document.querySelector('#role-pill-list')?.closest('.nav-group');
   if(grupoRoles) grupoRoles.style.display = restringir ? 'none' : '';
+}
+
+// El logo de la marca antes llevaba siempre al portal libre de las diez
+// materias, sin importar si la sesión activa estaba bloqueada a una
+// materia específica — una salida sin querer del bloqueo que se supone
+// debía existir. Ahora respeta lo mismo que el resto de la navegación.
+function irAInicioSegunSesion(){
+  if(currentUser?.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
+    navSubject(currentUser.materia_id);
+  } else {
+    navPortal();
+  }
 }
 
 function mostrarSelectorDeSesion(membresias){
@@ -3438,6 +3485,161 @@ async function abrirMenuCuenta(){
 }
 function cerrarMenuCuenta(){ $('cuenta-overlay')?.remove(); }
 
+// ═══════════════════════════════════════════════════════
+// NOTIFICACIONES — avisan cuando el docente de tu clase edita el
+// contenido de la materia, o cuando alguien que sigues escribe o
+// actualiza un apunte.
+// ═══════════════════════════════════════════════════════
+async function cargarNotificaciones(){
+  if(!sb || !currentUser) return;
+  try {
+    const { data, error } = await sb.from('academy_notificaciones').select('id,leida').eq('usuario_id', currentUser.usuario_id).eq('leida', false);
+    if(error) throw error;
+    const badge = $('notif-badge');
+    const cantidad = (data||[]).length;
+    badge.textContent = cantidad > 9 ? '9+' : String(cantidad);
+    badge.classList.toggle('hidden', cantidad === 0);
+  } catch(e){ /* silencioso — no interrumpe el resto de la app */ }
+}
+async function abrirNotificaciones(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'notif-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-bell" style="color:var(--gold)"></i> Notificaciones</h2>
+    <div id="notif-lista"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('notif-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data, error } = await sb.from('academy_notificaciones').select('id,tipo,mensaje,leida,creado_en').eq('usuario_id', currentUser.usuario_id).order('creado_en',{ascending:false}).limit(30);
+    if(error) throw error;
+    $('notif-lista').innerHTML = (data||[]).length ? data.map(n => `
+      <div class="export-opt" style="cursor:default;${n.leida?'opacity:.55;':''}">
+        <i class="ti ${n.tipo==='contenido_editado'?'ti-edit':'ti-notes'}" style="color:${n.leida?'var(--t3)':'var(--gold)'};"></i>
+        <div><span style="font-size:12.5px;">${n.mensaje}</span><span style="display:block;font-size:10.5px;color:var(--t3);margin-top:2px;">${new Date(n.creado_en).toLocaleString('es-PA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>
+      </div>`).join('') : '<div class="auth-hint">No tienes notificaciones todavía.</div>';
+    // Al abrir el panel, se marcan todas como leídas.
+    const idsNoLeidas = (data||[]).filter(n=>!n.leida).map(n=>n.id);
+    if(idsNoLeidas.length){
+      await sb.from('academy_notificaciones').update({ leida:true }).in('id', idsNoLeidas);
+      cargarNotificaciones();
+    }
+  } catch(e){
+    $('notif-lista').innerHTML = `<div class="auth-msg show error">No se pudieron cargar: ${e.message||e}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPAÑEROS DE CLASE — otros estudiantes de la misma sesión (mismo
+// grupo_id, vía membresías), a quienes se puede seguir para ver sus
+// apuntes y recibir un aviso cuando escriban algo nuevo.
+// ═══════════════════════════════════════════════════════
+let misSeguidosAcademy = new Set();
+async function cargarMisSeguidosAcademy(){
+  if(!sb || !currentUser) return;
+  try {
+    const { data } = await sb.from('academy_seguidores').select('seguido_id').eq('seguidor_id', currentUser.usuario_id);
+    misSeguidosAcademy = new Set((data||[]).map(f=>f.seguido_id));
+  } catch(e){ misSeguidosAcademy = new Set(); }
+}
+async function abrirCompaneros(){
+  if(currentUser?.rol !== 'estudiante'){ toast('Esta sección es para estudiantes — el docente ya ve a todos sus estudiantes en "Mis Grupos".'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'companeros-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-users" style="color:var(--gold)"></i> Compañeros de clase</h2>
+    <p>Estudiantes de <b>${currentUser.grupo_nombre}</b>. Sigue a quien quieras para ver sus apuntes y recibir un aviso cuando escriba algo nuevo.</p>
+    <div id="companeros-lista"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('companeros-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  await cargarMisSeguidosAcademy();
+  try {
+    const { data: membresias, error } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    if(error) throw error;
+    const companeros = (membresias||[]).map(m=>m.academy_usuarios).filter(u=>u.id !== currentUser.usuario_id);
+    $('companeros-lista').innerHTML = companeros.length ? companeros.map(u => `
+      <div class="export-opt" style="cursor:default;">
+        <i class="ti ti-user"></i>
+        <div style="flex:1;"><b>${u.nombre}</b></div>
+        <div style="display:flex;gap:6px;">
+          ${misSeguidosAcademy.has(u.id) ? `<button class="btn btn-ghost btn-sm" onclick="verApuntesDeCompanero('${u.id}','${u.nombre.replace(/'/g,"\\'")}')" title="Ver sus apuntes"><i class="ti ti-notes"></i></button>` : ''}
+          <button class="btn btn-sm" id="seguir-btn-${u.id}" onclick="alternarSeguirCompanero('${u.id}','${u.nombre.replace(/'/g,"\\'")}')">${misSeguidosAcademy.has(u.id) ? '<i class="ti ti-user-check"></i> Siguiendo' : '<i class="ti ti-user-plus"></i> Seguir'}</button>
+        </div>
+      </div>`).join('') : '<div class="auth-hint">Todavía no hay más estudiantes en esta clase.</div>';
+  } catch(e){
+    $('companeros-lista').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function alternarSeguirCompanero(usuarioId, nombre){
+  try {
+    if(misSeguidosAcademy.has(usuarioId)){
+      await sb.from('academy_seguidores').delete().eq('seguidor_id', currentUser.usuario_id).eq('seguido_id', usuarioId);
+      misSeguidosAcademy.delete(usuarioId);
+      toast('Dejaste de seguir a ' + nombre);
+    } else {
+      await sb.from('academy_seguidores').insert({ seguidor_id: currentUser.usuario_id, seguido_id: usuarioId });
+      misSeguidosAcademy.add(usuarioId);
+      toast('Ahora sigues a ' + nombre);
+    }
+    const btn = $('seguir-btn-'+usuarioId);
+    if(btn) btn.innerHTML = misSeguidosAcademy.has(usuarioId) ? '<i class="ti ti-user-check"></i> Siguiendo' : '<i class="ti ti-user-plus"></i> Seguir';
+    // El botón de "ver sus apuntes" solo tenía sentido mostrarlo si ya
+    // lo sigo — antes solo aparecía en la carga inicial de la lista, no
+    // se actualizaba al seguir a alguien en la misma sesión sin volver
+    // a abrir el panel completo.
+    const contenedorBotones = btn?.parentElement;
+    if(contenedorBotones){
+      let btnApuntes = contenedorBotones.querySelector('.btn-ver-apuntes-'+usuarioId);
+      if(misSeguidosAcademy.has(usuarioId) && !btnApuntes){
+        const nuevo = document.createElement('button');
+        nuevo.className = 'btn btn-ghost btn-sm btn-ver-apuntes-'+usuarioId;
+        nuevo.title = 'Ver sus apuntes';
+        nuevo.innerHTML = '<i class="ti ti-notes"></i>';
+        nuevo.onclick = () => verApuntesDeCompanero(usuarioId, nombre);
+        contenedorBotones.insertBefore(nuevo, btn);
+      } else if(!misSeguidosAcademy.has(usuarioId) && btnApuntes){
+        btnApuntes.remove();
+      }
+    }
+  } catch(e){
+    toast('No se pudo actualizar: ' + (e.message||e));
+  }
+}
+
+// Muestra los apuntes de un compañero que sigo, en la materia que
+// tengo abierta ahora mismo — la base de datos ya se encarga de que
+// esto solo funcione si de verdad lo sigo (ver el esquema SQL).
+async function verApuntesDeCompanero(usuarioId, nombre){
+  const materiaActual = currentSubjectId;
+  if(!materiaActual){ toast('Entra a una materia primero para ver sus apuntes ahí.'); return; }
+  $('companeros-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'apuntes-companero-overlay';
+  const s = SUBJECTS.find(x=>x.id===materiaActual);
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-notes" style="color:var(--gold)"></i> Apuntes de ${nombre}</h2>
+    <p>En ${s?.title||materiaActual} — solo puedes ver esto porque sigues a ${nombre}.</p>
+    <div id="apuntes-companero-lista"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('apuntes-companero-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data, error } = await sb.from('academy_apuntes').select('titulo,contenido,actualizado_en').eq('usuario_id', usuarioId).eq('materia_id', materiaActual).order('actualizado_en',{ascending:false});
+    if(error) throw error;
+    $('apuntes-companero-lista').innerHTML = (data||[]).length ? data.map(n => `
+      <div class="export-opt" style="cursor:default;align-items:flex-start;">
+        <i class="ti ti-notes"></i>
+        <div><b>${n.titulo}</b><div style="font-size:12.5px;color:var(--t2);margin-top:4px;">${n.contenido||'(sin contenido todavía)'}</div></div>
+      </div>`).join('') : `<div class="auth-hint">${nombre} todavía no tiene apuntes en esta materia.</div>`;
+  } catch(e){
+    $('apuntes-companero-lista').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+
 async function renderMisGrupos(cont){
   try {
     const { data: grupos, error: e1 } = await sb.from('academy_grupos').select('id,nombre,codigo,materia_id').eq('docente_id', currentUser.auth_id).order('creado_en',{ascending:false});
@@ -3454,7 +3656,10 @@ async function renderMisGrupos(cont){
         <i class="ti ti-school" style="color:${materia?.color||'var(--t3)'};"></i>
         <div style="flex:1;">
           <b>${g.nombre}</b>
-          <span>${materia?.title||'Sin materia asignada'} · ${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11.5px;color:var(--t3);">${materia?.title||'Sin materia asignada'} · ${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
+            <i class="ti ti-pencil" style="cursor:pointer;font-size:12px;color:var(--t3);" title="Cambiar materia" onclick="mostrarCambiarMateria('${g.id}','${g.materia_id||''}')"></i>
+          </div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
             <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em;" id="codigo-texto-${g.id}">${g.codigo}</span>
             <i class="ti ti-copy" style="cursor:pointer;font-size:14px;" title="Copiar código" onclick="navigator.clipboard.writeText('${g.codigo}');toast('Código copiado.');"></i>
@@ -3492,6 +3697,41 @@ async function cambiarCodigoGrupo(grupoId, nuevoCodigo){
     await renderMisGrupos($('cuenta-contenido'));
   } catch(e){
     alert('No se pudo cambiar el código: ' + (e.message||e));
+  }
+}
+
+// Cambiar la materia de un grupo que ya existe — la pieza que faltaba
+// para cuando un docente crea el grupo al inicio sin definirla bien, o
+// simplemente se equivoca. El contenido editado que ya hubiera hecho
+// para la materia anterior se limpia, porque ya no correspondería a la
+// materia nueva.
+function mostrarCambiarMateria(grupoId, materiaActualId){
+  const cont = $('cuenta-contenido');
+  cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Cambiar materia del grupo</div>
+    <div class="auth-field">
+      <label>Materia nueva</label>
+      <select id="cm-materia"></select>
+    </div>
+    <div class="auth-hint" style="margin-bottom:14px;">Si ya habías editado el resumen o el glosario para la materia anterior, esa edición se pierde — no aplicaría a la materia nueva.</div>
+    <div class="auth-msg" id="cm-msg"></div>
+    <button class="auth-submit" onclick="guardarCambioMateria('${grupoId}')">Guardar</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="renderMisGrupos($('cuenta-contenido'))">Cancelar</button>`;
+  poblarSelectorDeMateria('cm-materia');
+  $('cm-materia').value = materiaActualId || '';
+}
+async function guardarCambioMateria(grupoId){
+  const nuevaMateria = $('cm-materia').value;
+  const msg = $('cm-msg');
+  try {
+    const { error: e1 } = await sb.from('academy_grupos').update({ materia_id: nuevaMateria }).eq('id', grupoId);
+    if(e1) throw e1;
+    // Se limpia cualquier contenido editado previo, porque estaba
+    // pensado para la materia anterior, no para la nueva.
+    await sb.from('academy_contenido_grupo').delete().eq('grupo_id', grupoId);
+    toast('Materia del grupo actualizada.');
+    await renderMisGrupos($('cuenta-contenido'));
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo cambiar la materia: ' + (e.message||e);
   }
 }
 
