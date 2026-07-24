@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>CapitalLab Academy — Universidad de Panamá, Facultad de Economía</title>
+<title>CapitalLab Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Poppins:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -14,7 +14,7 @@
   --t1:#eef3fb; --t2:#9fb0ca; --t3:#5f7491;
   --accent:#00c4ff; --accent2:#2e9bff; --green:#00d084; --red:#ff4757; --amber:#ffb400; --gold:#e8b94a; --gold2:#f4cf6b; --purple:#a78bfa; --purple2:#c4b5fd; --teal:#00d0b0;
   --r:8px; --r2:12px; --r3:16px;
-  --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif; --font-mono:'DM Mono',monospace;
+  --font-head:'Syne','Poppins','Segoe UI',sans-serif; --font-body:'DM Sans','Segoe UI',sans-serif; --font-mono:'DM Mono','Courier New',monospace;
   --vh:1vh;
   --ac:var(--gold); --ac-text:#1a1404; /* acento activo: se sobreescribe por materia */
 }
@@ -37,7 +37,7 @@ h1,h2,h3{font-family:var(--font-head);}
 /* ───── TOPBAR ───── */
 .topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;padding:13px 20px;background:rgba(13,18,28,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--c3);}
 .nav-toggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--r);background:var(--c2);border:1px solid var(--c3);color:var(--t1);font-size:20px;cursor:pointer;flex-shrink:0;}
-.brand{font-family:var(--font-head);font-weight:800;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:1;min-width:0;max-width:min(220px,45vw);overflow:hidden;white-space:nowrap;}
+.brand{font-family:var(--font-head);font-weight:800;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:1;min-width:0;max-width:min(280px,60vw);overflow:hidden;white-space:nowrap;}
 .brand span:not(.dot):not(.brand-sub){overflow:hidden;text-overflow:ellipsis;}
 .brand .dot{color:var(--gold);}
 .brand-sub{font-size:9.5px;color:var(--t3);font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;border-left:1px solid var(--c4);padding-left:11px;margin-left:1px;white-space:nowrap;}
@@ -350,7 +350,7 @@ h1,h2,h3{font-family:var(--font-head);}
 <div id="auth-gate">
   <div class="auth-card">
     <div class="auth-brand">CapitalLab<span class="dot">.</span>Academy</div>
-    <div class="auth-sub">Facultad de Economía · Universidad de Panamá</div>
+    <div class="auth-sub">Casos aplicados para carreras de Economía y Finanzas</div>
 
     <div class="auth-tabs">
       <button id="tab-login" class="active" onclick="authSwitchView('login')">Iniciar sesión</button>
@@ -519,9 +519,9 @@ h1,h2,h3{font-family:var(--font-head);}
     <!-- ░░░ PORTAL DE INICIO ░░░ -->
     <section id="view-portal" class="fade-in">
       <div class="hero">
-        <div class="eyebrow"><i class="ti ti-sparkles"></i> Licenciatura en Finanzas y Banca · Universidad de Panamá</div>
+        <div class="eyebrow"><i class="ti ti-sparkles"></i> Casos aplicados para carreras de Economía y Finanzas</div>
         <h1>Casos reales para formar financistas</h1>
-        <p>Cada materia de tu plan de estudio tiene su propio banco de casos, anclados en datos y situaciones del sistema financiero panameño. Elige una materia o un rol profesional para comenzar.</p>
+        <p>Cada materia tiene su propio banco de casos, anclados en datos y situaciones del sistema financiero real. Elige una materia o un rol profesional para comenzar.</p>
       </div>
 
       <div class="mentor-bar">
@@ -555,8 +555,8 @@ h1,h2,h3{font-family:var(--font-head);}
 </div>
 
 <div class="foot">
-  <b>CapitalLab Academy</b> — Casos aplicados de la Licenciatura en Finanzas y Banca<br>
-  Universidad de Panamá · Facultad de Economía · 2026
+  <b>CapitalLab Academy</b> — Casos aplicados para carreras de Economía y Finanzas<br>
+  Parte del paquete CapitalLab · 2026
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2375,7 +2375,7 @@ function downloadTxt(filename, content){
 function exportAllGlossaries(){
   closeExportModal();
   let lines=['CAPITALLAB ACADEMY — GLOSARIOS COMPLETOS DE LAS 10 MATERIAS'];
-  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('CapitalLab Academy · 2026');
   lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
   lines.push('');
   SUBJECTS.forEach(s=>{
@@ -2397,7 +2397,7 @@ function exportAllGlossaries(){
 function exportAllSummaries(){
   closeExportModal();
   let lines=['CAPITALLAB ACADEMY — RESÚMENES DE ESTUDIO POR MATERIA'];
-  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('CapitalLab Academy · 2026');
   lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
   lines.push('');
   lines.push('NOTA: Los resúmenes están redactados para lectura didáctica rápida.');
@@ -2421,7 +2421,7 @@ function exportAllSummaries(){
 function exportFullBank(){
   closeExportModal();
   let lines=['CAPITALLAB ACADEMY — BANCO COMPLETO DE CONTENIDO'];
-  lines.push('Universidad de Panamá · Facultad de Economía · 2026');
+  lines.push('CapitalLab Academy · 2026');
   lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
   lines.push('');
   SUBJECTS.forEach(s=>{
@@ -3028,16 +3028,62 @@ async function renderMisGrupos(cont){
           <b>${g.nombre}</b>
           <span>${materia?.title||'Sin materia asignada'} · ${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em;">${g.codigo}</span>
+            <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em;" id="codigo-texto-${g.id}">${g.codigo}</span>
             <i class="ti ti-copy" style="cursor:pointer;font-size:14px;" title="Copiar código" onclick="navigator.clipboard.writeText('${g.codigo}');toast('Código copiado.');"></i>
+            <i class="ti ti-pencil" style="cursor:pointer;font-size:14px;color:var(--t3);" title="Cambiar código" onclick="mostrarCambiarCodigo('${g.id}','${g.codigo}')"></i>
           </div>
-          <button class="auth-submit" style="margin-top:10px;padding:8px;font-size:11.5px;min-height:36px;" onclick="verEstudiantesDeGrupo('${g.id}','${g.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver estudiantes</button>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="auth-submit" style="padding:8px;font-size:11.5px;min-height:36px;margin:0;flex:1;" onclick="verEstudiantesDeGrupo('${g.id}','${g.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver estudiantes</button>
+            <button class="auth-submit" style="padding:8px;font-size:11.5px;min-height:36px;margin:0;background:transparent;border:1px solid var(--red);color:var(--red);width:auto;" title="Eliminar grupo" onclick="confirmarEliminarGrupo('${g.id}','${g.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
       </div>`;
       }).join('') +
       `<button class="auth-submit" style="margin-top:6px;" onclick="mostrarCrearGrupoNuevo()"><i class="ti ti-plus"></i> Crear nuevo grupo</button>`;
   } catch(e){
     cont.innerHTML = `<div class="auth-msg show error">No se pudieron cargar tus grupos: ${e.message||e}</div>`;
+  }
+}
+
+// Cambiar el código no borra ni recrea el grupo — los estudiantes que
+// ya se unieron con el código viejo conservan su lugar sin problema,
+// esto solo afecta a quien intente unirse de ahora en adelante.
+function mostrarCambiarCodigo(grupoId, codigoActual){
+  const nuevo = prompt('Nuevo código para este grupo (los estudiantes que ya se unieron no se ven afectados):', codigoActual);
+  if(!nuevo || !nuevo.trim() || nuevo.trim().toUpperCase() === codigoActual) return;
+  cambiarCodigoGrupo(grupoId, nuevo.trim().toUpperCase());
+}
+async function cambiarCodigoGrupo(grupoId, nuevoCodigo){
+  try {
+    const { error } = await sb.from('academy_grupos').update({ codigo: nuevoCodigo }).eq('id', grupoId);
+    if(error){
+      if(error.code === '23505') throw new Error('Ese código ya lo usa otro grupo — prueba con otro.');
+      throw error;
+    }
+    toast('Código actualizado a ' + nuevoCodigo);
+    await renderMisGrupos($('cuenta-contenido'));
+  } catch(e){
+    alert('No se pudo cambiar el código: ' + (e.message||e));
+  }
+}
+
+// Eliminar un grupo también elimina, en cascada, las membresías de
+// todos los estudiantes que estaban ahí (así lo define el esquema de
+// la base de datos) — el aviso lo dice explícitamente para que no sea
+// una sorpresa después.
+async function confirmarEliminarGrupo(grupoId, nombreGrupo){
+  const { count } = await sb.from('academy_membresias').select('id', {count:'exact', head:true}).eq('grupo_id', grupoId);
+  const advertencia = count
+    ? `"${nombreGrupo}" tiene ${count} estudiante${count===1?'':'s'} inscrito${count===1?'':'s'}. Al eliminarlo, pierden su acceso y su progreso guardado en esta materia. Esto no se puede deshacer. ¿Continuar?`
+    : `¿Eliminar el grupo "${nombreGrupo}"? Esto no se puede deshacer.`;
+  if(!confirm(advertencia)) return;
+  try {
+    const { error } = await sb.from('academy_grupos').delete().eq('id', grupoId);
+    if(error) throw error;
+    toast('Grupo eliminado.');
+    await renderMisGrupos($('cuenta-contenido'));
+  } catch(e){
+    alert('No se pudo eliminar el grupo: ' + (e.message||e));
   }
 }
 
