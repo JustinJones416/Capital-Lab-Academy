@@ -483,11 +483,16 @@ h1,h2,h3{font-family:var(--font-head);}
     <button id="mode-student" class="active" onclick="setMode('student')"><i class="ti ti-school"></i> <span>Estudiante</span></button>
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
   </div>
-  <button class="btn btn-ghost btn-sm" onclick="openExportModal()" style="flex-shrink:0;" title="Exportar material"><i class="ti ti-package-export"></i></button>
-  <button class="btn btn-ghost btn-sm" onclick="abrirCompaneros()" title="Compañeros de clase" style="flex-shrink:0;"><i class="ti ti-users"></i></button>
   <div style="position:relative;flex-shrink:0;">
     <button class="btn btn-ghost btn-sm" onclick="abrirNotificaciones()" title="Notificaciones"><i class="ti ti-bell"></i></button>
     <span id="notif-badge" class="hidden" style="position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 3px;">0</span>
+  </div>
+  <div style="position:relative;flex-shrink:0;">
+    <button class="btn btn-ghost btn-sm" onclick="alternarMenuTopbarMas(event)" title="Más opciones"><i class="ti ti-dots-vertical"></i></button>
+    <div id="menu-topbar-mas" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r2);box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:200;min-width:200px;padding:6px;">
+      <button class="btn btn-ghost btn-sm" id="menu-btn-companeros" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirCompaneros();"><i class="ti ti-users"></i> Compañeros de clase</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;" onclick="cerrarMenuTopbarMas();openExportModal();"><i class="ti ti-package-export"></i> Exportar material</button>
+    </div>
   </div>
   <div class="user-chip" id="user-chip" onclick="abrirMenuCuenta()" title="Mi cuenta">
     <div class="avatar" id="user-avatar">—</div>
@@ -3253,6 +3258,7 @@ async function entrarConSesion(membresia){
   // oculta el interruptor por completo, en vez de solo confiar en que no
   // lo toque.
   document.querySelector('.mode-toggle').style.display = currentUser.rol==='docente' ? '' : 'none';
+  $('menu-btn-companeros').style.display = currentUser.rol==='docente' ? 'none' : '';
   $('brand-sub').textContent = currentUser.grupo_nombre || 'Portal de materias';
 
   // La pieza central de todo esto: un estudiante entra directo a la
@@ -3285,6 +3291,25 @@ function restringirNavegacionAMateria(materiaId){
 // materias, sin importar si la sesión activa estaba bloqueada a una
 // materia específica — una salida sin querer del bloqueo que se supone
 // debía existir. Ahora respeta lo mismo que el resto de la navegación.
+// Menú de "Más opciones" en la topbar — antes había cuatro botones
+// sueltos (exportar, compañeros, notificaciones, cuenta) que en
+// conjunto desbordaban la pantalla en móvil. Ahora solo quedan afuera
+// las notificaciones (por lo frecuentes que son) y la cuenta; el resto
+// vive en este menú.
+function alternarMenuTopbarMas(evento){
+  evento.stopPropagation();
+  const menu = $('menu-topbar-mas');
+  const abrir = menu.style.display === 'none';
+  menu.style.display = abrir ? 'block' : 'none';
+  if(abrir){
+    const cerrarAlTocarFuera = (e) => {
+      if(!menu.contains(e.target)){ menu.style.display = 'none'; document.removeEventListener('click', cerrarAlTocarFuera); }
+    };
+    setTimeout(()=>document.addEventListener('click', cerrarAlTocarFuera), 10);
+  }
+}
+function cerrarMenuTopbarMas(){ $('menu-topbar-mas').style.display = 'none'; }
+
 function irAInicioSegunSesion(){
   if(currentUser?.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
     navSubject(currentUser.materia_id);
