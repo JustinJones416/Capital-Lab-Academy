@@ -12,7 +12,7 @@
 :root{
   --bg:#0a0e17; --bg2:#0e1420; --c1:#131a26; --c2:#18212f; --c3:#1f2a3a; --c4:#2a3850; --c5:#374863;
   --t1:#eef3fb; --t2:#9fb0ca; --t3:#5f7491;
-  --accent:#00c4ff; --accent2:#2e9bff; --green:#00d084; --red:#ff4757; --amber:#ffb400; --gold:#e8b94a; --gold2:#f4cf6b; --purple:#a78bfa; --purple2:#c4b5fd; --teal:#00d0b0;
+  --accent:#00c4ff; --accent2:#2e9bff; --green:#00d084; --red:#ff4757; --amber:#ffb400; --gold:#e8b94a; --gold2:#f4cf6b; --purple:#a78bfa; --purple2:#c4b5fd; --teal:#00d0b0; --rose:#fb7185; --indigo:#818cf8; --lime:#a3e635; --emerald:#34d399;
   --r:8px; --r2:12px; --r3:16px;
   --font-head:'Syne','Poppins','Segoe UI',sans-serif; --font-body:'DM Sans','Segoe UI',sans-serif; --font-mono:'DM Mono','Courier New',monospace;
   --vh:1vh;
@@ -614,6 +614,10 @@ const SUBJECTS = [
   {id:'macro', clave:'ECO 305', kind:'academic', color:'var(--red)', textOn:'#2c0a0d', icon:'ti-world', title:'Macroeconomía I', sub:'Lectura del ciclo económico panameño con indicadores macro.'},
   {id:'inv1', clave:'FIN 325', kind:'academic', color:'var(--accent2)', textOn:'#06182f', icon:'ti-chart-pie', title:'Inversión I', sub:'Construcción y diversificación de portafolios de inversión.'},
   {id:'bancint', clave:'BAN 320', kind:'academic', color:'var(--teal)', textOn:'#012a23', icon:'ti-world-pin', title:'Banca Internacional', sub:'Financiamiento de comercio exterior y riesgo cambiario.'},
+  {id:'deriv', clave:'INVR 341', kind:'academic', color:'var(--rose)', textOn:'#2c0a13', icon:'ti-arrows-cross', title:'Derivados Financieros', sub:'Futuros, opciones y coberturas aplicadas a carteras reales.'},
+  {id:'anmon', clave:'ECO 315', kind:'academic', color:'var(--indigo)', textOn:'#161233', icon:'ti-building-bank', title:'Análisis Monetario', sub:'Política monetaria, tasas de interés y su efecto en la economía.'},
+  {id:'estfin', clave:'EST 465', kind:'academic', color:'var(--lime)', textOn:'#1a2604', icon:'ti-chart-histogram', title:'Estadística Aplicada a las Finanzas', sub:'Modelos estadísticos para medir riesgo y retorno con datos reales.'},
+  {id:'finsost', clave:'INVR 360', kind:'academic', color:'var(--emerald)', textOn:'#04261c', icon:'ti-leaf', title:'Finanzas Sostenibles', sub:'Inversión con criterios ambientales, sociales y de gobernanza (ESG).'},
   {id:'corredor', clave:'ROL', kind:'role', color:'var(--gold2)', textOn:'#1a1404', icon:'ti-device-desktop-analytics', title:'Corredor de Bolsa', sub:'Ejecución de órdenes en la Bolsa de Valores de Panamá.'},
   {id:'asesor', clave:'ROL', kind:'role', color:'var(--purple2)', textOn:'#1d1733', icon:'ti-user-heart', title:'Asesor Financiero', sub:'Planificación financiera integral para clientes reales.'},
 ];
@@ -640,6 +644,10 @@ const MENTOR_QUOTES = {
   macro:'"Panamá no controla su política monetaria. Entender eso te va a ahorrar muchos errores de análisis."',
   inv1:'"Diversificar no es comprar de todo: es entender qué se mueve junto y qué se mueve distinto."',
   bancint:'"En comercio internacional, el riesgo cambiario rara vez es el único riesgo, pero sí es el que más se ignora."',
+  deriv:'"Un derivado no crea riesgo de la nada: casi siempre lo traslada de quien no lo quiere a quien sí lo quiere asumir, a cambio de un precio."',
+  anmon:'"Cuando el banco central mueve la tasa de referencia, no mueve un número — mueve el costo de cada crédito y el valor de cada activo del país."',
+  estfin:'"El retorno promedio te dice adónde llegaste. La desviación estándar te dice qué tan accidentado fue el camino — y eso es lo que de verdad mide el riesgo."',
+  finsost:'"Ignorar el riesgo ambiental de una inversión no lo elimina — solo lo pospone hasta que aparece en el balance de otra persona, o en el tuyo."',
   corredor:'"Un corredor no opina sobre el mercado en el momento de ejecutar: ejecuta la mejor orden posible para su cliente."',
   asesor:'"Un buen plan financiero no es el más sofisticado, es el que la familia realmente va a seguir."',
 };
@@ -1559,6 +1567,299 @@ SUBJECT_DATA.asesor.studyMaterial = {
   quiz:[
     {q:'¿Qué determina principalmente la tolerancia al riesgo apropiada para una meta financiera específica?', opts:['La edad del asesor','El horizonte de tiempo de esa meta','El nombre del banco','El número de hijos de la familia'], correct:1},
     {q:'¿Cuántos meses de gastos suele cubrir un fondo de emergencia típico?', opts:['1 mes','3 a 6 meses','24 meses','No tiene un rango típico'], correct:1},
+  ],
+};
+
+// ═══════════ Derivados Financieros ═══════════
+SUBJECT_DATA.deriv = { casesPlanned:3, cases:[
+  {
+    id:'deriv-c1', expediente:'TES-2026-301', role:'Analista de Tesorería',
+    title:'Cobertura cambiaria para un importador panameño',
+    brief:'Una empresa panameña que importa maquinaria desde Europa debe pagar €500,000 en 90 días. El tipo de cambio euro/dólar es volátil y la gerencia te pide evaluar si conviene cubrir esa exposición con un derivado, o asumir el riesgo sin cobertura.',
+    character:{name:'Marisol Tejada', role:'Gerente Financiera, Importadora Istmo, S.A.', quote:'"Si el euro sube antes del pago, perdemos margen en todo el contenedor. Necesito saber si cubrirnos vale la pena."'},
+    facts:[['Monto a pagar','€500,000 en 90 días'],['Tipo de cambio spot (EUR/USD)','1.08'],['Tipo de cambio forward a 90 días','1.10'],['Costo de una opción call EUR (prima)','1.5% del monto cubierto']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Tamaño de la exposición', icon:'ti-currency-euro',
+        intro:'Antes de decidir cómo cubrirse, hay que cuantificar exactamente cuánto está en riesgo si el tipo de cambio se mueve en contra.',
+        databox:{title:'Exposición sin cobertura', rows:[['Pago comprometido','€500,000'],['Costo en USD al tipo de cambio spot actual (1.08)','US$ 540,000'],['Costo en USD si el euro sube a 1.15 en 90 días','US$ 575,000'],['Pérdida potencial por movimiento adverso','US$ 35,000']]},
+        questions:[
+          {type:'num', q:'Si el tipo de cambio spot es 1.08 USD por euro, ¿cuánto cuesta en dólares el pago de €500,000 hoy?', placeholder:'En US$', correct:540000, tolerance:1000, explain:'500,000 × 1.08 = US$ 540,000.'},
+          {type:'mc', q:'¿Por qué una empresa que factura en dólares pero paga en euros tiene riesgo cambiario en esta operación?', opts:['No tiene ningún riesgo, el monto en euros es fijo','Porque el costo en dólares de ese pago varía según cómo se mueva el tipo de cambio antes de la fecha de pago','El riesgo cambiario solo existe si la empresa exporta','Solo los bancos tienen riesgo cambiario'], correct:1, explain:'El monto en euros está fijo, pero su equivalente en dólares —la moneda en que la empresa genera sus ingresos— cambia con el tipo de cambio. Esa incertidumbre es exactamente el riesgo cambiario.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Cobertura con forward', icon:'ti-calendar-time',
+        intro:'Un forward permite fijar hoy el tipo de cambio al que se comprarán los euros dentro de 90 días, eliminando la incertidumbre.',
+        databox:{title:'Cobertura con contrato forward', rows:[['Tipo de cambio forward pactado','1.10'],['Costo garantizado en USD','US$ 550,000'],['Costo si NO se cubre y el euro sube a 1.15','US$ 575,000'],['Costo si NO se cubre y el euro baja a 1.05','US$ 525,000']]},
+        chart:{type:'bar', title:'Costo en USD según escenario', labels:['Forward (fijo)','Sin cobertura, euro sube','Sin cobertura, euro baja'], data:[550000,575000,525000], color:'var(--rose)'},
+        questions:[
+          {type:'mc', q:'Si la empresa fija el forward a 1.10 y el euro termina subiendo a 1.15, ¿qué gana la empresa por haberse cubierto?', opts:['Nada, el forward no sirvió de nada','Certeza sobre su costo, y de hecho pagó menos (US$ 550,000) que si no se hubiera cubierto (US$ 575,000)','Un descuento adicional del banco','El forward solo protege si el euro baja'], correct:1, explain:'El forward elimina la incertidumbre y, en este escenario específico, resultó ser la decisión correcta: la empresa pagó US$ 25,000 menos de lo que hubiera pagado sin cobertura.'},
+          {type:'mc', q:'¿Qué hubiera pasado si la empresa se cubre con el forward a 1.10 pero el euro termina bajando a 1.05?', opts:['La empresa se beneficia igual','La empresa queda obligada a pagar al tipo forward (1.10), perdiendo la oportunidad de haber pagado menos (1.05) si no se hubiera cubierto','El forward se cancela automáticamente','No hay ninguna diferencia'], correct:1, explain:'Un forward es una obligación, no una opción: fija el tipo de cambio en ambas direcciones. Si el euro baja, la empresa pierde la oportunidad de haber pagado menos, a cambio de la certeza que buscaba.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Cobertura con opción', icon:'ti-shield-half-filled',
+        intro:'A diferencia del forward, una opción call sobre euros da el DERECHO, no la obligación, de comprar euros a un precio fijado, a cambio de pagar una prima.',
+        databox:{title:'Cobertura con opción call', rows:[['Prima de la opción (1.5% de US$ 540,000)','US$ 8,100'],['Precio de ejercicio de la opción','1.10'],['Si el euro sube a 1.15: ejerce la opción, paga','US$ 550,000 + US$ 8,100 de prima = US$ 558,100'],['Si el euro baja a 1.05: no ejerce, compra en el mercado spot','US$ 525,000 + US$ 8,100 de prima = US$ 533,100']]},
+        questions:[
+          {type:'num', q:'¿Cuál es la prima de la opción si es 1.5% sobre un monto de US$ 540,000?', placeholder:'En US$', correct:8100, tolerance:100, explain:'540,000 × 0.015 = US$ 8,100.'},
+          {type:'mc', q:'¿Cuál es la ventaja principal de la opción frente al forward en este caso?', opts:['La opción siempre cuesta menos que el forward','La opción da flexibilidad: si el euro baja, la empresa puede no ejercerla y comprar más barato en el mercado, algo que el forward no permite','La opción no tiene ningún costo','No hay ninguna diferencia real entre ambas'], correct:1, explain:'La opción cuesta una prima que el forward no tiene, pero a cambio da flexibilidad: protege ante un alza del euro sin obligar a pagar de más si el euro baja, algo que el forward, al ser una obligación, no permite.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Decisión de cobertura', icon:'ti-gavel',
+        intro:'Con las tres alternativas cuantificadas, debes recomendar a la gerencia financiera cuál tomar.',
+        verdictOptions:[
+          {v:'forward', label:'Cubrir con forward', desc:'Fijar el tipo de cambio con certeza total, aceptando renunciar a cualquier beneficio si el euro baja.'},
+          {v:'opcion', label:'Cubrir con opción', desc:'Pagar una prima por mantener flexibilidad: protección si el euro sube, sin perder la oportunidad si baja.'},
+          {v:'sin-cobertura', label:'No cubrirse', desc:'Asumir el riesgo cambiario completo, apostando a que el euro no subirá significativamente.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando el apetito de riesgo de una empresa importadora, el costo de cada alternativa (etapas 2 y 3), y qué tan predecible es el comportamiento del euro en 90 días.',
+      },
+    ],
+    summary:'Este caso compara las tres formas de manejar una <b>exposición cambiaria</b>: no cubrirse (riesgo completo), cubrirse con un <b>forward</b> (certeza total, pero sin margen de mejora), y cubrirse con una <b>opción</b> (protección con flexibilidad, a cambio de una prima). Ninguna alternativa es "la correcta" en abstracto — depende de qué tan dispuesta esté la empresa a pagar por eliminar incertidumbre, y de su propia lectura sobre hacia dónde se moverá el tipo de cambio.',
+    flashcards:[
+      {q:'¿Qué es un forward de divisas?', a:'Un contrato que obliga a comprar o vender una moneda a un tipo de cambio fijado hoy, en una fecha futura determinada.'},
+      {q:'¿En qué se diferencia una opción de un forward?', a:'La opción da el derecho, no la obligación, de ejecutar la operación al precio pactado — a cambio de pagar una prima por esa flexibilidad.'},
+      {q:'¿Qué es la prima de una opción?', a:'El costo que se paga por adquirir el derecho (no la obligación) de comprar o vender un activo a un precio fijado.'},
+    ],
+    glossary:[
+      {t:'Derivado financiero', d:'Instrumento cuyo valor depende del precio de otro activo subyacente (una divisa, una acción, una materia prima).'},
+      {t:'Forward', d:'Contrato a la medida entre dos partes que obliga a comprar o vender un activo a un precio fijado, en una fecha futura.'},
+      {t:'Opción call', d:'Contrato que da el derecho, no la obligación, de comprar un activo a un precio fijado (precio de ejercicio) antes o en una fecha determinada.'},
+      {t:'Cobertura (hedge)', d:'Estrategia para reducir o eliminar un riesgo financiero existente, usando un instrumento derivado.'},
+    ],
+    quiz:[
+      {q:'¿Qué obliga un contrato forward?', opts:['Nada, es opcional','Comprar o vender el activo al precio pactado en la fecha futura','Solo vender el activo','Pagar una prima mensual'], correct:1},
+      {q:'¿Qué se paga por adquirir una opción?', opts:['Un interés','Una prima','Un impuesto','Nada'], correct:1},
+      {q:'Si una empresa se cubre con forward y el tipo de cambio se mueve a su favor, ¿qué pasa?', opts:['Se beneficia del movimiento favorable','Renuncia al movimiento favorable, porque el forward ya fijó el precio','El forward se cancela','Recibe un reembolso'], correct:1},
+    ],
+  },
+]};
+SUBJECT_DATA.deriv.studyMaterial = {
+  summary:'Los <b>derivados financieros</b> son instrumentos cuyo valor depende de otro activo — una divisa, una acción, una tasa de interés, una materia prima. En Panamá, donde muchas empresas importan o exportan, los derivados sobre divisas son los más comunes: protegen contra movimientos adversos del tipo de cambio en pagos o cobros futuros.<br><br>Los dos instrumentos más básicos son el <b>forward</b> y la <b>opción</b>. El forward fija hoy el precio de una transacción futura: obliga a ambas partes, sin excepción. Es gratis en el sentido de que no se paga una prima, pero a cambio elimina cualquier posibilidad de beneficiarse si el mercado se mueve favorablemente. La opción, en cambio, cuesta una prima, pero da flexibilidad: el comprador decide si ejerce su derecho o no, según le convenga cuando llegue la fecha.<br><br>La decisión de cubrirse o no —y con qué instrumento— depende del apetito de riesgo de la empresa, de su capacidad de absorber pérdidas si no se cubre, y del costo de cada alternativa frente al beneficio de la certeza que ofrece.',
+  flashcards:[
+    {q:'¿Qué es un forward de divisas?', a:'Un contrato que obliga a comprar o vender una moneda a un tipo de cambio fijado hoy, en una fecha futura determinada.'},
+    {q:'¿En qué se diferencia una opción de un forward?', a:'La opción da el derecho, no la obligación, de ejecutar la operación al precio pactado — a cambio de pagar una prima por esa flexibilidad.'},
+  ],
+  glossary:[
+    {t:'Derivado financiero', d:'Instrumento cuyo valor depende del precio de otro activo subyacente.'},
+    {t:'Forward', d:'Contrato que obliga a comprar o vender un activo a un precio fijado, en una fecha futura.'},
+  ],
+  quiz:[
+    {q:'¿Qué obliga un contrato forward?', opts:['Nada, es opcional','Comprar o vender el activo al precio pactado','Solo vender el activo','Pagar una prima mensual'], correct:1},
+  ],
+};
+
+// ═══════════ Análisis Monetario ═══════════
+SUBJECT_DATA.anmon = { casesPlanned:3, cases:[
+  {
+    id:'anmon-c1', expediente:'BM-2026-401', role:'Analista Económico',
+    title:'Efecto de una subida de tasas de la Fed en la economía panameña',
+    brief:'La Reserva Federal de Estados Unidos anuncia una subida de su tasa de referencia. Como Panamá usa el dólar como moneda oficial y no tiene banco central con política monetaria propia, esa decisión se transmite casi directamente a la economía panameña. Te piden explicar ese efecto a la gerencia de un banco local.',
+    character:{name:'Ing. Federico Solís', role:'Director de Riesgo, Banco Metropolitano', quote:'"Cada vez que la Fed sube la tasa, nuestros clientes preguntan qué significa para sus créditos. Necesito una explicación clara, no un discurso académico."'},
+    facts:[['Tasa de referencia de la Fed (antes)','5.00%'],['Tasa de referencia de la Fed (después del anuncio)','5.50%'],['Tasa preferencial promedio de préstamos en Panamá (antes)','8.25%'],['Panamá no emite moneda propia — usa el dólar estadounidense como moneda de curso legal']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Por qué la Fed afecta a Panamá', icon:'ti-world',
+        intro:'A diferencia de países con banco central propio, Panamá no puede "amortiguar" las decisiones de la Fed con su propia política monetaria — las importa directamente.',
+        databox:{title:'La dolarización panameña', rows:[['Moneda de curso legal en Panamá','Dólar estadounidense (además del Balboa, a la par)'],['Banco central propio con política monetaria autónoma','No existe'],['Consecuencia','Las tasas de interés en Panamá siguen de cerca las decisiones de la Fed']]},
+        questions:[
+          {type:'mc', q:'¿Por qué una decisión de la Reserva Federal de EE.UU. afecta directamente las tasas de interés en Panamá?', opts:['No las afecta, son economías separadas','Porque Panamá usa el dólar como moneda oficial y no tiene un banco central propio que pueda fijar una política monetaria independiente','Solo afecta a las empresas que exportan a EE.UU.','Panamá tiene su propia moneda, así que no hay relación'], correct:1, explain:'Al no emitir moneda propia ni tener banco central con política monetaria autónoma, Panamá "importa" las condiciones monetarias de Estados Unidos casi de forma directa — es una de las particularidades más importantes de su economía dolarizada.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Transmisión a las tasas de crédito local', icon:'ti-percentage',
+        intro:'La subida de la Fed no cambia automáticamente las tasas locales en el mismo instante, pero sí presiona a los bancos panameños a ajustar las suyas.',
+        databox:{title:'Efecto esperado en tasas locales', rows:[['Tasa preferencial de préstamos antes del anuncio','8.25%'],['Subida de la Fed','+0.50 puntos porcentuales'],['Ajuste esperado en la tasa preferencial local (transmisión típica, no 1 a 1)','+0.30 a +0.50 puntos porcentuales'],['Nueva tasa preferencial estimada','8.55% – 8.75%']]},
+        chart:{type:'bar', title:'Tasa preferencial: antes vs. después (estimado)', labels:['Antes','Después (estimado)'], data:[8.25,8.65], color:'var(--indigo)'},
+        questions:[
+          {type:'mc', q:'¿Por qué la transmisión de la subida de la Fed a las tasas locales panameñas no es exactamente "punto por punto"?', opts:['Porque no hay ninguna relación entre ambas','Porque cada banco compite localmente por depósitos y créditos, y ajusta su tasa según su propia posición de liquidez y competencia, no de forma automática e idéntica a la Fed','Porque la ley panameña lo prohíbe','La transmisión siempre es exactamente igual'], correct:1, explain:'Aunque la relación es cercana por la dolarización, cada banco panameño ajusta sus tasas según su propia estructura de costos, liquidez y competencia — la transmisión es fuerte pero no matemáticamente idéntica.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Efecto en el crédito y la economía real', icon:'ti-building-bank',
+        intro:'Tasas de interés más altas no son solo un número — cambian el comportamiento de quienes piden préstamos.',
+        databox:{title:'Efectos esperados sobre el crédito', rows:[['Costo de nuevos préstamos hipotecarios','Aumenta'],['Demanda de crédito para consumo e inversión','Tiende a disminuir'],['Costo de servicio de deuda para quienes ya tienen préstamos a tasa variable','Aumenta'],['Efecto típico sobre el ritmo de crecimiento económico de corto plazo','Moderadamente contractivo']]},
+        questions:[
+          {type:'mc', q:'¿Qué efecto típico tiene una subida de tasas de interés sobre la demanda de crédito de consumidores y empresas?', opts:['Ninguno, la demanda de crédito no depende de la tasa','La demanda tiende a disminuir, porque pedir prestado se vuelve más costoso','La demanda siempre aumenta con tasas más altas','Solo afecta a quienes ya tienen deuda'], correct:1, explain:'Es uno de los mecanismos centrales de la política monetaria: tasas más altas encarecen el crédito, lo cual típicamente reduce la demanda de préstamos para consumo e inversión, moderando el ritmo de la economía.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al banco', icon:'ti-gavel',
+        intro:'Con el análisis completo, debes recomendar cómo debería posicionarse el banco ante este entorno de tasas al alza.',
+        verdictOptions:[
+          {v:'ajustar-gradual', label:'Ajuste gradual de tasas activas', desc:'Subir las tasas de nuevos préstamos de forma escalonada, monitoreando la competencia y la demanda.'},
+          {v:'fortalecer-cartera', label:'Fortalecer el seguimiento de cartera existente', desc:'Enfocar recursos en monitorear a clientes con préstamos a tasa variable, ante el riesgo de mayor mora.'},
+          {v:'ambas', label:'Ambas medidas en paralelo', desc:'Ajustar tasas nuevas gradualmente mientras se refuerza el seguimiento de la cartera vigente más sensible a tasa.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando la transmisión de tasas (etapa 2) y el efecto esperado sobre el comportamiento de los clientes con crédito (etapa 3).',
+      },
+    ],
+    summary:'Este caso explica cómo una decisión de la <b>Reserva Federal de EE.UU.</b> se transmite a la economía panameña por la vía de la <b>dolarización</b> — una particularidad clave de Panamá frente a países con banco central propio. Se analiza la <b>transmisión a las tasas de crédito local</b>, el <b>efecto sobre la demanda de crédito</b> y el comportamiento esperado de la economía real, cerrando con una recomendación concreta para un banco local.',
+    flashcards:[
+      {q:'¿Por qué Panamá no tiene política monetaria propia?', a:'Porque usa el dólar estadounidense como moneda de curso legal y no emite moneda propia, por lo que no cuenta con un banco central que pueda fijar tasas de interés de forma independiente.'},
+      {q:'¿Qué efecto tiene una subida de tasas sobre la demanda de crédito?', a:'Tiende a reducirla, porque pedir prestado se vuelve más costoso, lo que modera el consumo y la inversión financiados con deuda.'},
+    ],
+    glossary:[
+      {t:'Dolarización', d:'Uso del dólar estadounidense como moneda de curso legal en un país que no lo emite, como es el caso de Panamá.'},
+      {t:'Tasa de referencia (Fed Funds Rate)', d:'Tasa de interés que fija la Reserva Federal de Estados Unidos, que influye en el costo del crédito en todo el sistema financiero estadounidense y en economías dolarizadas.'},
+      {t:'Transmisión de política monetaria', d:'Proceso mediante el cual un cambio en la tasa de referencia de un banco central afecta las tasas de interés del resto de la economía.'},
+    ],
+    quiz:[
+      {q:'¿Qué moneda usa Panamá como moneda de curso legal?', opts:['El Balboa, con banco central propio','El dólar estadounidense, sin banco central con política monetaria propia','El peso panameño','No tiene moneda oficial'], correct:1},
+      {q:'¿Qué institución fija la tasa de referencia que más influye en Panamá?', opts:['El Banco Nacional de Panamá','La Superintendencia de Bancos de Panamá','La Reserva Federal de Estados Unidos (Fed)','El Fondo Monetario Internacional'], correct:2},
+    ],
+  },
+]};
+SUBJECT_DATA.anmon.studyMaterial = {
+  summary:'El <b>análisis monetario</b> estudia cómo las decisiones sobre la cantidad de dinero en circulación y las tasas de interés afectan a la economía. En la mayoría de los países, esto lo controla un banco central propio. Panamá es un caso particular: al usar el dólar estadounidense como moneda de curso legal, no tiene banco central con política monetaria autónoma, por lo que las decisiones de la <b>Reserva Federal de Estados Unidos</b> se transmiten de forma casi directa a las tasas de interés locales.<br><br>Esto significa que un analista económico panameño debe seguir de cerca las decisiones de la Fed, no solo las noticias locales, para anticipar movimientos en el costo del crédito, la demanda de préstamos y el ritmo general de la actividad económica del país.',
+  flashcards:[
+    {q:'¿Por qué Panamá no tiene política monetaria propia?', a:'Porque usa el dólar estadounidense como moneda de curso legal y no emite moneda propia.'},
+  ],
+  glossary:[
+    {t:'Dolarización', d:'Uso del dólar estadounidense como moneda de curso legal en un país que no lo emite.'},
+  ],
+  quiz:[
+    {q:'¿Qué institución fija la tasa de referencia que más influye en Panamá?', opts:['El Banco Nacional de Panamá','La Reserva Federal de Estados Unidos (Fed)','La Superintendencia de Bancos','El FMI'], correct:1},
+  ],
+};
+
+// ═══════════ Estadística Aplicada a las Finanzas ═══════════
+SUBJECT_DATA.estfin = { casesPlanned:3, cases:[
+  {
+    id:'estfin-c1', expediente:'RQ-2026-501', role:'Analista Cuantitativo de Riesgo',
+    title:'Comparación estadística de dos carteras de inversión',
+    brief:'Un cliente tiene que elegir entre dos carteras de inversión propuestas por el banco. Ambas tienen el mismo retorno promedio histórico, pero se comportan muy distinto. Te piden explicar, con estadística, cuál es realmente más riesgosa y por qué el retorno promedio por sí solo no basta para decidir.',
+    character:{name:'Lic. Patricia Nuñez', role:'Cliente de banca privada', quote:'"Las dos carteras dicen que rinden 8% anual en promedio. Si es lo mismo, ¿por qué debería importarme cuál elijo?"'},
+    facts:[['Retorno promedio anual — Cartera A','8.0%'],['Retorno promedio anual — Cartera B','8.0%'],['Desviación estándar — Cartera A','4.5%'],['Desviación estándar — Cartera B','14.0%']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Por qué el promedio no es suficiente', icon:'ti-math-avg',
+        intro:'Dos carteras con el mismo retorno promedio pueden haber llegado a ese promedio de formas completamente distintas.',
+        databox:{title:'Retornos anuales de los últimos 5 años (ejemplo ilustrativo)', rows:[['Cartera A','6%, 9%, 7%, 10%, 8% → promedio 8%'],['Cartera B','-8%, 22%, 3%, 15%, 8% → promedio 8%']]},
+        questions:[
+          {type:'mc', q:'Ambas carteras promedian 8% anual. ¿Qué diferencia clave hay entre ellas al ver los retornos año por año?', opts:['Ninguna, son idénticas para fines prácticos','La Cartera B tuvo años mucho mejores y mucho peores que la Cartera A, aunque el promedio final sea igual — es decir, fue más volátil','La Cartera A es más rentable en realidad','Los datos no permiten ninguna comparación'], correct:1, explain:'El promedio esconde la variabilidad: la Cartera B tuvo un año de -8% y otro de 22%, mientras que la Cartera A se mantuvo mucho más estable entre 6% y 10%. Esa variabilidad es exactamente lo que mide la desviación estándar.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Desviación estándar como medida de riesgo', icon:'ti-chart-bell-curve',
+        intro:'La desviación estándar cuantifica qué tan dispersos están los retornos alrededor de su promedio — es la medida estadística de riesgo más usada en finanzas.',
+        databox:{title:'Comparación de riesgo', rows:[['Desviación estándar — Cartera A','4.5%'],['Desviación estándar — Cartera B','14.0%'],['Interpretación','Cartera B es más de 3 veces más volátil que Cartera A, para el mismo retorno promedio']]},
+        chart:{type:'bar', title:'Desviación estándar por cartera', labels:['Cartera A','Cartera B'], data:[4.5,14.0], color:'var(--lime)'},
+        questions:[
+          {type:'mc', q:'¿Qué significa que la Cartera B tenga una desviación estándar de 14% frente al 4.5% de la Cartera A?', opts:['Que la Cartera B es mejor porque el número es más alto','Que los retornos anuales de la Cartera B se alejan mucho más de su promedio de 8%, en ambas direcciones — es una cartera más riesgosa','Que la Cartera B siempre pierde dinero','La desviación estándar no tiene relación con el riesgo'], correct:1, explain:'Una desviación estándar más alta significa mayor dispersión de los retornos alrededor del promedio — en la práctica, mayor probabilidad de resultados muy buenos o muy malos en cualquier año dado, lo cual es la definición estadística de mayor riesgo.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Retorno ajustado por riesgo', icon:'ti-scale',
+        intro:'Si dos carteras rinden lo mismo pero una es más riesgosa, la pregunta correcta no es "¿cuál rinde más?" sino "¿cuál rinde mejor por unidad de riesgo asumido?"',
+        databox:{title:'Retorno por unidad de riesgo (simplificado)', rows:[['Cartera A: retorno / desviación estándar','8.0 / 4.5 = 1.78'],['Cartera B: retorno / desviación estándar','8.0 / 14.0 = 0.57'],['Interpretación','Cartera A ofrece mucho más retorno por cada unidad de riesgo asumido']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el retorno por unidad de riesgo de la Cartera A, si el retorno es 8.0% y la desviación estándar es 4.5%? (dos decimales)', placeholder:'Ej: 1.78', correct:1.78, tolerance:0.05, explain:'8.0 / 4.5 = 1.78 — la Cartera A genera 1.78 unidades de retorno por cada unidad de riesgo asumido, frente a solo 0.57 de la Cartera B.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al cliente', icon:'ti-gavel',
+        intro:'Con el análisis estadístico completo, debes explicarle a la clienta cuál cartera recomendarías, y por qué.',
+        verdictOptions:[
+          {v:'cartera-a', label:'Recomendar la Cartera A', desc:'Mismo retorno promedio, con considerablemente menos riesgo — mejor retorno ajustado por riesgo.'},
+          {v:'cartera-b', label:'Recomendar la Cartera B', desc:'Aceptable solo si la clienta busca explícitamente mayor volatilidad a cambio de la posibilidad de años excepcionales.'},
+          {v:'depende-perfil', label:'Depende del perfil de riesgo de la clienta', desc:'Ninguna es "mejor" en el vacío — depende de cuánta volatilidad esté dispuesta a tolerar la clienta.'},
+        ],
+        openPrompt:'Justifica tu recomendación usando la desviación estándar (etapa 2) y el retorno ajustado por riesgo (etapa 3) — no solo el retorno promedio.',
+      },
+    ],
+    summary:'Este caso enseña por qué el <b>retorno promedio nunca debe evaluarse solo</b>: dos carteras con el mismo 8% de retorno histórico resultan tener un riesgo radicalmente distinto una vez que se mide su <b>desviación estándar</b>. El caso introduce el concepto de <b>retorno ajustado por riesgo</b>, una de las herramientas centrales de la estadística aplicada a las finanzas para comparar alternativas de inversión de forma justa.',
+    flashcards:[
+      {q:'¿Qué mide la desviación estándar de una serie de retornos?', a:'Qué tan dispersos están los retornos individuales alrededor de su promedio — es la medida estadística de riesgo o volatilidad más usada en finanzas.'},
+      {q:'¿Por qué dos inversiones con el mismo retorno promedio pueden tener riesgos muy distintos?', a:'Porque el promedio no captura la variabilidad año a año — una puede tener resultados estables mientras la otra alterna entre pérdidas y ganancias grandes.'},
+      {q:'¿Qué es el retorno ajustado por riesgo?', a:'Una medida que relaciona el retorno obtenido con el riesgo asumido para lograrlo, permitiendo comparar inversiones de forma más justa que solo mirando el retorno.'},
+    ],
+    glossary:[
+      {t:'Desviación estándar', d:'Medida estadística de dispersión que indica qué tan alejados están, en promedio, los valores individuales de una serie respecto a su media.'},
+      {t:'Retorno esperado', d:'El promedio histórico o proyectado de los retornos de una inversión en un período determinado.'},
+      {t:'Retorno ajustado por riesgo', d:'Medida que compara el retorno de una inversión en proporción al riesgo (usualmente la desviación estándar) asumido para obtenerlo.'},
+      {t:'Volatilidad', d:'Término usado en finanzas para referirse a la magnitud de las fluctuaciones de precio o retorno de un activo, generalmente medida con la desviación estándar.'},
+    ],
+    quiz:[
+      {q:'¿Qué mide la desviación estándar en el contexto de una cartera de inversión?', opts:['El retorno total acumulado','La dispersión de los retornos alrededor del promedio, es decir, el riesgo','El número de activos en la cartera','El costo de las comisiones'], correct:1},
+      {q:'Si dos carteras tienen el mismo retorno promedio pero distinta desviación estándar, ¿cuál es generalmente preferible?', opts:['La de mayor desviación estándar','La de menor desviación estándar, porque logra el mismo retorno con menos riesgo','Ninguna es preferible, son iguales','Siempre la más cara'], correct:1},
+    ],
+  },
+]};
+SUBJECT_DATA.estfin.studyMaterial = {
+  summary:'La <b>estadística aplicada a las finanzas</b> da las herramientas para medir algo que en finanzas es tan importante como el retorno: el <b>riesgo</b>. El retorno promedio de una inversión dice hacia dónde tiende a ir su valor, pero no dice nada sobre qué tan predecible o errático es el camino para llegar ahí — y esa es información esencial para cualquier decisión de inversión.<br><br>La <b>desviación estándar</b> es la herramienta central: mide qué tan dispersos están los retornos individuales alrededor de su promedio. Dos inversiones pueden tener el mismo retorno esperado y, aun así, ser completamente distintas en términos de riesgo. A partir de ahí, conceptos como el <b>retorno ajustado por riesgo</b> permiten comparar alternativas de forma más justa que mirando solo el número de retorno.',
+  flashcards:[
+    {q:'¿Qué mide la desviación estándar de una serie de retornos?', a:'Qué tan dispersos están los retornos individuales alrededor de su promedio.'},
+  ],
+  glossary:[
+    {t:'Desviación estándar', d:'Medida estadística de dispersión que indica qué tan alejados están los valores individuales respecto a su media.'},
+  ],
+  quiz:[
+    {q:'¿Qué mide la desviación estándar en una cartera de inversión?', opts:['El retorno total','El riesgo (dispersión de los retornos)','El número de activos','Las comisiones'], correct:1},
+  ],
+};
+
+// ═══════════ Finanzas Sostenibles ═══════════
+SUBJECT_DATA.finsost = { casesPlanned:3, cases:[
+  {
+    id:'finsost-c1', expediente:'ESG-2026-601', role:'Analista ESG',
+    title:'Evaluación de un proyecto para un fondo de inversión sostenible',
+    brief:'Un fondo de inversión que se promociona como "sostenible" evalúa incluir una empresa agroindustrial panameña en su cartera. Te toca evaluar si la empresa realmente cumple criterios ambientales, sociales y de gobernanza (ESG) sólidos, o si se trata de una etiqueta sin sustancia real — lo que en la industria se conoce como "greenwashing".',
+    character:{name:'Ricardo Chen', role:'Gestor del Fondo Istmo Sostenible', quote:'"La empresa dice que es sostenible en su publicidad, pero necesito que alguien verifique eso con datos antes de poner el dinero de nuestros inversionistas."'},
+    facts:[['Reducción de emisiones reportada por la empresa (últimos 3 años)','15%'],['% de la cadena de suministro con certificación ambiental verificada','22%'],['Rotación anual de personal','34%'],['Composición de la junta directiva','Sin ningún miembro independiente']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Criterios ambientales (la "E" de ESG)', icon:'ti-leaf',
+        intro:'El primer pilar evalúa el impacto ambiental real de la empresa, no solo lo que declara en su reporte de sostenibilidad.',
+        databox:{title:'Indicadores ambientales', rows:[['Reducción de emisiones reportada (3 años)','15%'],['% de la cadena de suministro con certificación ambiental verificada por un tercero','22%'],['Brecha entre lo reportado y lo verificado','Significativa: la mayoría de las reducciones no tienen respaldo independiente']]},
+        questions:[
+          {type:'mc', q:'La empresa reporta una reducción de emisiones de 15%, pero solo el 22% de su cadena de suministro tiene certificación ambiental verificada por un tercero. ¿Qué señal de alerta representa esto?', opts:['Ninguna, el 15% ya es un dato confiable por sí solo','Que la mayor parte de la afirmación de sostenibilidad ambiental no está verificada de forma independiente, lo cual es una señal clásica de posible greenwashing','Que la empresa está mintiendo con certeza','Que el dato de 22% es irrelevante'], correct:1, explain:'Un dato de impacto ambiental reportado por la propia empresa, sin verificación independiente amplia, es una señal de alerta — no prueba que sea falso, pero exige mayor escrutinio antes de aceptarlo como criterio de inversión sostenible.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Criterios sociales y de gobernanza (la "S" y la "G")', icon:'ti-users-group',
+        intro:'Sostenibilidad no es solo el medio ambiente: también incluye cómo trata la empresa a su gente y qué tan sólida es su gobernanza corporativa.',
+        databox:{title:'Indicadores sociales y de gobernanza', rows:[['Rotación anual de personal','34% (alta para el sector)'],['Miembros independientes en la junta directiva','0 de un total de 7'],['Política de diversidad e inclusión documentada','No existe'],['Mecanismo formal de denuncia interna','No existe']]},
+        chart:{type:'bar', title:'Rotación de personal: empresa vs. promedio del sector', labels:['Empresa evaluada','Promedio del sector'], data:[34,18], color:'var(--emerald)'},
+        questions:[
+          {type:'mc', q:'¿Por qué la ausencia de miembros independientes en la junta directiva es relevante para un análisis ESG?', opts:['No es relevante, ESG solo mide temas ambientales','Porque una junta sin independencia reduce los controles internos y aumenta el riesgo de decisiones que beneficien a unos pocos por encima del resto de los accionistas', 'Porque la ley panameña lo prohíbe en cualquier empresa','Es solo una preferencia estética sin impacto real'], correct:1, explain:'La "G" de gobernanza evalúa precisamente estos controles: una junta sin independencia tiene menos contrapesos internos, lo cual es un riesgo reconocido en cualquier análisis de gobernanza corporativa, más allá del sector o del país.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Viabilidad financiera del proyecto', icon:'ti-report-money',
+        intro:'Un proyecto sostenible también debe ser financieramente viable — la sostenibilidad no reemplaza el análisis financiero tradicional, lo complementa.',
+        databox:{title:'Resumen financiero de la empresa', rows:[['Margen operativo','11%'],['Nivel de endeudamiento (deuda/patrimonio)','1.8x'],['Tendencia de ingresos (últimos 3 años)','Crecimiento moderado y estable']]},
+        questions:[
+          {type:'mc', q:'Si una empresa tuviera excelentes indicadores ambientales y sociales pero una situación financiera insostenible, ¿debería el fondo invertir de todas formas?', opts:['Sí, siempre, porque lo ESG es lo único que importa para un fondo sostenible','No necesariamente — un fondo sostenible sigue siendo un fondo de inversión, y la viabilidad financiera del proyecto sigue siendo un criterio central, no opcional','Es imposible que eso ocurra','El análisis financiero ya no aplica a fondos ESG'], correct:1, explain:'La inversión sostenible integra criterios ESG al análisis financiero tradicional — no lo sustituye. Un proyecto insostenible financieramente no protege el capital de los inversionistas, sin importar qué tan buenos sean sus indicadores ambientales o sociales.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al fondo', icon:'ti-gavel',
+        intro:'Con los tres pilares evaluados, debes recomendar al gestor del fondo si esta empresa califica para la cartera sostenible.',
+        verdictOptions:[
+          {v:'incluir', label:'Incluir en la cartera', desc:'Los indicadores, aunque mejorables, son suficientes para calificar como inversión sostenible.'},
+          {v:'rechazar', label:'Rechazar por ahora', desc:'Las brechas de verificación ambiental y gobernanza son demasiado significativas para calificar hoy.'},
+          {v:'condicionar', label:'Incluir condicionado a mejoras verificables', desc:'Exigir a la empresa un plan concreto de mejora en verificación ambiental e independencia de junta, con seguimiento.'},
+        ],
+        openPrompt:'Justifica tu recomendación integrando los criterios ambientales (etapa 1), sociales y de gobernanza (etapa 2), y la viabilidad financiera (etapa 3).',
+      },
+    ],
+    summary:'Este caso evalúa una empresa candidata a un <b>fondo de inversión sostenible</b> bajo los tres pilares <b>ESG</b> (ambiental, social y de gobernanza), y expone la brecha común entre lo que una empresa <b>declara</b> sobre su sostenibilidad y lo que puede <b>verificarse</b> de forma independiente — el riesgo conocido como <b>greenwashing</b>. El caso también deja claro que un análisis ESG no reemplaza el análisis financiero tradicional: lo complementa.',
+    flashcards:[
+      {q:'¿Qué significa ESG?', a:'Ambiental, Social y de Gobernanza (Environmental, Social, Governance) — los tres pilares que evalúa un análisis de inversión sostenible.'},
+      {q:'¿Qué es el "greenwashing"?', a:'La práctica de una empresa de presentarse como más sostenible o ambientalmente responsable de lo que sus prácticas reales respaldan.'},
+      {q:'¿Por qué la independencia de la junta directiva es un criterio de gobernanza relevante?', a:'Porque una junta sin miembros independientes tiene menos contrapesos internos, aumentando el riesgo de decisiones que no protejan a todos los accionistas por igual.'},
+    ],
+    glossary:[
+      {t:'ESG', d:'Sigla que agrupa los criterios Ambiental, Social y de Gobernanza usados para evaluar la sostenibilidad e impacto de una inversión, además de su retorno financiero.'},
+      {t:'Greenwashing', d:'Práctica de exagerar o fabricar credenciales de sostenibilidad ambiental sin que existan prácticas reales que las respalden.'},
+      {t:'Gobernanza corporativa', d:'Conjunto de reglas, prácticas y procesos mediante los cuales se dirige y controla una empresa, incluyendo la composición y funcionamiento de su junta directiva.'},
+      {t:'Verificación independiente (third-party verification)', d:'Confirmación de una afirmación o dato por parte de una entidad externa sin interés directo en el resultado, aumentando su credibilidad.'},
+    ],
+    quiz:[
+      {q:'¿Qué significa la sigla ESG?', opts:['Estrategia, Servicio, Ganancia','Ambiental, Social, Gobernanza','Economía Sostenible Global','Evaluación de Solvencia General'], correct:1},
+      {q:'¿Qué es el greenwashing?', opts:['Un tipo de certificación ambiental oficial','Presentar una empresa como más sostenible de lo que realmente es','Un impuesto ambiental','Un fondo especializado en energía verde'], correct:1},
+      {q:'¿La inversión sostenible reemplaza el análisis financiero tradicional?', opts:['Sí, por completo','No, lo complementa — la viabilidad financiera sigue siendo esencial','Solo en fondos pequeños','Solo en Panamá'], correct:1},
+    ],
+  },
+]};
+SUBJECT_DATA.finsost.studyMaterial = {
+  summary:'Las <b>finanzas sostenibles</b> integran criterios <b>ambientales, sociales y de gobernanza (ESG)</b> al análisis financiero tradicional de una inversión. No se trata de elegir entre rentabilidad e impacto: se trata de reconocer que factores como el manejo ambiental, las prácticas laborales y la calidad de la gobernanza corporativa también son señales de riesgo y de calidad de gestión a largo plazo.<br><br>Uno de los mayores retos del analista ESG es distinguir entre sostenibilidad real y <b>greenwashing</b> — declaraciones de sostenibilidad que no están respaldadas por prácticas verificables. Por eso, un análisis ESG riguroso exige buscar verificación independiente de los datos, no solo aceptar lo que la empresa reporta sobre sí misma. Al final, una inversión sostenible sigue siendo una inversión: debe ser financieramente viable, además de cumplir criterios ESG sólidos.',
+  flashcards:[
+    {q:'¿Qué significa ESG?', a:'Ambiental, Social y de Gobernanza — los tres pilares de un análisis de inversión sostenible.'},
+  ],
+  glossary:[
+    {t:'ESG', d:'Sigla que agrupa los criterios Ambiental, Social y de Gobernanza usados para evaluar la sostenibilidad de una inversión.'},
+  ],
+  quiz:[
+    {q:'¿Qué significa la sigla ESG?', opts:['Estrategia, Servicio, Ganancia','Ambiental, Social, Gobernanza','Economía Sostenible Global','Ninguna de las anteriores'], correct:1},
   ],
 };
 
