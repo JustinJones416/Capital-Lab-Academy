@@ -563,27 +563,19 @@ h1,h2,h3{font-family:var(--font-head);}
 <div class="export-modal-overlay hidden" id="export-modal-overlay">
   <div class="export-modal">
     <h2><i class="ti ti-package-export" style="color:var(--gold)"></i> Exportar material</h2>
-    <p>Selecciona qué deseas exportar. El PDF imprime la vista actual de la materia (resumen, glosario y datos); el TXT consolida todo el banco de contenido del proyecto.</p>
+    <p>Exporta el material de estudio de la materia que estás viendo — si tu profesor editó el contenido para esta clase, la exportación incluye esa versión.</p>
     <div class="export-options">
       <div class="export-opt" onclick="exportPDFCurrentSubject()">
         <i class="ti ti-file-type-pdf"></i>
-        <div><b>PDF — Materia actual</b><span>Imprime el material de estudio de la materia que estás viendo (resumen + glosario).</span></div>
+        <div><b>PDF — Esta materia</b><span>Resumen y glosario, listos para imprimir o guardar como PDF.</span></div>
       </div>
-      <div class="export-opt" onclick="exportAllGlossaries()">
-        <i class="ti ti-books"></i>
-        <div><b>TXT — Todos los glosarios</b><span>Exporta en un solo archivo los glosarios completos de las 10 materias.</span></div>
-      </div>
-      <div class="export-opt" onclick="exportAllSummaries()">
-        <i class="ti ti-file-description"></i>
-        <div><b>TXT — Todos los resúmenes</b><span>Exporta en un solo archivo los resúmenes didácticos de las 10 materias.</span></div>
-      </div>
-      <div class="export-opt" onclick="exportFullBank()">
-        <i class="ti ti-database-export"></i>
-        <div><b>TXT — Banco completo del proyecto</b><span>Todo el contenido: resúmenes, glosarios, flashcards, preguntas y respuestas de los 10 casos.</span></div>
+      <div class="export-opt" onclick="exportWordCurrentSubject()">
+        <i class="ti ti-file-type-doc"></i>
+        <div><b>Word — Esta materia</b><span>El mismo contenido, en un archivo que se puede editar en Word.</span></div>
       </div>
       <div class="export-opt" onclick="exportMyAnalysis()">
         <i class="ti ti-user-check"></i>
-        <div><b>TXT — Mis análisis completados</b><span>Exporta todos los casos que hayas finalizado con tus respuestas y decisiones.</span></div>
+        <div><b>PDF — Mis casos completados</b><span>Tus respuestas y decisiones en los casos que ya terminaste.</span></div>
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="closeExportModal()"><i class="ti ti-x"></i> Cerrar</button>
@@ -598,6 +590,7 @@ const SUPABASE_URL = 'https://banzfcsggkoshsoiadry.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_sg-FW58VGNi9KDOVqsf5Ig_B8aLxw0i';
 let sb = null;
 let currentUser = null; // { usuario_id, auth_id, nombre, correo, rol, grupo_id, grupo_nombre, grupo_codigo }
+let contenidoEditadoGrupo = null; // resumen/glosario editados por el docente para la sesión activa, si existen
 
 const $=id=>document.getElementById(id);
 function toast(msg){const t=$('toast');t.innerHTML='<i class="ti ti-circle-check"></i> '+msg;t.className='toast show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
@@ -628,10 +621,121 @@ const MENTOR = {name:'Lic. Adriana Castillo', role:'Guía de CapitalLab Academy'
 // "roles profesionales" como Corredor de Bolsa o Asesor — esos son
 // perfiles de práctica libre, no materias del plan de estudio, así que
 // no tiene sentido crear una sesión de clase para ellos).
+// Agrupa las materias académicas por licenciatura, para que el
+// selector no sea una sola lista larga y desordenada — un docente
+// encuentra su materia mucho más rápido si primero ubica su carrera.
+const LICENCIATURAS = [
+  { nombre:'Finanzas y Banca', materias:['banmer','bancred','aeef','mdofin','proy','macro','inv1','bancint'] },
+  { nombre:'Inversión y Riesgo', materias:['deriv'] },
+  { nombre:'Economía', materias:['anmon'] },
+  { nombre:'Estadística Económica y Social', materias:['estfin'] },
+  { nombre:'Economía y Gestión Ambiental', materias:['finsost'] },
+];
+
+// Devuelve el resumen o el glosario que corresponde mostrar: el
+// editado por el docente, si existe para la sesión activa y la materia
+// que se está viendo coincide con la de esa sesión — o el original si
+// no hay ninguna edición.
+function obtenerResumenEfectivo(subjectId){
+  if(contenidoEditadoGrupo?.resumen_editado && currentUser?.materia_id === subjectId){
+    return contenidoEditadoGrupo.resumen_editado;
+  }
+  return SUBJECT_DATA[subjectId].studyMaterial.summary;
+}
+function obtenerGlosarioEfectivo(subjectId){
+  if(contenidoEditadoGrupo?.glosario_editado && currentUser?.materia_id === subjectId){
+    return contenidoEditadoGrupo.glosario_editado;
+  }
+  return SUBJECT_DATA[subjectId].studyMaterial.glossary;
+}
+
+// ═══════════════════════════════════════════════════════
+// EDITOR DE CONTENIDO POR CLASE — el docente edita el resumen y el
+// glosario de la materia, pero SOLO para su propio grupo. La materia
+// original (y su versión en cualquier otro grupo) nunca se toca — esto
+// se guarda aparte, en academy_contenido_grupo, ligado al grupo_id.
+// ═══════════════════════════════════════════════════════
+function abrirEditorContenido(subjectId){
+  const resumenActual = obtenerResumenEfectivo(subjectId);
+  const glosarioActual = obtenerGlosarioEfectivo(subjectId);
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'editor-contenido-overlay';
+  overlay.innerHTML = `<div class="export-modal" style="max-width:640px;">
+    <h2><i class="ti ti-edit" style="color:var(--gold)"></i> Editar para mi clase</h2>
+    <p>Estos cambios solo los van a ver los estudiantes de <b>${currentUser.grupo_nombre}</b> — la materia original no se modifica en ningún otro grupo.</p>
+    <div class="auth-field">
+      <label>Resumen (admite &lt;b&gt;negrita&lt;/b&gt; y &lt;br&gt; para saltos de línea)</label>
+      <textarea id="ec-resumen" rows="8" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;resize:vertical;">${resumenActual}</textarea>
+    </div>
+    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin-bottom:6px;">Glosario</label>
+    <div id="ec-glosario-lista"></div>
+    <button class="btn btn-ghost btn-sm" onclick="ecAgregarTerminoGlosario()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir término</button>
+    <div class="auth-msg" id="ec-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="auth-submit" onclick="guardarContenidoEditado('${subjectId}')">Guardar cambios</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="$('editor-contenido-overlay').remove()">Cancelar</button>
+    </div>
+    ${contenidoEditadoGrupo?.resumen_editado || contenidoEditadoGrupo?.glosario_editado ? `<button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="restaurarContenidoOriginal('${subjectId}')"><i class="ti ti-restore"></i> Restaurar contenido original</button>` : ''}
+  </div>`;
+  document.body.appendChild(overlay);
+  window.__ecGlosario = (glosarioActual||[]).map(g=>({t:g.t, d:g.d}));
+  ecRenderGlosario();
+}
+function ecRenderGlosario(){
+  $('ec-glosario-lista').innerHTML = window.__ecGlosario.map((g,i) => `
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
+      <div style="flex:1;">
+        <input type="text" value="${(g.t||'').replace(/"/g,'&quot;')}" placeholder="Término" oninput="window.__ecGlosario[${i}].t=this.value" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;margin-bottom:4px;">
+        <textarea rows="2" placeholder="Definición" oninput="window.__ecGlosario[${i}].d=this.value" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${g.d||''}</textarea>
+      </div>
+      <i class="ti ti-trash" style="cursor:pointer;color:var(--red);font-size:16px;margin-top:8px;" onclick="ecQuitarTerminoGlosario(${i})"></i>
+    </div>`).join('');
+}
+function ecAgregarTerminoGlosario(){ window.__ecGlosario.push({t:'',d:''}); ecRenderGlosario(); }
+function ecQuitarTerminoGlosario(i){ window.__ecGlosario.splice(i,1); ecRenderGlosario(); }
+
+async function guardarContenidoEditado(subjectId){
+  const resumen = $('ec-resumen').value.trim();
+  const glosario = window.__ecGlosario.filter(g => g.t.trim() && g.d.trim());
+  const msg = $('ec-msg');
+  if(!resumen){ msg.className='auth-msg show error'; msg.textContent='El resumen no puede quedar vacío.'; return; }
+  try {
+    const { error } = await sb.from('academy_contenido_grupo').upsert({
+      grupo_id: currentUser.grupo_id, resumen_editado: resumen, glosario_editado: glosario, actualizado_en: new Date().toISOString(),
+    }, { onConflict:'grupo_id' });
+    if(error) throw error;
+    contenidoEditadoGrupo = { resumen_editado: resumen, glosario_editado: glosario };
+    $('editor-contenido-overlay').remove();
+    toast('Contenido actualizado para tu clase.');
+    navSubject(subjectId);
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e);
+  }
+}
+async function restaurarContenidoOriginal(subjectId){
+  if(!confirm('¿Restaurar el resumen y glosario originales de esta materia para tu clase? Se perderán tus ediciones.')) return;
+  try {
+    await sb.from('academy_contenido_grupo').delete().eq('grupo_id', currentUser.grupo_id);
+    contenidoEditadoGrupo = null;
+    $('editor-contenido-overlay').remove();
+    toast('Contenido original restaurado.');
+    navSubject(subjectId);
+  } catch(e){
+    alert('No se pudo restaurar: ' + (e.message||e));
+  }
+}
+
 function poblarSelectorDeMateria(idSelect){
   const el = $(idSelect);
   if(!el) return;
-  el.innerHTML = SUBJECTS.filter(s=>s.kind==='academic').map(s=>`<option value="${s.id}">${s.clave} — ${s.title}</option>`).join('');
+  el.innerHTML = LICENCIATURAS.map(lic => {
+    const opciones = lic.materias.map(mid => {
+      const s = SUBJECTS.find(x=>x.id===mid);
+      return s ? `<option value="${s.id}">${s.clave} — ${s.title}</option>` : '';
+    }).join('');
+    return opciones ? `<optgroup label="${lic.nombre}">${opciones}</optgroup>` : '';
+  }).join('');
 }
 
 // Frases del mentor por materia, mostradas al entrar a cada una
@@ -2110,32 +2214,38 @@ function renderSubjectView(subjectId){
 
     <div class="section-label"><i class="ti ti-bulb"></i> Material de estudio · revisa esto antes de empezar</div>
     <div class="card">
-      <div class="card-sub" style="margin-bottom:16px;"><i class="ti ti-info-circle"></i> Repasa los conceptos clave de la materia antes de entrar a los casos. Te ayudará a resolverlos con más seguridad.</div>
+      <div class="card-sub" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <span><i class="ti ti-info-circle"></i> Repasa los conceptos clave de la materia antes de entrar a los casos. Te ayudará a resolverlos con más seguridad.</span>
+        ${(currentUser?.rol==='docente' && currentUser?.materia_id===subjectId) ? `<button class="btn btn-ghost btn-sm" onclick="abrirEditorContenido('${subjectId}')" style="flex-shrink:0;"><i class="ti ti-edit"></i> Editar para mi clase</button>` : ''}
+      </div>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
         <button class="tool-tab" id="subj-tab-gloss" onclick="showSubjTool('gloss')"><i class="ti ti-book"></i> Glosario</button>
         <button class="tool-tab" id="subj-tab-quiz" onclick="showSubjTool('quiz')"><i class="ti ti-bolt"></i> Quiz rápido</button>
+        <button class="tool-tab" id="subj-tab-notas" onclick="showSubjTool('notas')"><i class="ti ti-notes"></i> Mis apuntes</button>
       </div>
-      <div id="subj-tool-summary"><div class="summary-box">${SUBJECT_DATA[subjectId].studyMaterial.summary}</div></div>
+      <div id="subj-tool-summary"><div class="summary-box">${obtenerResumenEfectivo(subjectId)}</div></div>
       <div id="subj-tool-flash" class="hidden"></div>
       <div id="subj-tool-gloss" class="hidden"></div>
       <div id="subj-tool-quiz" class="hidden"></div>
+      <div id="subj-tool-notas" class="hidden"></div>
     </div>
 
     <div class="section-label"><i class="ti ti-briefcase"></i> Casos de la materia</div>
     <div class="case-grid">${caseCardsHtml}</div>
   `;
   renderSubjectFlashcards(SUBJECT_DATA[subjectId].studyMaterial.flashcards);
-  renderSubjectGlossary(SUBJECT_DATA[subjectId].studyMaterial.glossary);
+  renderSubjectGlossary(obtenerGlosarioEfectivo(subjectId));
   renderSubjectQuiz(SUBJECT_DATA[subjectId].studyMaterial.quiz);
 }
 
 function showSubjTool(which){
-  ['summary','flash','gloss','quiz'].forEach(t=>{
+  ['summary','flash','gloss','quiz','notas'].forEach(t=>{
     $('subj-tab-'+t).classList.toggle('active', t===which);
     $('subj-tool-'+t).classList.toggle('hidden', t!==which);
   });
+  if(which==='notas') renderApuntesMateria(currentSubjectId);
 }
 
 // ───── Utilidades de respuestas ─────
@@ -2467,6 +2577,83 @@ function drawSubjQuiz(){
   const optsEl=$('subj-quiz-opts');
   optsEl.innerHTML = q.opts.map((o,oi)=>`<div class="q-opt" onclick="answerSubjQuiz(${oi})"><span class="dot"></span>${o}</div>`).join('');
 }
+
+// ═══════════════════════════════════════════════════════
+// MIS APUNTES — cada estudiante puede llevar sus propias notas dentro
+// de cada materia. Son completamente privados: nadie más los ve, ni
+// siquiera el docente. Se guardan en Supabase para no perderlos si
+// cambia de dispositivo.
+// ═══════════════════════════════════════════════════════
+let apuntesCache = {};
+async function renderApuntesMateria(subjectId){
+  const cont = $('subj-tool-notas');
+  if(!currentUser || !sb){ cont.innerHTML = '<div class="auth-hint">Inicia sesión para llevar tus propios apuntes.</div>'; return; }
+  cont.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="text" id="apunte-titulo-nuevo" placeholder="Título del apunte nuevo" style="flex:1;padding:9px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;">
+      <button class="btn btn-sm" onclick="crearApunte('${subjectId}')"><i class="ti ti-plus"></i> Nuevo</button>
+    </div>
+    <div id="apuntes-lista"><div class="auth-hint">Cargando tus apuntes…</div></div>`;
+  try {
+    const { data, error } = await sb.from('academy_apuntes').select('id,titulo,contenido,actualizado_en').eq('usuario_id', currentUser.usuario_id).eq('materia_id', subjectId).order('actualizado_en',{ascending:false});
+    if(error) throw error;
+    apuntesCache[subjectId] = data || [];
+    dibujarListaApuntes(subjectId);
+  } catch(e){
+    $('apuntes-lista').innerHTML = `<div class="auth-msg show error">No se pudieron cargar tus apuntes: ${e.message||e}</div>`;
+  }
+}
+function dibujarListaApuntes(subjectId){
+  const lista = apuntesCache[subjectId] || [];
+  $('apuntes-lista').innerHTML = lista.length ? lista.map(n => `
+    <div class="export-opt" style="cursor:default;align-items:flex-start;margin-bottom:8px;">
+      <i class="ti ti-notes"></i>
+      <div style="flex:1;">
+        <input type="text" value="${(n.titulo||'').replace(/"/g,'&quot;')}" oninput="apunteEditadoLocal('${n.id}','titulo',this.value)" onblur="guardarApunte('${n.id}','${subjectId}')" style="width:100%;background:transparent;border:none;color:var(--t1);font-weight:700;font-size:13.5px;padding:0;margin-bottom:6px;">
+        <textarea rows="3" oninput="apunteEditadoLocal('${n.id}','contenido',this.value)" onblur="guardarApunte('${n.id}','${subjectId}')" placeholder="Escribe aquí…" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${n.contenido||''}</textarea>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:4px;">Actualizado ${new Date(n.actualizado_en).toLocaleDateString('es-PA')}</div>
+      </div>
+      <i class="ti ti-trash" style="cursor:pointer;color:var(--red);font-size:15px;margin-top:2px;" onclick="borrarApunte('${n.id}','${subjectId}')"></i>
+    </div>`).join('') : '<div class="auth-hint">Todavía no tienes apuntes en esta materia — crea el primero arriba.</div>';
+}
+function apunteEditadoLocal(id, campo, valor){
+  const n = (apuntesCache[currentSubjectId]||[]).find(x=>x.id===id);
+  if(n) n[campo] = valor;
+}
+async function crearApunte(subjectId){
+  const input = $('apunte-titulo-nuevo');
+  const titulo = input.value.trim() || 'Sin título';
+  try {
+    const { data, error } = await sb.from('academy_apuntes').insert({ usuario_id: currentUser.usuario_id, materia_id: subjectId, titulo, contenido:'' }).select().single();
+    if(error) throw error;
+    apuntesCache[subjectId] = [data, ...(apuntesCache[subjectId]||[])];
+    input.value = '';
+    dibujarListaApuntes(subjectId);
+  } catch(e){
+    toast('No se pudo crear el apunte: ' + (e.message||e));
+  }
+}
+let guardarApunteTimeout = null;
+function guardarApunte(id, subjectId){
+  clearTimeout(guardarApunteTimeout);
+  guardarApunteTimeout = setTimeout(async () => {
+    const n = (apuntesCache[subjectId]||[]).find(x=>x.id===id);
+    if(!n) return;
+    try {
+      await sb.from('academy_apuntes').update({ titulo:n.titulo, contenido:n.contenido, actualizado_en:new Date().toISOString() }).eq('id', id);
+    } catch(e){ /* se reintentará la próxima vez que edite */ }
+  }, 500);
+}
+async function borrarApunte(id, subjectId){
+  if(!confirm('¿Eliminar este apunte? No se puede deshacer.')) return;
+  try {
+    await sb.from('academy_apuntes').delete().eq('id', id);
+    apuntesCache[subjectId] = (apuntesCache[subjectId]||[]).filter(x=>x.id!==id);
+    dibujarListaApuntes(subjectId);
+  } catch(e){
+    toast('No se pudo eliminar: ' + (e.message||e));
+  }
+}
 function answerSubjQuiz(oi){
   if(subjQuizState.answered) return;
   subjQuizState.answered=true;
@@ -2652,174 +2839,103 @@ function reviewLocalStudent(){
 function openExportModal(){ $('export-modal-overlay').classList.remove('hidden'); }
 function closeExportModal(){ $('export-modal-overlay').classList.add('hidden'); }
 
+// Ventana de impresión reutilizable — genera un documento HTML aparte,
+// en vez de depender del CSS de impresión de la página en vivo, así
+// funciona igual de bien para cualquier exportación (materia actual o
+// mis casos completados).
+function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${tituloDoc}</title>
+  <style>
+    body{font-family:Georgia,serif;color:#111;max-width:760px;margin:0 auto;padding:32px 24px;line-height:1.55;}
+    h1{font-size:22px;margin-bottom:2px;} .sub{color:#555;font-size:12.5px;margin-bottom:22px;}
+    h2{font-size:16px;margin-top:26px;border-bottom:1px solid #ccc;padding-bottom:4px;}
+    .gloss-t{font-weight:700;margin-top:10px;} .gloss-d{color:#333;margin-bottom:2px;}
+    .caso{margin-top:22px;padding-top:14px;border-top:1px solid #ddd;}
+    .preg{margin:10px 0;font-size:13.5px;} .resp{color:#333;margin-left:12px;}
+    @media print{ body{padding:0;} }
+  </style></head><body>${cuerpoHtml}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 350);
+}
+
 function exportPDFCurrentSubject(){
   closeExportModal();
-  if(!currentSubjectId){ toast('Navega a una materia antes de exportar a PDF.'); return; }
-  navSubject(currentSubjectId);
-  // Abrir todos los términos del glosario antes de imprimir
-  document.querySelectorAll('.gloss-item').forEach(el=>el.classList.add('open'));
-  setTimeout(()=>{
-    window.print();
-  }, 300);
+  if(!currentSubjectId){ toast('Navega a una materia antes de exportar.'); return; }
+  const s = SUBJECTS.find(x=>x.id===currentSubjectId);
+  const resumen = obtenerResumenEfectivo(currentSubjectId);
+  const glosario = obtenerGlosarioEfectivo(currentSubjectId);
+  const cuerpo = `
+    <h1>${s.title}</h1>
+    <div class="sub">CapitalLab Academy${currentUser?.grupo_nombre ? ' · '+currentUser.grupo_nombre : ''} · ${new Date().toLocaleDateString('es-PA')}</div>
+    <h2>Resumen</h2>
+    <div>${resumen}</div>
+    <h2>Glosario</h2>
+    ${glosario.map(g=>`<div class="gloss-t">${g.t}</div><div class="gloss-d">${g.d}</div>`).join('')}
+  `;
+  abrirVentanaImpresion(s.title+' — CapitalLab Academy', cuerpo);
 }
 
-function downloadTxt(filename, content){
-  const blob=new Blob([content], {type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
+// El truco para generar un archivo que Word abre directamente: es HTML
+// normal, pero con el tipo MIME y la extensión de Word — no hace falta
+// ninguna librería aparte para esto.
+function exportWordCurrentSubject(){
+  closeExportModal();
+  if(!currentSubjectId){ toast('Navega a una materia antes de exportar.'); return; }
+  const s = SUBJECTS.find(x=>x.id===currentSubjectId);
+  const resumen = obtenerResumenEfectivo(currentSubjectId);
+  const glosario = obtenerGlosarioEfectivo(currentSubjectId);
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${s.title}</title></head><body style="font-family:Georgia,serif;">
+    <h1>${s.title}</h1>
+    <p style="color:#555;font-size:12px;">CapitalLab Academy${currentUser?.grupo_nombre ? ' · '+currentUser.grupo_nombre : ''} · ${new Date().toLocaleDateString('es-PA')}</p>
+    <h2>Resumen</h2>
+    <p>${resumen}</p>
+    <h2>Glosario</h2>
+    ${glosario.map(g=>`<p><b>${g.t}</b><br>${g.d}</p>`).join('')}
+  </body></html>`;
+  const blob = new Blob(['\ufeff', html], { type:'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${s.title.replace(/\s+/g,'_')}_CapitalLab_Academy.doc`;
+  a.click();
   URL.revokeObjectURL(url);
-}
-
-function exportAllGlossaries(){
-  closeExportModal();
-  let lines=['CAPITALLAB ACADEMY — GLOSARIOS COMPLETOS DE LAS 10 MATERIAS'];
-  lines.push('CapitalLab Academy · 2026');
-  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
-  lines.push('');
-  SUBJECTS.forEach(s=>{
-    const data=SUBJECT_DATA[s.id];
-    if(!data?.studyMaterial?.glossary) return;
-    lines.push('════════════════════════════════════════');
-    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
-    lines.push('════════════════════════════════════════');
-    data.studyMaterial.glossary.forEach(g=>{
-      lines.push('► '+g.t);
-      lines.push('  '+g.d);
-      lines.push('');
-    });
-  });
-  downloadTxt('CapitalLab_Academy_Glosarios_Completos.txt', lines.join('\n'));
-  toast('Glosarios exportados correctamente.');
-}
-
-function exportAllSummaries(){
-  closeExportModal();
-  let lines=['CAPITALLAB ACADEMY — RESÚMENES DE ESTUDIO POR MATERIA'];
-  lines.push('CapitalLab Academy · 2026');
-  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
-  lines.push('');
-  lines.push('NOTA: Los resúmenes están redactados para lectura didáctica rápida.');
-  lines.push('Estudia cada uno antes de abrir los casos de la materia correspondiente.');
-  lines.push('');
-  SUBJECTS.forEach(s=>{
-    const data=SUBJECT_DATA[s.id];
-    if(!data?.studyMaterial?.summary) return;
-    lines.push('════════════════════════════════════════');
-    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
-    lines.push('════════════════════════════════════════');
-    // Limpiar etiquetas HTML para texto plano
-    const clean = data.studyMaterial.summary.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
-    lines.push(clean);
-    lines.push('');
-  });
-  downloadTxt('CapitalLab_Academy_Resumenes_Completos.txt', lines.join('\n'));
-  toast('Resúmenes exportados correctamente.');
-}
-
-function exportFullBank(){
-  closeExportModal();
-  let lines=['CAPITALLAB ACADEMY — BANCO COMPLETO DE CONTENIDO'];
-  lines.push('CapitalLab Academy · 2026');
-  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
-  lines.push('');
-  SUBJECTS.forEach(s=>{
-    const data=SUBJECT_DATA[s.id];
-    if(!data) return;
-    lines.push('════════════════════════════════════════');
-    lines.push(s.title.toUpperCase()+(s.clave!=='ROL'?' ('+s.clave+')':''));
-    lines.push('════════════════════════════════════════');
-    if(data.studyMaterial?.summary){
-      lines.push('── RESUMEN ──');
-      lines.push(data.studyMaterial.summary.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim());
-      lines.push('');
-    }
-    if(data.studyMaterial?.glossary?.length){
-      lines.push('── GLOSARIO ──');
-      data.studyMaterial.glossary.forEach(g=>{ lines.push('► '+g.t+': '+g.d); });
-      lines.push('');
-    }
-    if(data.studyMaterial?.flashcards?.length){
-      lines.push('── TARJETAS DIDÁCTICAS ──');
-      data.studyMaterial.flashcards.forEach((f,i)=>{ lines.push(`[${i+1}] P: ${f.q}`); lines.push(`     R: ${f.a}`); });
-      lines.push('');
-    }
-    if(data.studyMaterial?.quiz?.length){
-      lines.push('── QUIZ DE REPASO ──');
-      data.studyMaterial.quiz.forEach((q,i)=>{
-        lines.push(`${i+1}. ${q.q}`);
-        q.opts.forEach((o,oi)=>lines.push(`   ${oi===q.correct?'✓':'◦'} ${o}`));
-      });
-      lines.push('');
-    }
-    data.cases.forEach(c=>{
-      lines.push('── CASO: '+c.title+' ──');
-      lines.push('Expediente: '+c.expediente+' · '+c.role);
-      lines.push(c.brief);
-      c.stages.forEach(stage=>{
-        lines.push('  · '+stage.title);
-        if(stage.questions){
-          stage.questions.forEach((q,i)=>{
-            lines.push('    P'+(i+1)+': '+q.q);
-            if(q.type==='mc') lines.push('    R: '+q.opts[q.correct]+' — '+q.explain);
-            else lines.push('    R: '+q.correct+' — '+q.explain);
-          });
-        }
-        if(stage.verdictOptions){ lines.push('    Opciones de decisión: '+stage.verdictOptions.map(v=>v.label).join(' | ')); }
-      });
-      lines.push('');
-    });
-  });
-  downloadTxt('CapitalLab_Academy_Banco_Completo.txt', lines.join('\n'));
-  toast('Banco completo exportado correctamente.');
+  toast('Documento de Word generado.');
 }
 
 function exportMyAnalysis(){
   closeExportModal();
-  const name = studentName || 'Estudiante';
-  let lines=['CAPITALLAB ACADEMY — MIS ANÁLISIS COMPLETADOS'];
-  lines.push('Estudiante: '+name);
-  lines.push('Exportado el: '+new Date().toLocaleDateString('es-PA'));
-  lines.push('');
-  let hasAny=false;
+  const name = currentUser?.nombre || studentName || 'Estudiante';
+  let hasAny = false;
+  let cuerpo = `<h1>Mis casos completados</h1><div class="sub">${name}${currentUser?.grupo_nombre?' · '+currentUser.grupo_nombre:''} · ${new Date().toLocaleDateString('es-PA')}</div>`;
   SUBJECTS.forEach(s=>{
-    const data=SUBJECT_DATA[s.id];
+    const data = SUBJECT_DATA[s.id];
     if(!data) return;
     data.cases.forEach(c=>{
-      const ans=studentAnswers[c.id];
+      const ans = studentAnswers[c.id];
       if(!ans || ans.score===undefined) return;
-      hasAny=true;
-      lines.push('════════════════════════════════════════');
-      lines.push(s.title+' — '+c.title);
-      lines.push('Calificación automática: '+ans.score+'/'+ans.total+' preguntas correctas');
-      lines.push('Completado el: '+(ans.completedAt ? new Date(ans.completedAt).toLocaleDateString('es-PA') : 'fecha no registrada'));
-      lines.push('');
+      hasAny = true;
+      cuerpo += `<div class="caso"><h2>${s.title} — ${c.title}</h2>
+        <div class="sub">Calificación: ${ans.score}/${ans.total} · ${ans.completedAt ? new Date(ans.completedAt).toLocaleDateString('es-PA') : 'sin fecha'}</div>`;
       c.stages.forEach(st=>{
-        lines.push('  '+st.title);
-        const stAns=(ans.stages||{})[st.id]||{};
+        const stAns = (ans.stages||{})[st.id]||{};
         if(st.questions){
           st.questions.forEach((q,i)=>{
-            const given=stAns[i];
+            const given = stAns[i];
             const givenTxt = q.type==='mc' ? (given!==undefined?q.opts[given]:'(sin responder)') : (given!==undefined?given:'(sin responder)');
             const correct = q.type==='mc' ? given===q.correct : (given!==undefined && Math.abs(parseFloat(given)-q.correct)<=q.tolerance);
-            lines.push('    P'+(i+1)+': '+q.q);
-            lines.push('    Mi respuesta: '+givenTxt+' '+(correct?'✓':'✗'));
+            cuerpo += `<div class="preg"><b>${q.q}</b><div class="resp">Mi respuesta: ${givenTxt} ${correct?'✓':'✗'}</div></div>`;
           });
         }
         if(st.verdictOptions && stAns.verdict){
-          const v=st.verdictOptions.find(x=>x.v===stAns.verdict);
-          lines.push('    Decisión: '+(v?v.label:'—'));
-          if(stAns.open) lines.push('    Justificación: '+stAns.open);
+          const v = st.verdictOptions.find(x=>x.v===stAns.verdict);
+          cuerpo += `<div class="preg"><b>Decisión:</b> ${v?v.label:'—'}${stAns.open?`<div class="resp">${stAns.open}</div>`:''}</div>`;
         }
-        lines.push('');
       });
+      cuerpo += `</div>`;
     });
   });
-  if(!hasAny){ lines.push('No hay análisis completados aún. Finaliza al menos un caso para exportar tu registro.'); }
-  downloadTxt('CapitalLab_Academy_MisAnalisis_'+name.replace(/\s+/g,'_')+'.txt', lines.join('\n'));
-  toast('Análisis exportados correctamente.');
+  if(!hasAny){ cuerpo += '<p>Todavía no hay casos completados. Termina al menos uno para exportar tu registro.</p>'; }
+  abrirVentanaImpresion('Mis casos completados — CapitalLab Academy', cuerpo);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3080,6 +3196,17 @@ async function entrarConSesion(membresia){
   // otra materia si la persona pertenece a más de una.
   studentAnswers = membresia.progreso || {};
   localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
+
+  // Si el docente de esta sesión editó el resumen o el glosario de la
+  // materia, ese contenido reemplaza al original SOLO dentro de esta
+  // sesión — nunca afecta a la materia en otros grupos.
+  contenidoEditadoGrupo = null;
+  if(sb && currentUser.grupo_id){
+    try {
+      const { data } = await sb.from('academy_contenido_grupo').select('resumen_editado,glosario_editado').eq('grupo_id', currentUser.grupo_id).maybeSingle();
+      contenidoEditadoGrupo = data || null;
+    } catch(e){ contenidoEditadoGrupo = null; }
+  }
 
   $('selector-sesion').classList.add('hidden');
   $('app-shell').classList.add('visible');
