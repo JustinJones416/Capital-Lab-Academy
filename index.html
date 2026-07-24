@@ -1610,8 +1610,42 @@ function setMode(mode){
   currentMode=mode;
   $('mode-student').classList.toggle('active',mode==='student');
   $('mode-teacher').classList.toggle('active',mode==='teacher');
-  if(mode==='teacher'){ renderTeacherView(); showView('view-teacher'); setActiveNav(null); setActiveSubjectPill(null); }
-  else { navPortal(); }
+  if(mode==='teacher'){
+    $('banner-vista-previa')?.remove();
+    renderTeacherView(); showView('view-teacher'); setActiveNav(null); setActiveSubjectPill(null);
+  } else {
+    // Antes esto mostraba el portal libre de las diez materias — pero
+    // un estudiante real, dentro de una sesión ligada a una materia,
+    // nunca ve ese portal: entra directo a su materia. Si el docente
+    // está probando "como lo vería un estudiante", tiene que ver
+    // EXACTAMENTE eso, no una versión más permisiva que no existe para
+    // nadie más.
+    mostrarBannerVistaPrevia();
+    if(currentUser?.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
+      navSubject(currentUser.materia_id);
+    } else {
+      navPortal();
+    }
+  }
+}
+
+// Aviso fijo en pantalla mientras el docente prueba el modo estudiante,
+// para que nunca se le olvide en cuál de los dos "sombreros" está — muy
+// fácil de confundir si no queda claro, sobre todo con la vista tan
+// parecida a la real.
+function mostrarBannerVistaPrevia(){
+  if($('banner-vista-previa')) return;
+  const el = document.createElement('div');
+  el.id = 'banner-vista-previa';
+  // Antes flotaba fijo en top:0, tapando la propia topbar — incluido el
+  // botón para volver a modo profesor, dejando a quien lo probara sin
+  // poder salir con un clic normal. Ahora se inserta como parte del
+  // flujo normal de la página, justo debajo de la topbar, sin taparla
+  // nunca — se ve, mueve el contenido hacia abajo, y no bloquea nada.
+  el.style.cssText = 'position:sticky;top:0;z-index:90;background:var(--gold);color:#1a1404;text-align:center;padding:6px 12px;font-size:12px;font-weight:700;';
+  el.innerHTML = '<i class="ti ti-eye"></i> Estás viendo Academy como lo vería un estudiante de tu sesión — nada de lo que hagas aquí se guarda como progreso real.';
+  const topbar = document.querySelector('.topbar');
+  topbar.insertAdjacentElement('afterend', el);
 }
 
 function navPortal(){
@@ -1807,12 +1841,12 @@ function showSubjTool(which){
 function ensureAnswers(caseId){ if(!studentAnswers[caseId]) studentAnswers[caseId]={stages:{}}; if(!studentAnswers[caseId].stages) studentAnswers[caseId].stages={}; return studentAnswers[caseId]; }
 function saveAnswers(){
   localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
-  // Además de guardarlo en este navegador, se sincroniza a la sesión
-  // ACTIVA en particular — no al perfil general — para que el progreso
-  // de una materia nunca se mezcle con el de otra si la persona
-  // pertenece a más de una sesión. Si falla (sin conexión, por
-  // ejemplo), no interrumpe nada — el localStorage ya guardó el avance.
-  if(sb && currentUser && currentUser.membresia_id){
+  // Un docente probando "cómo lo vería un estudiante" también pasa por
+  // aquí al hacer clic en las respuestas de prueba — eso NO debe
+  // guardarse como si fuera progreso real de su propia cuenta, o
+  // ensuciaría los datos la próxima vez que alguien revise avances.
+  const esVistaPrevia = currentUser?.rol==='docente' && currentMode==='student';
+  if(sb && currentUser && currentUser.membresia_id && !esVistaPrevia){
     sb.from('academy_membresias').update({ progreso: studentAnswers }).eq('id', currentUser.membresia_id).then(()=>{}).catch(()=>{});
   }
 }
