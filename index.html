@@ -406,6 +406,11 @@ h1,h2,h3{font-family:var(--font-head);}
         <input type="text" id="signup-grupo-nombre" placeholder='Ej. "Mercados Financieros — 2026-2"'>
         <div class="auth-hint">Se crea un grupo nuevo del que serás responsable. Al terminar te damos un código para tus estudiantes.</div>
       </div>
+      <div class="auth-field hidden" id="field-grupo-materia">
+        <label>Materia de este grupo</label>
+        <select id="signup-grupo-materia"></select>
+        <div class="auth-hint">Tus estudiantes van a entrar directo a esta materia con el código — no van a ver las demás.</div>
+      </div>
       <button class="auth-submit" id="btn-signup" onclick="authSignup()">Crear cuenta</button>
       <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--t3);font-size:11px;"><div style="flex:1;height:1px;background:var(--c4);"></div>o bien<div style="flex:1;height:1px;background:var(--c4);"></div></div>
       <button class="auth-submit" id="btn-google-signup" onclick="authConGoogle()" style="background:#fff;color:#1a1a1a;display:flex;align-items:center;justify-content:center;gap:10px;">
@@ -446,6 +451,25 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="auth-submit" id="btn-nueva-password" onclick="finalizarRecuperacionPassword()">Guardar y entrar</button>
       <button class="auth-submit" id="btn-cancelar-recuperacion" onclick="cancelarRecuperacionPassword()" style="background:var(--c3);color:var(--t2);margin-top:10px;">Cancelar y volver al inicio</button>
     </div>
+  </div>
+</div>
+
+<!-- Selector de sesión — aparece cuando alguien tiene más de una
+     sesión (por ejemplo, es estudiante en dos materias distintas, o
+     docente con varios grupos), para elegir con cuál entrar. Vive
+     FUERA de #app-shell a propósito: ese contenedor empieza oculto por
+     completo hasta que se entra a una sesión, y un elemento oculto
+     oculta también a todos sus hijos sin importar su propio estilo —
+     si el selector se queda adentro, nunca llega a mostrarse, aunque
+     técnicamente exista en la página.
+-->
+<div id="selector-sesion" class="hidden" style="position:fixed;inset:0;z-index:1900;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto;">
+  <div class="auth-card" style="max-width:480px;">
+    <div class="auth-brand">Elige tu sesión</div>
+    <div class="auth-sub" id="selector-sesion-sub">Perteneces a más de una sesión dentro de CapitalLab Academy.</div>
+    <div id="selector-sesion-lista"></div>
+    <button class="auth-submit" id="selector-sesion-nueva" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="mostrarUnirseANuevaSesion()"><i class="ti ti-plus"></i> Unirme a otra sesión con un código</button>
+    <span class="auth-forgot" onclick="authLogout()">Cerrar sesión</span>
   </div>
 </div>
 
@@ -595,6 +619,16 @@ const SUBJECTS = [
 ];
 
 const MENTOR = {name:'Lic. Adriana Castillo', role:'Guía de CapitalLab Academy', initials:'AC'};
+
+// Llena un <select> con las materias académicas reales (sin incluir los
+// "roles profesionales" como Corredor de Bolsa o Asesor — esos son
+// perfiles de práctica libre, no materias del plan de estudio, así que
+// no tiene sentido crear una sesión de clase para ellos).
+function poblarSelectorDeMateria(idSelect){
+  const el = $(idSelect);
+  if(!el) return;
+  el.innerHTML = SUBJECTS.filter(s=>s.kind==='academic').map(s=>`<option value="${s.id}">${s.clave} — ${s.title}</option>`).join('');
+}
 
 // Frases del mentor por materia, mostradas al entrar a cada una
 const MENTOR_QUOTES = {
@@ -1773,13 +1807,13 @@ function showSubjTool(which){
 function ensureAnswers(caseId){ if(!studentAnswers[caseId]) studentAnswers[caseId]={stages:{}}; if(!studentAnswers[caseId].stages) studentAnswers[caseId].stages={}; return studentAnswers[caseId]; }
 function saveAnswers(){
   localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
-  // Además de guardarlo en este navegador, se sincroniza a la cuenta —
-  // así el progreso lo puede ver el docente, y el estudiante lo
-  // conserva aunque entre desde otro dispositivo. Si falla (sin
-  // conexión, por ejemplo), no interrumpe nada — el localStorage ya
-  // guardó el avance de todas formas.
-  if(sb && currentUser){
-    sb.from('academy_usuarios').update({ progreso: studentAnswers }).eq('id', currentUser.usuario_id).then(()=>{}).catch(()=>{});
+  // Además de guardarlo en este navegador, se sincroniza a la sesión
+  // ACTIVA en particular — no al perfil general — para que el progreso
+  // de una materia nunca se mezcle con el de otra si la persona
+  // pertenece a más de una sesión. Si falla (sin conexión, por
+  // ejemplo), no interrumpe nada — el localStorage ya guardó el avance.
+  if(sb && currentUser && currentUser.membresia_id){
+    sb.from('academy_membresias').update({ progreso: studentAnswers }).eq('id', currentUser.membresia_id).then(()=>{}).catch(()=>{});
   }
 }
 function findCase(caseId){ for(const subjId in SUBJECT_DATA){ const c=SUBJECT_DATA[subjId].cases.find(x=>x.id===caseId); if(c) return {subjId, case:c}; } return null; }
@@ -2479,6 +2513,7 @@ function authSetRole(rol){
   $('role-profesor').classList.toggle('active', rol==='profesor');
   $('field-grupo-codigo').classList.toggle('hidden', rol!=='estudiante');
   $('field-grupo-nombre').classList.toggle('hidden', rol!=='profesor');
+  $('field-grupo-materia').classList.toggle('hidden', rol!=='profesor');
 }
 function authSwitchView(view){
   authMsgClear();
@@ -2519,13 +2554,14 @@ async function authSignup(){
   const clave = $('signup-password').value;
   if(!nombre || !correo || !clave){ authMsg('Completa tu nombre, correo y contraseña.'); return; }
   if(clave.length < 6){ authMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
-  let grupoCodigo = null, grupoNombre = null;
+  let grupoCodigo = null, grupoNombre = null, grupoMateria = null;
   if(authRoleSeleccionado === 'estudiante'){
     grupoCodigo = $('signup-grupo-codigo').value.trim().toUpperCase();
     if(!grupoCodigo){ authMsg('Ingresa el código de grupo que te dio tu profesor.'); return; }
   } else {
     grupoNombre = $('signup-grupo-nombre').value.trim();
     if(!grupoNombre){ authMsg('Ponle un nombre a tu grupo.'); return; }
+    grupoMateria = $('signup-grupo-materia').value;
   }
   const btn = $('btn-signup');
   btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Creando cuenta…';
@@ -2536,7 +2572,7 @@ async function authSignup(){
         emailRedirectTo: window.location.origin + window.location.pathname,
         data: {
           pending_nombre: nombre, pending_rol: authRoleSeleccionado==='profesor'?'docente':'estudiante',
-          pending_grupo_codigo: grupoCodigo, pending_grupo_nombre: grupoNombre,
+          pending_grupo_codigo: grupoCodigo, pending_grupo_nombre: grupoNombre, pending_grupo_materia: grupoMateria,
         }
       }
     });
@@ -2568,7 +2604,7 @@ async function completarRegistroPendiente(user, meta){
   if(meta.pending_rol === 'docente'){
     const codigo = Array.from({length:6}, ()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*33)]).join('');
     const { data: gruposCreados, error: e1 } = await sb.from('academy_grupos').insert({
-      nombre: meta.pending_grupo_nombre, codigo, docente_id: user.id,
+      nombre: meta.pending_grupo_nombre, codigo, docente_id: user.id, materia_id: meta.pending_grupo_materia,
     }).select();
     if(e1) throw e1;
     const grupo = gruposCreados[0];
@@ -2576,16 +2612,22 @@ async function completarRegistroPendiente(user, meta){
       auth_id: user.id, nombre: meta.pending_nombre, correo: user.email, rol:'docente', grupo_id: grupo.id,
     }).select();
     if(e2) throw e2;
-    return { ...perfilesCreados[0], grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre };
+    const perfil = perfilesCreados[0];
+    const { error: e3 } = await sb.from('academy_membresias').insert({ usuario_id: perfil.id, grupo_id: grupo.id });
+    if(e3) throw e3;
+    return { ...perfil, grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre, materia_id: grupo.materia_id };
   } else {
-    const { data: grupo, error: eG } = await sb.from('academy_grupos').select('id,nombre,codigo').eq('codigo', meta.pending_grupo_codigo).maybeSingle();
+    const { data: grupo, error: eG } = await sb.from('academy_grupos').select('id,nombre,codigo,materia_id').eq('codigo', meta.pending_grupo_codigo).maybeSingle();
     if(eG) throw eG;
     if(!grupo) throw new Error('No se encontró ningún grupo con ese código. Verifícalo con tu profesor.');
     const { data: perfilesCreados, error: e2 } = await sb.from('academy_usuarios').insert({
       auth_id: user.id, nombre: meta.pending_nombre, correo: user.email, rol:'estudiante', grupo_id: grupo.id,
     }).select();
     if(e2) throw e2;
-    return { ...perfilesCreados[0], grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre };
+    const perfil = perfilesCreados[0];
+    const { error: e3 } = await sb.from('academy_membresias').insert({ usuario_id: perfil.id, grupo_id: grupo.id });
+    if(e3) throw e3;
+    return { ...perfil, grupo_codigo: grupo.codigo, grupo_nombre: grupo.nombre, materia_id: grupo.materia_id };
   }
 }
 
@@ -2642,7 +2684,7 @@ async function authLoadProfileAndEnter(){
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ authMsg('No se encontró la sesión. Intenta iniciar sesión de nuevo.'); return; }
 
-  let { data: perfil, error } = await sb.from('academy_usuarios').select('*, academy_grupos(nombre,codigo)').eq('auth_id', user.id).maybeSingle();
+  let { data: perfil, error } = await sb.from('academy_usuarios').select('*').eq('auth_id', user.id).maybeSingle();
   if(error && error.code !== 'PGRST116') throw error;
 
   if(!perfil){
@@ -2657,22 +2699,54 @@ async function authLoadProfileAndEnter(){
 
   currentUser = {
     usuario_id: perfil.id, auth_id: user.id, nombre: perfil.nombre, correo: perfil.correo, rol: perfil.rol,
-    grupo_id: perfil.grupo_id, grupo_nombre: perfil.academy_grupos?.nombre || perfil.grupo_nombre,
-    grupo_codigo: perfil.academy_grupos?.codigo || perfil.grupo_codigo,
   };
-
   studentName = currentUser.nombre;
   localStorage.setItem('academy_student_name', currentUser.nombre);
 
-  // Si ya hay progreso guardado en la cuenta (de otro dispositivo, por
-  // ejemplo) y tiene más contenido que lo que hay en este navegador, se
-  // usa ese — así el progreso sigue a la persona, no solo al navegador.
-  if(perfil.progreso && Object.keys(perfil.progreso).length > Object.keys(studentAnswers).length){
-    studentAnswers = perfil.progreso;
-    localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
+  // Cada quien puede pertenecer a más de una sesión (por ejemplo, ser
+  // estudiante en dos materias distintas) — se consultan todas antes de
+  // decidir si hace falta preguntar cuál usar, o si solo hay una y se
+  // entra directo, sin pedirle a la persona un paso de más.
+  const { data: membresias, error: eM } = await sb.from('academy_membresias')
+    .select('id,grupo_id,progreso,academy_grupos(nombre,codigo,materia_id,docente_id)')
+    .eq('usuario_id', perfil.id);
+  if(eM) throw eM;
+
+  if(!membresias || !membresias.length){
+    authMsg('Tu cuenta no tiene ninguna sesión asignada todavía. Contacta a quien administra Academy.', 'error');
+    return;
   }
 
   $('auth-gate').classList.add('hidden');
+
+  if(membresias.length === 1){
+    await entrarConSesion(membresias[0]);
+  } else {
+    const idGuardada = localStorage.getItem('academy_sesion_activa_'+currentUser.usuario_id);
+    const guardada = membresias.find(m => m.id === idGuardada);
+    if(guardada){ await entrarConSesion(guardada); }
+    else { mostrarSelectorDeSesion(membresias); }
+  }
+}
+
+// Aplica una membresía específica como la sesión activa: cargar su
+// progreso, aplicar la materia (bloqueando la navegación del estudiante
+// a solo esa materia), y entrar de verdad a la aplicación.
+async function entrarConSesion(membresia){
+  const grupo = membresia.academy_grupos;
+  currentUser.membresia_id = membresia.id;
+  currentUser.grupo_id = membresia.grupo_id;
+  currentUser.grupo_nombre = grupo?.nombre;
+  currentUser.grupo_codigo = grupo?.codigo;
+  currentUser.materia_id = grupo?.materia_id;
+  localStorage.setItem('academy_sesion_activa_'+currentUser.usuario_id, membresia.id);
+
+  // El progreso de ESTA sesión en particular — no se mezcla con el de
+  // otra materia si la persona pertenece a más de una.
+  studentAnswers = membresia.progreso || {};
+  localStorage.setItem('academy_answers_v2', JSON.stringify(studentAnswers));
+
+  $('selector-sesion').classList.add('hidden');
   $('app-shell').classList.add('visible');
   $('user-avatar').textContent = currentUser.nombre.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
   $('user-chip-name').textContent = currentUser.nombre;
@@ -2682,12 +2756,81 @@ async function authLoadProfileAndEnter(){
   // debería poder entrar nunca a la vista de profesor, así que se le
   // oculta el interruptor por completo, en vez de solo confiar en que no
   // lo toque.
-  if(currentUser.rol !== 'docente'){
-    document.querySelector('.mode-toggle').style.display = 'none';
-  }
+  document.querySelector('.mode-toggle').style.display = currentUser.rol==='docente' ? '' : 'none';
   $('brand-sub').textContent = currentUser.grupo_nombre || 'Portal de materias';
 
-  navPortal();
+  // La pieza central de todo esto: un estudiante entra directo a la
+  // materia de su sesión, sin ver el portal completo de las diez
+  // materias — solo le sirve la suya. Un docente también aterriza ahí,
+  // ya que su grupo también está ligado a una sola materia.
+  restringirNavegacionAMateria(currentUser.materia_id);
+  if(currentUser.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
+    navSubject(currentUser.materia_id);
+  } else {
+    navPortal();
+  }
+}
+
+// Oculta el portal completo y la lista de las diez materias — a un
+// estudiante (o docente) dentro de una sesión ligada a una materia
+// específica no le sirve de nada navegar a las demás.
+function restringirNavegacionAMateria(materiaId){
+  const restringir = !!materiaId;
+  const navPortalBtn = $('nav-portal');
+  if(navPortalBtn) navPortalBtn.style.display = restringir ? 'none' : '';
+  const grupoMaterias = document.querySelector('#subj-pill-list')?.closest('.nav-group');
+  if(grupoMaterias) grupoMaterias.style.display = restringir ? 'none' : '';
+  const grupoRoles = document.querySelector('#role-pill-list')?.closest('.nav-group');
+  if(grupoRoles) grupoRoles.style.display = restringir ? 'none' : '';
+}
+
+function mostrarSelectorDeSesion(membresias){
+  const lista = $('selector-sesion-lista');
+  lista.innerHTML = membresias.map(m => {
+    const grupo = m.academy_grupos;
+    const materia = SUBJECTS.find(s=>s.id===grupo?.materia_id);
+    return `<div class="export-opt" onclick='entrarConSesion(${JSON.stringify(m).replace(/'/g,"&apos;")})' style="cursor:pointer;">
+      <i class="ti ti-school" style="color:${materia?.color||'var(--gold)'};"></i>
+      <div><b>${grupo?.nombre||'Sesión'}</b><span>${materia?.title||'Sin materia asignada'}</span></div>
+    </div>`;
+  }).join('');
+  $('selector-sesion').classList.remove('hidden');
+}
+
+function mostrarUnirseANuevaSesion(){
+  const codigo = prompt('Código de la sesión a la que te quieres unir:');
+  if(!codigo || !codigo.trim()) return;
+  unirseANuevaSesion(codigo.trim().toUpperCase());
+}
+async function unirseANuevaSesion(codigo){
+  try {
+    const { data: grupo, error: eG } = await sb.from('academy_grupos').select('id,nombre,codigo,materia_id').eq('codigo', codigo).maybeSingle();
+    if(eG) throw eG;
+    if(!grupo) throw new Error('No se encontró ninguna sesión con ese código.');
+    const { data: nuevaMembresia, error: eM } = await sb.from('academy_membresias').insert({
+      usuario_id: currentUser.usuario_id, grupo_id: grupo.id,
+    }).select('id,grupo_id,progreso').single();
+    if(eM){
+      if(eM.code === '23505') throw new Error('Ya perteneces a esa sesión.');
+      throw eM;
+    }
+    toast('Te uniste a la sesión: ' + grupo.nombre);
+    await entrarConSesion({ ...nuevaMembresia, academy_grupos: grupo });
+  } catch(e){
+    alert('No se pudo unir a esa sesión: ' + (e.message||e));
+  }
+}
+
+// Vuelve al selector de sesión sin cerrar la sesión de la cuenta — para
+// cuando alguien con varias sesiones quiere cambiar de una a otra.
+async function cambiarDeSesion(){
+  cerrarMenuCuenta();
+  const { data: membresias, error } = await sb.from('academy_membresias')
+    .select('id,grupo_id,progreso,academy_grupos(nombre,codigo,materia_id,docente_id)')
+    .eq('usuario_id', currentUser.usuario_id);
+  if(error){ alert('No se pudieron cargar tus sesiones: ' + error.message); return; }
+  $('app-shell').classList.remove('visible');
+  mostrarSelectorDeSesion(membresias||[]);
 }
 
 // Inicia sesión (o crea la cuenta, la primera vez) con Google. Como
@@ -2740,12 +2883,17 @@ function mostrarFormularioCompletarPerfilAcademy(user){
       <label>Nombre de tu grupo</label>
       <input type="text" id="cp-grupo-nombre" placeholder='Ej. "Mercados Financieros — 2026-2"'>
     </div>
+    <div class="auth-field hidden" id="cp-field-grupo-materia">
+      <label>Materia de este grupo</label>
+      <select id="cp-grupo-materia"></select>
+    </div>
     <div class="auth-msg" id="cp-msg"></div>
     <button class="auth-submit" id="cp-continuar" onclick="cpContinuar()">Continuar</button>
     <button class="auth-submit" id="cp-cancelar" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="cpCancelar()">Cancelar y volver al inicio</button>
   </div>`;
   document.body.appendChild(overlay);
   window.__cpUser = user;
+  poblarSelectorDeMateria('cp-grupo-materia');
 }
 let cpRolSeleccionado = 'estudiante';
 function cpSetRole(rol){
@@ -2754,6 +2902,7 @@ function cpSetRole(rol){
   $('cp-role-profesor').classList.toggle('active', rol==='profesor');
   $('cp-field-grupo-codigo').classList.toggle('hidden', rol!=='estudiante');
   $('cp-field-grupo-nombre').classList.toggle('hidden', rol!=='profesor');
+  $('cp-field-grupo-materia').classList.toggle('hidden', rol!=='profesor');
 }
 async function cpContinuar(){
   const user = window.__cpUser;
@@ -2769,6 +2918,7 @@ async function cpContinuar(){
     const nombreGrupo = $('cp-grupo-nombre').value.trim();
     if(!nombreGrupo){ msg.className='auth-msg show error'; msg.textContent='Ponle un nombre a tu grupo.'; return; }
     meta.pending_grupo_nombre = nombreGrupo;
+    meta.pending_grupo_materia = $('cp-grupo-materia').value;
   }
   const btn = $('cp-continuar');
   btn.disabled = true; btn.innerHTML = '<span class="auth-spinner"></span> Guardando…';
@@ -2803,11 +2953,13 @@ async function abrirMenuCuenta(){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'cuenta-overlay';
+  const materiaActual = SUBJECTS.find(s=>s.id===currentUser.materia_id);
   overlay.innerHTML = `<div class="export-modal">
     <h2><i class="ti ti-user-circle" style="color:var(--gold)"></i> Mi cuenta</h2>
     <p>${currentUser.nombre} · ${currentUser.correo}</p>
     <div id="cuenta-contenido"><div class="auth-hint">Cargando…</div></div>
-    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:16px;" onclick="cerrarMenuCuenta()">Cerrar</button>
+    <button class="auth-submit" style="background:rgba(232,185,74,.1);color:var(--gold);border:1px solid var(--gold);margin-top:16px;" onclick="cambiarDeSesion()"><i class="ti ti-replace"></i> Cambiar de sesión</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="cerrarMenuCuenta()">Cerrar</button>
     <button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="authLogout()"><i class="ti ti-logout"></i> Cerrar sesión</button>
   </div>`;
   document.body.appendChild(overlay);
@@ -2817,8 +2969,8 @@ async function abrirMenuCuenta(){
     await renderMisGrupos(cont);
   } else {
     cont.innerHTML = `<div class="export-opt" style="cursor:default;">
-      <i class="ti ti-school"></i>
-      <div><b>${currentUser.grupo_nombre || 'Sin grupo'}</b><span>Código: ${currentUser.grupo_codigo || '—'}</span></div>
+      <i class="ti ti-school" style="color:${materiaActual?.color||'var(--t3)'};"></i>
+      <div><b>${currentUser.grupo_nombre || 'Sin grupo'}</b><span>${materiaActual?.title||'Sin materia'} · Código: ${currentUser.grupo_codigo || '—'}</span></div>
     </div>`;
   }
 }
@@ -2826,43 +2978,68 @@ function cerrarMenuCuenta(){ $('cuenta-overlay')?.remove(); }
 
 async function renderMisGrupos(cont){
   try {
-    const { data: grupos, error: e1 } = await sb.from('academy_grupos').select('id,nombre,codigo').eq('docente_id', currentUser.auth_id).order('creado_en',{ascending:false});
+    const { data: grupos, error: e1 } = await sb.from('academy_grupos').select('id,nombre,codigo,materia_id').eq('docente_id', currentUser.auth_id).order('creado_en',{ascending:false});
     if(e1) throw e1;
-    const { data: estudiantes, error: e2 } = await sb.from('academy_usuarios').select('grupo_id').eq('rol','estudiante');
+    const { data: membresias, error: e2 } = await sb.from('academy_membresias').select('grupo_id, academy_usuarios!inner(rol)').eq('academy_usuarios.rol','estudiante');
     if(e2) throw e2;
     const conteoPorGrupo = {};
-    (estudiantes||[]).forEach(e => { conteoPorGrupo[e.grupo_id] = (conteoPorGrupo[e.grupo_id]||0) + 1; });
+    (membresias||[]).forEach(m => { conteoPorGrupo[m.grupo_id] = (conteoPorGrupo[m.grupo_id]||0) + 1; });
 
     cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Mis grupos</div>` +
-      (grupos||[]).map(g => `<div class="export-opt" style="cursor:default;align-items:flex-start;">
-        <i class="ti ti-school"></i>
+      (grupos||[]).map(g => {
+        const materia = SUBJECTS.find(s=>s.id===g.materia_id);
+        return `<div class="export-opt" style="cursor:default;align-items:flex-start;">
+        <i class="ti ti-school" style="color:${materia?.color||'var(--t3)'};"></i>
         <div style="flex:1;">
           <b>${g.nombre}</b>
-          <span>${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
+          <span>${materia?.title||'Sin materia asignada'} · ${conteoPorGrupo[g.id]||0} estudiante${(conteoPorGrupo[g.id]||0)===1?'':'s'}</span>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
             <span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.08em;">${g.codigo}</span>
             <i class="ti ti-copy" style="cursor:pointer;font-size:14px;" title="Copiar código" onclick="navigator.clipboard.writeText('${g.codigo}');toast('Código copiado.');"></i>
           </div>
           <button class="auth-submit" style="margin-top:10px;padding:8px;font-size:11.5px;min-height:36px;" onclick="verEstudiantesDeGrupo('${g.id}','${g.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver estudiantes</button>
         </div>
-      </div>`).join('') +
-      `<button class="auth-submit" style="margin-top:6px;" onclick="crearGrupoNuevo()"><i class="ti ti-plus"></i> Crear nuevo grupo</button>`;
+      </div>`;
+      }).join('') +
+      `<button class="auth-submit" style="margin-top:6px;" onclick="mostrarCrearGrupoNuevo()"><i class="ti ti-plus"></i> Crear nuevo grupo</button>`;
   } catch(e){
     cont.innerHTML = `<div class="auth-msg show error">No se pudieron cargar tus grupos: ${e.message||e}</div>`;
   }
 }
 
+function mostrarCrearGrupoNuevo(){
+  const cont = $('cuenta-contenido');
+  cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">Grupo nuevo</div>
+    <div class="auth-field">
+      <label>Nombre del grupo</label>
+      <input type="text" id="ng-nombre" placeholder='Ej. "Mercados Financieros — 2026-2"'>
+    </div>
+    <div class="auth-field">
+      <label>Materia de este grupo</label>
+      <select id="ng-materia"></select>
+    </div>
+    <div class="auth-msg" id="ng-msg"></div>
+    <button class="auth-submit" onclick="crearGrupoNuevo()">Crear grupo</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="renderMisGrupos($('cuenta-contenido'))">Cancelar</button>`;
+  poblarSelectorDeMateria('ng-materia');
+}
+
 async function crearGrupoNuevo(){
-  const nombre = prompt('Nombre del grupo nuevo (por ejemplo, "Mercados Financieros — 2026-2"):');
-  if(!nombre || !nombre.trim()) return;
+  const nombre = $('ng-nombre').value.trim();
+  const materiaId = $('ng-materia').value;
+  const msg = $('ng-msg');
+  if(!nombre){ msg.className='auth-msg show error'; msg.textContent='Ponle un nombre al grupo.'; return; }
   try {
     const codigo = Array.from({length:6}, ()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*33)]).join('');
-    const { error } = await sb.from('academy_grupos').insert({ nombre: nombre.trim(), codigo, docente_id: currentUser.auth_id });
+    const { data: gruposCreados, error } = await sb.from('academy_grupos').insert({ nombre, codigo, docente_id: currentUser.auth_id, materia_id: materiaId }).select();
     if(error) throw error;
+    // El propio docente también queda inscrito en su grupo nuevo, para
+    // poder entrar a esa materia y revisar el contenido desde ahí.
+    await sb.from('academy_membresias').insert({ usuario_id: currentUser.usuario_id, grupo_id: gruposCreados[0].id });
     toast('Grupo creado — código: ' + codigo);
     await renderMisGrupos($('cuenta-contenido'));
   } catch(e){
-    alert('No se pudo crear el grupo: ' + (e.message||e));
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo crear el grupo: ' + (e.message||e);
   }
 }
 
@@ -2870,14 +3047,16 @@ async function verEstudiantesDeGrupo(grupoId, nombreGrupo){
   const cont = $('cuenta-contenido');
   cont.innerHTML = `<div class="auth-hint">Cargando estudiantes de ${nombreGrupo}…</div>`;
   try {
-    const { data: estudiantes, error } = await sb.from('academy_usuarios').select('nombre,correo,progreso').eq('grupo_id', grupoId).eq('rol','estudiante').order('nombre');
+    const { data: membresias, error } = await sb.from('academy_membresias')
+      .select('progreso, academy_usuarios!inner(nombre,correo,rol)')
+      .eq('grupo_id', grupoId).eq('academy_usuarios.rol','estudiante');
     if(error) throw error;
-    cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">${nombreGrupo} — ${(estudiantes||[]).length} estudiante${(estudiantes||[]).length===1?'':'s'}</div>` +
-      (estudiantes?.length ? estudiantes.map(e => {
-        const casosCompletados = Object.keys(e.progreso||{}).length;
+    cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">${nombreGrupo} — ${(membresias||[]).length} estudiante${(membresias||[]).length===1?'':'s'}</div>` +
+      (membresias?.length ? membresias.map(m => {
+        const casosCompletados = Object.keys(m.progreso||{}).length;
         return `<div class="export-opt" style="cursor:default;">
           <i class="ti ti-user"></i>
-          <div><b>${e.nombre}</b><span>${e.correo} · ${casosCompletados} materia${casosCompletados===1?'':'s'} con avance</span></div>
+          <div><b>${m.academy_usuarios.nombre}</b><span>${m.academy_usuarios.correo} · ${casosCompletados} caso${casosCompletados===1?'':'s'} completado${casosCompletados===1?'':'s'} en esta materia</span></div>
         </div>`;
       }).join('') : '<div class="auth-hint">Todavía no hay estudiantes en este grupo.</div>') +
       `<button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="renderMisGrupos($('cuenta-contenido'))"><i class="ti ti-arrow-left"></i> Volver a mis grupos</button>`;
@@ -2892,6 +3071,7 @@ function authLogout(){
 }
 
 async function authBoot(){
+  poblarSelectorDeMateria('signup-grupo-materia');
   if(!authConfigured()){
     authMsg('Este archivo aún no tiene configuradas las credenciales de Supabase (SUPABASE_URL / SUPABASE_ANON_KEY). Edítalas antes de usar Academy.', 'error');
     return;
