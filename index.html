@@ -1928,13 +1928,20 @@ SUBJECT_DATA.deriv.studyMaterial = {
   flashcards:[
     {q:'¿Qué es un forward de divisas?', a:'Un contrato que obliga a comprar o vender una moneda a un tipo de cambio fijado hoy, en una fecha futura determinada.'},
     {q:'¿En qué se diferencia una opción de un forward?', a:'La opción da el derecho, no la obligación, de ejecutar la operación al precio pactado — a cambio de pagar una prima por esa flexibilidad.'},
+    {q:'¿Qué es la prima de una opción?', a:'El costo que se paga por adquirir el derecho, no la obligación, de comprar o vender un activo a un precio fijado.'},
+    {q:'¿Qué es el precio de ejercicio (strike)?', a:'El precio al que el comprador de una opción tiene derecho a comprar o vender el activo subyacente, fijado desde el inicio del contrato.'},
   ],
   glossary:[
-    {t:'Derivado financiero', d:'Instrumento cuyo valor depende del precio de otro activo subyacente.'},
-    {t:'Forward', d:'Contrato que obliga a comprar o vender un activo a un precio fijado, en una fecha futura.'},
+    {t:'Derivado financiero', d:'Instrumento cuyo valor depende del precio de otro activo subyacente — una divisa, una acción, una tasa de interés. <br><br><b>Ejemplo:</b> el valor de una opción sobre el euro sube o baja según se mueva el tipo de cambio euro/dólar, no según ninguna decisión propia del contrato.'},
+    {t:'Forward', d:'Contrato que obliga a comprar o vender un activo a un precio fijado, en una fecha futura. <br><br><b>Ejemplo:</b> una empresa fija hoy un forward a 1.10 USD/EUR para pagar €500,000 en 90 días — pagará exactamente US$ 550,000, suba o baje el euro mientras tanto.'},
+    {t:'Opción call', d:'Contrato que da el derecho, no la obligación, de comprar un activo a un precio fijado (precio de ejercicio) antes o en una fecha determinada. <br><br><b>Ejemplo:</b> una opción call sobre euros con strike de 1.10 y prima de 1.5% cuesta US$ 8,100 sobre un monto de US$ 540,000 — y solo se ejerce si conviene.'},
+    {t:'Prima', d:'El precio que se paga por adquirir una opción — se paga siempre, se ejerza o no el derecho que la opción otorga. <br><br><b>Ejemplo:</b> si la prima de una opción es US$ 8,100 y nunca se ejerce porque el mercado se movió a favor sin necesidad de cobertura, esos US$ 8,100 de todas formas se pierden — es el costo de haber tenido la protección disponible.'},
+    {t:'Cobertura (hedge)', d:'Estrategia para reducir o eliminar un riesgo financiero existente, usando un instrumento derivado. <br><br><b>Ejemplo:</b> una empresa que debe pagar en euros dentro de 90 días se cubre comprando euros por adelantado (forward) o asegurando un precio máximo (opción), en vez de esperar a ver qué pasa con el tipo de cambio.'},
   ],
   quiz:[
-    {q:'¿Qué obliga un contrato forward?', opts:['Nada, es opcional','Comprar o vender el activo al precio pactado','Solo vender el activo','Pagar una prima mensual'], correct:1},
+    {q:'¿Qué obliga un contrato forward?', opts:['Nada, es opcional','Comprar o vender el activo al precio pactado','Solo vender el activo','Pagar una prima mensual'], correct:1, explain:'El forward es una obligación para ambas partes — a diferencia de la opción, no hay manera de "no ejercerlo" si el mercado se mueve en contra.'},
+    {q:'Si una empresa paga una prima de US$ 8,100 por una opción y nunca la ejerce, ¿qué pasa con esa prima?', opts:['Se la devuelven completa','Se pierde — es el costo de haber tenido la protección disponible','Se descuenta del siguiente contrato','Se convierte automáticamente en un forward'], correct:1, explain:'La prima se paga por el derecho de decidir después, se use ese derecho o no — es exactamente como pagar por un seguro que, por suerte, no se necesitó usar.'},
+    {q:'Una empresa se cubre con forward a 1.10 y el euro termina en 1.05. ¿Qué pasa?', opts:['La empresa se beneficia igual que si no se hubiera cubierto','La empresa paga al tipo forward (1.10), perdiendo la oportunidad de haber pagado menos (1.05)','El forward se cancela automáticamente','No hay ninguna diferencia'], correct:1, explain:'El forward obliga en ambas direcciones — la empresa gana certeza, pero a cambio pierde la posibilidad de beneficiarse si el mercado se mueve a su favor.'},
   ],
 };
 
