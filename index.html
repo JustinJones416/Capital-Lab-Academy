@@ -665,33 +665,85 @@ function obtenerGlosarioEfectivo(subjectId){
 // original (y su versión en cualquier otro grupo) nunca se toca — esto
 // se guarda aparte, en academy_contenido_grupo, ligado al grupo_id.
 // ═══════════════════════════════════════════════════════
+function obtenerFlashcardsEfectivo(subjectId){
+  if(contenidoEditadoGrupo?.flashcards_editado && currentUser?.materia_id === subjectId){
+    return contenidoEditadoGrupo.flashcards_editado;
+  }
+  return SUBJECT_DATA[subjectId].studyMaterial.flashcards;
+}
+
 function abrirEditorContenido(subjectId){
   const resumenActual = obtenerResumenEfectivo(subjectId);
   const glosarioActual = obtenerGlosarioEfectivo(subjectId);
+  const flashcardsActual = obtenerFlashcardsEfectivo(subjectId);
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'editor-contenido-overlay';
   overlay.innerHTML = `<div class="export-modal" style="max-width:640px;">
     <h2><i class="ti ti-edit" style="color:var(--gold)"></i> Editar para mi clase</h2>
     <p>Estos cambios solo los van a ver los estudiantes de <b>${currentUser.grupo_nombre}</b> — la materia original no se modifica en ningún otro grupo.</p>
-    <div class="auth-field">
-      <label>Resumen (admite &lt;b&gt;negrita&lt;/b&gt; y &lt;br&gt; para saltos de línea)</label>
-      <textarea id="ec-resumen" rows="8" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;resize:vertical;">${resumenActual}</textarea>
+    <div class="tool-tabs">
+      <button class="tool-tab active" id="ec-tab-resumen" onclick="ecMostrarSeccion('resumen')"><i class="ti ti-file-description"></i> Resumen</button>
+      <button class="tool-tab" id="ec-tab-gloss" onclick="ecMostrarSeccion('gloss')"><i class="ti ti-book"></i> Glosario</button>
+      <button class="tool-tab" id="ec-tab-flash" onclick="ecMostrarSeccion('flash')"><i class="ti ti-cards"></i> Tarjetas</button>
+      <button class="tool-tab" id="ec-tab-caso" onclick="ecMostrarSeccion('caso')"><i class="ti ti-star"></i> Caso destacado</button>
     </div>
-    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin-bottom:6px;">Glosario</label>
-    <div id="ec-glosario-lista"></div>
-    <button class="btn btn-ghost btn-sm" onclick="ecAgregarTerminoGlosario()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir término</button>
+    <div id="ec-seccion-resumen">
+      <div class="auth-field">
+        <label>Resumen (admite &lt;b&gt;negrita&lt;/b&gt; y &lt;br&gt; para saltos de línea)</label>
+        <textarea id="ec-resumen" rows="8" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;resize:vertical;">${resumenActual}</textarea>
+      </div>
+    </div>
+    <div id="ec-seccion-gloss" class="hidden">
+      <div id="ec-glosario-lista"></div>
+      <button class="btn btn-ghost btn-sm" onclick="ecAgregarTerminoGlosario()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir término</button>
+    </div>
+    <div id="ec-seccion-flash" class="hidden">
+      <div id="ec-flashcards-lista"></div>
+      <button class="btn btn-ghost btn-sm" onclick="ecAgregarFlashcard()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir tarjeta</button>
+    </div>
+    <div id="ec-seccion-caso" class="hidden">
+      <div class="auth-field">
+        <label>Caso que verán primero tus estudiantes</label>
+        <select id="ec-caso-destacado"></select>
+        <div class="auth-hint">No oculta los demás casos — solo cambia cuál aparece primero en la lista.</div>
+      </div>
+    </div>
     <div class="auth-msg" id="ec-msg"></div>
     <div style="display:flex;gap:10px;">
       <button class="auth-submit" onclick="guardarContenidoEditado('${subjectId}')">Guardar cambios</button>
       <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="$('editor-contenido-overlay').remove()">Cancelar</button>
     </div>
-    ${contenidoEditadoGrupo?.resumen_editado || contenidoEditadoGrupo?.glosario_editado ? `<button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="restaurarContenidoOriginal('${subjectId}')"><i class="ti ti-restore"></i> Restaurar contenido original</button>` : ''}
+    ${contenidoEditadoGrupo?.resumen_editado || contenidoEditadoGrupo?.glosario_editado || contenidoEditadoGrupo?.flashcards_editado ? `<button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="restaurarContenidoOriginal('${subjectId}')"><i class="ti ti-restore"></i> Restaurar contenido original</button>` : ''}
   </div>`;
   document.body.appendChild(overlay);
   window.__ecGlosario = (glosarioActual||[]).map(g=>({t:g.t, d:g.d}));
+  window.__ecFlashcards = (flashcardsActual||[]).map(f=>({q:f.q, a:f.a}));
   ecRenderGlosario();
+  ecRenderFlashcards();
+  const selectorCaso = $('ec-caso-destacado');
+  selectorCaso.innerHTML = SUBJECT_DATA[subjectId].cases.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  selectorCaso.value = contenidoEditadoGrupo?.caso_destacado_id || SUBJECT_DATA[subjectId].cases[0].id;
 }
+function ecMostrarSeccion(cual){
+  ['resumen','gloss','flash','caso'].forEach(s => {
+    $('ec-tab-'+s).classList.toggle('active', s===cual);
+    $('ec-seccion-'+s).classList.toggle('hidden', s!==cual);
+  });
+}
+function ecRenderFlashcards(){
+  $('ec-flashcards-lista').innerHTML = window.__ecFlashcards.map((f,i) => `
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
+      <div style="flex:1;">
+        <input type="text" value="${(f.q||'').replace(/"/g,'&quot;')}" placeholder="Pregunta" oninput="window.__ecFlashcards[${i}].q=this.value" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;margin-bottom:4px;">
+        <textarea rows="2" placeholder="Respuesta" oninput="window.__ecFlashcards[${i}].a=this.value" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${f.a||''}</textarea>
+      </div>
+      <i class="ti ti-trash" style="cursor:pointer;color:var(--red);font-size:16px;margin-top:8px;" onclick="ecQuitarFlashcard(${i})"></i>
+    </div>`).join('');
+}
+function ecAgregarFlashcard(){ window.__ecFlashcards.push({q:'',a:''}); ecRenderFlashcards(); }
+function ecQuitarFlashcard(i){ window.__ecFlashcards.splice(i,1); ecRenderFlashcards(); }
+
 function ecRenderGlosario(){
   $('ec-glosario-lista').innerHTML = window.__ecGlosario.map((g,i) => `
     <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
@@ -708,14 +760,16 @@ function ecQuitarTerminoGlosario(i){ window.__ecGlosario.splice(i,1); ecRenderGl
 async function guardarContenidoEditado(subjectId){
   const resumen = $('ec-resumen').value.trim();
   const glosario = window.__ecGlosario.filter(g => g.t.trim() && g.d.trim());
+  const flashcards = window.__ecFlashcards.filter(f => f.q.trim() && f.a.trim());
+  const casoDestacado = $('ec-caso-destacado').value;
   const msg = $('ec-msg');
   if(!resumen){ msg.className='auth-msg show error'; msg.textContent='El resumen no puede quedar vacío.'; return; }
   try {
     const { error } = await sb.from('academy_contenido_grupo').upsert({
-      grupo_id: currentUser.grupo_id, resumen_editado: resumen, glosario_editado: glosario, actualizado_en: new Date().toISOString(),
+      grupo_id: currentUser.grupo_id, resumen_editado: resumen, glosario_editado: glosario, flashcards_editado: flashcards, caso_destacado_id: casoDestacado, actualizado_en: new Date().toISOString(),
     }, { onConflict:'grupo_id' });
     if(error) throw error;
-    contenidoEditadoGrupo = { resumen_editado: resumen, glosario_editado: glosario };
+    contenidoEditadoGrupo = { resumen_editado: resumen, glosario_editado: glosario, flashcards_editado: flashcards, caso_destacado_id: casoDestacado };
     $('editor-contenido-overlay').remove();
     toast('Contenido actualizado para tu clase.');
     navSubject(subjectId);
@@ -855,6 +909,115 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
       {q:'¿Qué entidad supervisa el sistema bancario panameño?', opts:['Bolsa de Valores de Panamá','Banco Nacional de Panamá','Superintendencia de Bancos de Panamá','Ministerio de Economía y Finanzas'], correct:2},
       {q:'Si la cartera vencida sube y las provisiones no aumentan al mismo ritmo, ¿qué pasa con la cobertura de provisiones?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1},
       {q:'¿Qué mide una prueba de estrés de liquidez?', opts:['La rentabilidad futura del banco','Cómo resistiría el banco un escenario adverso específico, como una salida de depósitos','El valor de mercado de las acciones del banco','El cumplimiento fiscal del banco'], correct:1},
+    ],
+  },
+  {
+    id:'banmer-c2', expediente:'SBP-2026-118', role:'Analista de Riesgo de Liquidez',
+    title:'Corrida moderada de depósitos en una cooperativa de ahorro',
+    brief:'Una cooperativa de ahorro y crédito panameña pierde el 12% de sus depósitos en dos semanas, tras un rumor infundado en redes sociales sobre su solvencia. La junta directiva te pide evaluar si la institución puede resistir el retiro sin recurrir a ventas forzadas de activos, y qué medidas tomar.',
+    character:{name:'Yariela Ng', role:'Gerente General, Cooperativa Ahorro Seguro, R.L.', quote:'"El rumor es falso, pero la gente igual está retirando su dinero. Necesito saber si aguantamos esto o si tenemos un problema real."'},
+    facts:[['Depósitos totales antes de la corrida','US$ 85,000,000'],['Depósitos retirados en dos semanas','US$ 10,200,000 (12%)'],['Activos líquidos disponibles (caja + inversiones de corto plazo)','US$ 14,000,000'],['Cartera de préstamos (no líquida en el corto plazo)','US$ 68,000,000']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Tamaño real del retiro', icon:'ti-trending-down',
+        intro:'Antes de reaccionar, hay que confirmar exactamente cuánto se ha retirado y qué tan rápido, para saber si esto ya se está desacelerando o sigue en marcha.',
+        databox:{title:'Retiro de depósitos', rows:[['Depósitos antes de la corrida','US$ 85,000,000'],['Depósitos retirados','US$ 10,200,000'],['% retirado','12.0%'],['Depósitos restantes','US$ 74,800,000']]},
+        questions:[
+          {type:'num', q:'¿Qué porcentaje de los depósitos totales representa un retiro de US$ 10,200,000 sobre una base de US$ 85,000,000?', placeholder:'En %', correct:12, tolerance:0.5, explain:'10,200,000 / 85,000,000 = 12.0%.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Alcanza la liquidez disponible?', icon:'ti-droplet',
+        intro:'La pregunta central: ¿la cooperativa puede cubrir este retiro con lo que ya tiene disponible, sin tener que vender préstamos o activos a la fuerza?',
+        databox:{title:'Cobertura con activos líquidos', rows:[['Activos líquidos disponibles','US$ 14,000,000'],['Retiro ya ocurrido','US$ 10,200,000'],['Liquidez restante después de cubrir el retiro','US$ 3,800,000'],['Liquidez restante como % de los depósitos que quedan','5.1%']]},
+        chart:{type:'bar', title:'Liquidez disponible vs. retiro', labels:['Liquidez disponible','Retiro ocurrido','Liquidez restante'], data:[14,10.2,3.8], color:'var(--teal)'},
+        questions:[
+          {type:'mc', q:'Con US$ 14 millones de liquidez disponible y un retiro de US$ 10.2 millones, ¿pudo la cooperativa cubrir el retiro sin vender cartera de préstamos?', opts:['No, tuvo que vender préstamos de inmediato','Sí, y todavía le queda un colchón de liquidez, aunque ya reducido','Es imposible saberlo con estos datos','La cartera de préstamos siempre es líquida'], correct:1, explain:'La cooperativa cubrió el retiro con sus activos líquidos, sin necesidad de vender cartera de préstamos (que no es líquida en el corto plazo) — pero el colchón que le queda es considerablemente más delgado que antes.'},
+          {type:'mc', q:'¿Por qué es relevante que el colchón de liquidez restante (5.1%) sea mucho más bajo que antes de la corrida?', opts:['No es relevante, ya se resolvió el problema','Porque si el retiro continúa a un ritmo similar, la cooperativa se quedaría sin liquidez disponible en poco tiempo','Porque significa que la cooperativa ya es insolvente','Porque los depositantes reciben menos intereses'], correct:1, explain:'Un colchón de liquidez mucho más delgado significa mucho menos margen de maniobra si el retiro no se detiene — la cooperativa pasó de una posición cómoda a una vulnerable, incluso sin haber incumplido nada todavía.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Por qué importa el origen del rumor?', icon:'ti-message-circle',
+        intro:'A diferencia de un problema real de solvencia, una corrida basada en un rumor falso se puede frenar con comunicación clara — pero solo si se actúa rápido.',
+        databox:{title:'Naturaleza del problema', rows:[['Origen del retiro','Rumor infundado en redes sociales'],['Indicadores de solvencia de la cooperativa','Sin cambios, dentro de los parámetros normales'],['Riesgo real','De liquidez (por el retiro), no de solvencia']]},
+        questions:[
+          {type:'mc', q:'¿Por qué es importante distinguir entre un problema de liquidez causado por un rumor y un problema real de solvencia?', opts:['No hay ninguna diferencia práctica','Porque la respuesta correcta es distinta: un rumor se atiende con comunicación y gestión de liquidez, mientras que un problema real de solvencia necesita capital nuevo o intervención regulatoria','Porque los rumores nunca causan retiros reales','Porque la solvencia y la liquidez son lo mismo'], correct:1, explain:'Confundir ambos problemas lleva a la respuesta equivocada — inyectar capital no resuelve un problema de comunicación, y solo comunicar no resuelve un problema real de solvencia. Diagnosticar bien cuál es el problema es el primer paso.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación a la junta', icon:'ti-gavel',
+        intro:'Con el diagnóstico completo, debes recomendar qué debería hacer la cooperativa a partir de aquí.',
+        verdictOptions:[
+          {v:'comunicar', label:'Comunicación transparente + refuerzo de liquidez preventivo', desc:'Publicar los indicadores reales de la cooperativa y gestionar una línea de liquidez de respaldo por si el retiro continúa.'},
+          {v:'esperar', label:'Esperar sin actuar', desc:'No hacer nada adicional, confiando en que el rumor se disipe solo.'},
+          {v:'vender-cartera', label:'Vender cartera de préstamos de inmediato', desc:'Liquidar préstamos ya, para maximizar el colchón de liquidez sin esperar a ver si el retiro continúa.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando que el problema es de liquidez, no de solvencia (etapa 3), y que el colchón restante ya es delgado (etapa 2).',
+      },
+    ],
+    summary:'Este caso distingue entre un problema de <b>solvencia</b> (¿tiene la institución suficiente capital?) y uno de <b>liquidez</b> (¿tiene efectivo disponible cuando lo necesita?) — una cooperativa financieramente sana puede, aun así, verse en apuros si un retiro repentino de depósitos agota su colchón de activos líquidos. La respuesta correcta ante un rumor infundado es muy distinta a la respuesta ante un problema real de capital.',
+    flashcards:[
+      {q:'¿Cuál es la diferencia entre un problema de solvencia y uno de liquidez?', a:'Solvencia mide si los activos superan las obligaciones (capital suficiente); liquidez mide si hay efectivo disponible en el momento en que se necesita, aunque la institución sea solvente.'},
+      {q:'¿Por qué puede una institución solvente tener problemas de liquidez?', a:'Porque sus activos (como una cartera de préstamos) pueden no ser líquidos en el corto plazo, aunque valgan más que sus obligaciones — si hay una salida repentina de depósitos, puede faltar efectivo disponible de inmediato.'},
+    ],
+    glossary:[
+      {t:'Corrida bancaria (bank run)', d:'Retiro masivo y repentino de depósitos de una institución financiera, generalmente motivado por pérdida de confianza, fundada o no.'},
+      {t:'Activos líquidos', d:'Activos que se pueden convertir en efectivo de forma rápida y sin pérdida significativa de valor, como caja o inversiones de corto plazo.'},
+      {t:'Riesgo de liquidez', d:'Riesgo de que una institución no pueda cumplir sus obligaciones de pago en el momento en que vencen, aun siendo solvente en el largo plazo.'},
+    ],
+    quiz:[
+      {q:'¿Qué mide la solvencia de una institución financiera?', opts:['Si tiene efectivo disponible hoy','Si sus activos superan sus obligaciones','Su rentabilidad anual','El número de sucursales'], correct:1},
+      {q:'¿Qué mide la liquidez?', opts:['Si los activos superan las obligaciones','La disponibilidad de efectivo para cubrir obligaciones inmediatas','La calificación de crédito de la institución','El tamaño del banco'], correct:1},
+    ],
+  },
+  {
+    id:'banmer-c3', expediente:'SBP-2026-142', role:'Analista de Fusiones Bancarias',
+    title:'Debida diligencia de una fusión entre dos bancos de plaza',
+    brief:'Un banco mediano panameño negocia la adquisición de un banco más pequeño con problemas de rentabilidad. La junta te pide una debida diligencia preliminar: ¿la cartera del banco a comprar es tan sana como dice, y el precio ofrecido tiene sentido frente a lo que realmente vale?',
+    character:{name:'Andrés Bethancourt', role:'Director de Desarrollo Corporativo, Banco Comercial del Istmo', quote:'"El banco que queremos comprar dice que su cartera está limpia. Antes de firmar nada, necesito que alguien lo verifique con números, no con lo que ellos dicen."'},
+    facts:[['Precio de compra ofrecido','US$ 42,000,000'],['Patrimonio contable del banco a comprar (valor en libros)','US$ 38,000,000'],['Cartera de préstamos total','US$ 210,000,000'],['Cartera vencida reportada por el banco','4.1%'],['Cartera vencida tras revisión independiente de la muestra','7.8%']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Precio vs. valor en libros', icon:'ti-scale',
+        intro:'Un primer punto de referencia rápido: ¿cuánto se está pagando en relación con lo que el banco vale según su propia contabilidad?',
+        databox:{title:'Precio vs. valor en libros', rows:[['Precio de compra ofrecido','US$ 42,000,000'],['Patrimonio contable (valor en libros)','US$ 38,000,000'],['Múltiplo precio/valor en libros','1.11x']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el múltiplo de precio sobre valor en libros, si se ofrecen US$ 42,000,000 por un patrimonio contable de US$ 38,000,000? (dos decimales)', placeholder:'Ej: 1.11', correct:1.11, tolerance:0.02, explain:'42,000,000 / 38,000,000 = 1.11x — se está pagando un 11% por encima del valor contable.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · La cartera vencida no cuadra', icon:'ti-alert-triangle',
+        intro:'El hallazgo más importante de cualquier debida diligencia bancaria: comparar lo que la institución REPORTA contra lo que una revisión independiente encuentra.',
+        databox:{title:'Discrepancia en la cartera vencida', rows:[['Cartera vencida reportada por el banco','4.1% (US$ 8,610,000)'],['Cartera vencida tras revisión independiente de una muestra','7.8% (US$ 16,380,000)'],['Diferencia','US$ 7,770,000 en cartera vencida no reconocida']]},
+        chart:{type:'bar', title:'Cartera vencida: reportada vs. revisada', labels:['Reportada por el banco','Tras revisión independiente'], data:[4.1,7.8], color:'var(--rose)'},
+        questions:[
+          {type:'mc', q:'¿Qué implica que la revisión independiente encuentre casi el doble de cartera vencida que la reportada por el propio banco?', opts:['Es un error sin importancia, ambos números son parecidos','El banco puede estar subestimando su cartera vencida, lo cual afecta directamente cuánto vale realmente su patrimonio','La revisión independiente seguramente está equivocada','Esto no afecta el precio de la operación'], correct:1, explain:'Una diferencia de casi el doble es una señal seria — si la cartera vencida real es mayor a la reportada, el patrimonio real del banco (después de provisionar esas pérdidas potenciales) es menor al que aparece en los libros, lo cual afecta directamente si el precio ofrecido sigue teniendo sentido.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Ajustando el valor real', icon:'ti-calculator',
+        intro:'Si la cartera vencida real es mayor, hay que estimar cuánto de esa diferencia debería provisionarse, y cómo eso reduce el patrimonio real del banco.',
+        databox:{title:'Ajuste estimado al patrimonio', rows:[['Cartera vencida adicional no reconocida','US$ 7,770,000'],['Provisión estimada necesaria (60% de cobertura sobre lo adicional)','US$ 4,662,000'],['Patrimonio contable original','US$ 38,000,000'],['Patrimonio ajustado estimado','US$ 33,338,000']]},
+        questions:[
+          {type:'mc', q:'Si el patrimonio ajustado estimado es de US$ 33,338,000, y el precio ofrecido es US$ 42,000,000, ¿cómo cambia el múltiplo real de la operación frente al 1.11x inicial?', opts:['Se mantiene igual','Sube considerablemente, porque ahora se está pagando más en proporción al patrimonio real', 'Baja, porque el ajuste beneficia al comprador','El ajuste no afecta el múltiplo'], correct:1, explain:'42,000,000 / 33,338,000 ≈ 1.26x — un múltiplo notablemente más alto que el 1.11x inicial, porque el patrimonio real (ya ajustado por la cartera vencida no reconocida) es menor al contable. El precio ofrecido, en términos reales, es más costoso de lo que parecía.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación a la junta', icon:'ti-gavel',
+        intro:'Con el ajuste hecho, debes recomendar cómo proceder con la negociación.',
+        verdictOptions:[
+          {v:'renegociar', label:'Renegociar el precio a la baja', desc:'Usar el hallazgo de cartera vencida no reconocida para negociar un precio más cercano al patrimonio ajustado.'},
+          {v:'continuar', label:'Continuar con el precio original', desc:'Aceptar el precio ofrecido tal cual, confiando en que el banco corrija su cartera después de la compra.'},
+          {v:'retirarse', label:'Retirarse de la negociación', desc:'La discrepancia es señal de un problema más profundo de gobernanza o control interno que no vale la pena asumir.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando el múltiplo ajustado (etapa 3) y lo que revela sobre la calidad de la información que el banco vendedor está compartiendo (etapa 2).',
+      },
+    ],
+    summary:'Este caso muestra por qué la <b>debida diligencia</b> en una fusión bancaria no puede basarse solo en lo que la institución vendedora reporta — la revisión independiente de la cartera de préstamos reveló una <b>cartera vencida casi el doble</b> de la reportada, lo cual cambia el <b>múltiplo real</b> de la operación de 1.11x a cerca de 1.26x sobre el patrimonio ajustado. El caso conecta el hallazgo cualitativo (una discrepancia en los datos) con su efecto cuantitativo directo sobre el precio.',
+    flashcards:[
+      {q:'¿Qué es la debida diligencia en una fusión bancaria?', a:'El proceso de verificar de forma independiente la información financiera y de riesgo de la institución que se va a comprar, antes de cerrar la operación.'},
+      {q:'¿Por qué es relevante si la cartera vencida real es mayor a la reportada?', a:'Porque reduce el patrimonio real del banco (al necesitar más provisiones), lo cual aumenta el múltiplo real que se está pagando por la operación.'},
+    ],
+    glossary:[
+      {t:'Debida diligencia (due diligence)', d:'Proceso de investigación y verificación independiente de la situación financiera, legal y operativa de una empresa antes de una adquisición o inversión.'},
+      {t:'Múltiplo precio/valor en libros', d:'Relación entre el precio pagado por una empresa y su patrimonio contable — indica cuánto se paga por encima (o por debajo) de su valor en libros.'},
+      {t:'Cartera vencida', d:'Parte de la cartera de préstamos de un banco cuyos pagos están atrasados más allá del plazo establecido, lo que indica mayor riesgo de no recuperación.'},
+    ],
+    quiz:[
+      {q:'¿Qué busca verificar la debida diligencia en una compra bancaria?', opts:['Solo el nombre legal de la empresa','La veracidad de la información financiera y de riesgo reportada por el vendedor','El color del logo del banco','Nada, es un trámite solo formal'], correct:1},
+      {q:'Si la cartera vencida real es mayor a la reportada, ¿qué pasa con el patrimonio real del banco?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1},
     ],
   },
 ]};
@@ -2193,10 +2356,15 @@ function renderSubjectView(subjectId){
   const s=SUBJECTS.find(x=>x.id===subjectId);
   const data=SUBJECT_DATA[subjectId];
   const plannedSlots = data.casesPlanned;
-  let caseCardsHtml = data.cases.map(c=>{
+  // Si el docente marcó un caso destacado para esta clase, ese aparece
+  // primero — no oculta los demás, solo cambia el orden en que se ven.
+  const destacadoId = (currentUser?.materia_id===subjectId) ? contenidoEditadoGrupo?.caso_destacado_id : null;
+  const casosOrdenados = destacadoId ? [...data.cases].sort((a,b) => (a.id===destacadoId?-1:0) - (b.id===destacadoId?-1:0)) : data.cases;
+  let caseCardsHtml = casosOrdenados.map(c=>{
     const st=caseStatus(c.id);
     return `<div class="case-card" onclick="openCase('${c.id}')">
       <div class="status ${st==='completo'?'done':''}"></div>
+      ${c.id===destacadoId ? `<div class="lock-badge" style="background:var(--gold);color:#1a1404;"><i class="ti ti-star"></i> Recomendado</div>` : ''}
       <div class="tab"><span>Expediente ${c.expediente}</span><span class="role">${c.role}</span></div>
       <div class="body-p">
         <span class="casetype"><i class="ti ti-layers-intersect"></i> Caso extenso · 5 etapas</span>
@@ -2245,12 +2413,14 @@ function renderSubjectView(subjectId){
       </div>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
+        <button class="tool-tab" id="subj-tab-mapa" onclick="showSubjTool('mapa')"><i class="ti ti-sitemap"></i> Mapa mental</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
         <button class="tool-tab" id="subj-tab-gloss" onclick="showSubjTool('gloss')"><i class="ti ti-book"></i> Glosario</button>
         <button class="tool-tab" id="subj-tab-quiz" onclick="showSubjTool('quiz')"><i class="ti ti-bolt"></i> Quiz rápido</button>
         <button class="tool-tab" id="subj-tab-notas" onclick="showSubjTool('notas')"><i class="ti ti-notes"></i> Mis apuntes</button>
       </div>
       <div id="subj-tool-summary"><div class="summary-box">${obtenerResumenEfectivo(subjectId)}</div></div>
+      <div id="subj-tool-mapa" class="hidden"></div>
       <div id="subj-tool-flash" class="hidden"></div>
       <div id="subj-tool-gloss" class="hidden"></div>
       <div id="subj-tool-quiz" class="hidden"></div>
@@ -2260,17 +2430,18 @@ function renderSubjectView(subjectId){
     <div class="section-label"><i class="ti ti-briefcase"></i> Casos de la materia</div>
     <div class="case-grid">${caseCardsHtml}</div>
   `;
-  renderSubjectFlashcards(SUBJECT_DATA[subjectId].studyMaterial.flashcards);
+  renderSubjectFlashcards(obtenerFlashcardsEfectivo(subjectId));
   renderSubjectGlossary(obtenerGlosarioEfectivo(subjectId));
   renderSubjectQuiz(SUBJECT_DATA[subjectId].studyMaterial.quiz);
 }
 
 function showSubjTool(which){
-  ['summary','flash','gloss','quiz','notas'].forEach(t=>{
+  ['summary','mapa','flash','gloss','quiz','notas'].forEach(t=>{
     $('subj-tab-'+t).classList.toggle('active', t===which);
     $('subj-tool-'+t).classList.toggle('hidden', t!==which);
   });
   if(which==='notas') renderApuntesMateria(currentSubjectId);
+  if(which==='mapa') dibujarMapaMental(currentSubjectId);
 }
 
 // ───── Utilidades de respuestas ─────
@@ -2601,6 +2772,54 @@ function drawSubjQuiz(){
   `;
   const optsEl=$('subj-quiz-opts');
   optsEl.innerHTML = q.opts.map((o,oi)=>`<div class="q-opt" onclick="answerSubjQuiz(${oi})"><span class="dot"></span>${o}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// MAPA MENTAL — se genera solo, a partir del glosario que ya existe en
+// cada materia (o del editado por el docente, si lo hay), así funciona
+// de inmediato en las doce materias sin tener que escribir contenido
+// nuevo aparte. La materia queda en el centro, y cada término del
+// glosario sale como una rama — al tocar una rama se ve su definición.
+// ═══════════════════════════════════════════════════════
+function dibujarMapaMental(subjectId){
+  const cont = $('subj-tool-mapa');
+  const s = SUBJECTS.find(x=>x.id===subjectId);
+  const terminos = obtenerGlosarioEfectivo(subjectId) || [];
+  if(!terminos.length){ cont.innerHTML = '<div class="auth-hint">Esta materia todavía no tiene términos de glosario para armar un mapa.</div>'; return; }
+
+  const W = 720, H = 480, cx = W/2, cy = H/2;
+  const radio = Math.min(W,H)/2 - 90;
+  const nodos = terminos.map((t,i) => {
+    const angulo = (i / terminos.length) * Math.PI*2 - Math.PI/2;
+    return { ...t, x: cx + radio*Math.cos(angulo), y: cy + radio*Math.sin(angulo) };
+  });
+  const lineas = nodos.map(n => `<line x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="var(--c4)" stroke-width="1.5"/>`).join('');
+  const ramas = nodos.map((n,i) => `
+    <g class="mapa-nodo" style="cursor:pointer;" onclick="mostrarDefinicionMapa(${i})">
+      <circle cx="${n.x}" cy="${n.y}" r="22" fill="transparent"/>
+      <circle cx="${n.x}" cy="${n.y}" r="7" fill="${s?.color||'var(--gold)'}"/>
+      <text x="${n.x}" y="${n.y + (n.y>cy?22:-14)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--t1)" style="font-family:var(--font-body);pointer-events:none;">${(n.t.length>22?n.t.slice(0,20)+'…':n.t)}</text>
+    </g>`).join('');
+
+  cont.innerHTML = `
+    <div style="overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:720px;height:auto;display:block;margin:0 auto;">
+        ${lineas}
+        <circle cx="${cx}" cy="${cy}" r="46" fill="${s?.color||'var(--gold)'}" opacity="0.15"/>
+        <circle cx="${cx}" cy="${cy}" r="46" fill="none" stroke="${s?.color||'var(--gold)'}" stroke-width="2"/>
+        <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" font-weight="800" fill="var(--t1)" style="font-family:var(--font-head);">${(s?.title||'').split(' ').slice(0,2).join(' ')}</text>
+        ${ramas}
+      </svg>
+    </div>
+    <div id="mapa-definicion" class="summary-box" style="margin-top:14px;display:none;"></div>
+    <div class="auth-hint" style="text-align:center;">Toca cualquier término para ver su definición.</div>`;
+  window.__mapaNodos = nodos;
+}
+function mostrarDefinicionMapa(i){
+  const n = window.__mapaNodos[i];
+  const el = $('mapa-definicion');
+  el.style.display = 'block';
+  el.innerHTML = `<b>${n.t}</b><br>${n.d}`;
 }
 
 // ═══════════════════════════════════════════════════════
