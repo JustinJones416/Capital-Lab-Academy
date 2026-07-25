@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CapitalLab Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +38,7 @@ h1,h2,h3{font-family:var(--font-head);}
 
 /* ───── TOPBAR ───── */
 .topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;padding:13px 20px;background:rgba(13,18,28,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--c3);}
+@media(max-width:420px){.topbar{gap:6px;padding:10px 12px;}}
 .nav-toggle{display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--r);background:var(--c2);border:1px solid var(--c3);color:var(--t1);font-size:20px;cursor:pointer;flex-shrink:0;}
 .brand{font-family:var(--font-head);font-weight:800;font-size:19px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:1;min-width:0;max-width:min(280px,60vw);overflow:hidden;white-space:nowrap;}
 .brand span:not(.dot):not(.brand-sub){overflow:hidden;text-overflow:ellipsis;}
@@ -3076,48 +3079,50 @@ function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
 // editor (incluyendo Word, guardando como texto sin formato) y la sube
 // de vuelta — se convierte en un caso interactivo real.
 // ═══════════════════════════════════════════════════════
-function descargarPlantillaCaso(){
-  const plantilla = `PLANTILLA DE CASO — CAPITALLAB ACADEMY
-
-CÓMO USAR ESTA PLANTILLA
-Este archivo ya viene lleno con un caso de ejemplo completo, de principio a fin — ábrelo, mira cómo está armado, y escribe tu propio caso encima, reemplazando cada línea. No borres ninguna palabra en MAYÚSCULAS antes de los dos puntos, ni las líneas que dicen "--- NUEVA ETAPA ---": la aplicación las usa para saber dónde empieza y termina cada parte.
-Para marcar cuál opción es la correcta, escribe exactamente "[CORRECTA]" al final de esa opción — así, sin tener que recordar ninguna letra por separado.
-Guarda este archivo como texto sin formato antes de subirlo (en Word: Archivo > Guardar como > Texto sin formato, extensión .txt).
-
-TÍTULO DEL CASO: Evaluación de una línea de crédito rotativo
-MATERIA A LA QUE PERTENECE (referencia — la materia real es siempre la de tu sesión activa): Mercado Bancario
-ROL PROFESIONAL DEL EXPEDIENTE: Analista de Crédito Comercial
-CONTEXTO: Una empresa mediana solicita una línea de crédito rotativo de US$ 300,000 para financiar su capital de trabajo. El banco te pide evaluar si la solicitud es razonable antes de pasarla a comité.
-CONTRAPARTE (nombre, rol): Ricardo Aguilar, Dueño de la empresa solicitante
-DATOS CLAVE (una línea por dato, formato "Etiqueta: Valor" — agrega o quita las que necesites):
-Monto solicitado: US$ 300,000
-Ventas anuales de la empresa: US$ 1,800,000
-Razón corriente actual: 1.4
-
---- NUEVA ETAPA ---
-TÍTULO DE LA ETAPA: Capacidad de pago de la empresa
-INTRODUCCIÓN: Antes de aprobar cualquier línea de crédito, hay que confirmar que la empresa genera suficiente flujo para cubrirla sin ahogar su operación.
-PREGUNTA: Si el monto solicitado es de US$ 300,000 y las ventas anuales son de US$ 1,800,000, ¿qué porcentaje de las ventas anuales representa la línea solicitada?
-OPCIÓN A: 8.3%
-OPCIÓN B: 16.7% [CORRECTA]
-OPCIÓN C: 25.0%
-OPCIÓN D: 60.0%
-EXPLICACIÓN DE LA RESPUESTA CORRECTA: 300,000 dividido entre 1,800,000 es 16.7% — un dato de referencia útil para comparar contra el promedio del sector antes de decidir.
-
---- NUEVA ETAPA (borra este bloque si tu caso solo necesita una etapa, o cópialo para agregar más) ---
-TÍTULO DE LA ETAPA: 
-INTRODUCCIÓN: 
-PREGUNTA: 
-OPCIÓN A: 
-OPCIÓN B: 
-OPCIÓN C: 
-OPCIÓN D: 
-EXPLICACIÓN DE LA RESPUESTA CORRECTA: 
-`;
-  const blob = new Blob([plantilla], { type:'text/plain;charset=utf-8' });
+async function descargarPlantillaCaso(){
+  // Genera un documento de Word real (.docx), no un archivo de texto
+  // disfrazado — usa la librería docx.js, que corre enteramente en el
+  // navegador. Cada campo se escribe en negrita para que se distinga
+  // claro de lo que el docente debe completar.
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+  const campo = (etiqueta, valor) => new Paragraph({ children:[ new TextRun({text:etiqueta+': ', bold:true}), new TextRun(valor||'') ], spacing:{after:120} });
+  const doc = new Document({ sections:[{ children:[
+    new Paragraph({ text:'Plantilla de caso — CapitalLab Academy', heading:HeadingLevel.HEADING_1 }),
+    new Paragraph({ text:'Cómo usar esta plantilla', heading:HeadingLevel.HEADING_2, spacing:{before:200} }),
+    new Paragraph({ text:'Este documento ya viene lleno con un caso de ejemplo completo, de principio a fin — léelo para ver cómo está armado, y escribe tu propio caso encima, reemplazando cada línea. No borres ninguna etiqueta en negrita, ni las líneas que dicen "--- NUEVA ETAPA ---": la aplicación las usa para saber dónde empieza y termina cada parte.', spacing:{after:120} }),
+    new Paragraph({ children:[new TextRun('Para marcar cuál opción es la correcta, escribe exactamente '), new TextRun({text:'[CORRECTA]', bold:true}), new TextRun(' al final de esa opción — así, sin tener que recordar ninguna letra por separado.')], spacing:{after:200} }),
+    new Paragraph({ text:'Datos del caso', heading:HeadingLevel.HEADING_2, spacing:{before:200} }),
+    campo('TÍTULO DEL CASO', 'Evaluación de una línea de crédito rotativo'),
+    campo('ROL PROFESIONAL DEL EXPEDIENTE', 'Analista de Crédito Comercial'),
+    campo('CONTEXTO', 'Una empresa mediana solicita una línea de crédito rotativo de US$ 300,000 para financiar su capital de trabajo. El banco te pide evaluar si la solicitud es razonable antes de pasarla a comité.'),
+    campo('CONTRAPARTE (nombre, rol)', 'Ricardo Aguilar, Dueño de la empresa solicitante'),
+    new Paragraph({ children:[new TextRun({text:'DATOS CLAVE', bold:true}), new TextRun(' (una línea por dato, formato "Etiqueta: Valor" — agrega o quita las que necesites):')], spacing:{after:80} }),
+    new Paragraph({ text:'Monto solicitado: US$ 300,000', spacing:{after:40} }),
+    new Paragraph({ text:'Ventas anuales de la empresa: US$ 1,800,000', spacing:{after:40} }),
+    new Paragraph({ text:'Razón corriente actual: 1.4', spacing:{after:200} }),
+    new Paragraph({ text:'--- NUEVA ETAPA ---', heading:HeadingLevel.HEADING_2, spacing:{before:200} }),
+    campo('TÍTULO DE LA ETAPA', 'Capacidad de pago de la empresa'),
+    campo('INTRODUCCIÓN', 'Antes de aprobar cualquier línea de crédito, hay que confirmar que la empresa genera suficiente flujo para cubrirla sin ahogar su operación.'),
+    campo('PREGUNTA', 'Si el monto solicitado es de US$ 300,000 y las ventas anuales son de US$ 1,800,000, ¿qué porcentaje de las ventas anuales representa la línea solicitada?'),
+    campo('OPCIÓN A', '8.3%'),
+    campo('OPCIÓN B', '16.7% [CORRECTA]'),
+    campo('OPCIÓN C', '25.0%'),
+    campo('OPCIÓN D', '60.0%'),
+    campo('EXPLICACIÓN DE LA RESPUESTA CORRECTA', '300,000 dividido entre 1,800,000 es 16.7% — un dato de referencia útil para comparar contra el promedio del sector antes de decidir.'),
+    new Paragraph({ text:'--- NUEVA ETAPA (borra este bloque si tu caso solo necesita una etapa, o cópialo para agregar más) ---', heading:HeadingLevel.HEADING_2, spacing:{before:200} }),
+    campo('TÍTULO DE LA ETAPA', ''),
+    campo('INTRODUCCIÓN', ''),
+    campo('PREGUNTA', ''),
+    campo('OPCIÓN A', ''),
+    campo('OPCIÓN B', ''),
+    campo('OPCIÓN C', ''),
+    campo('OPCIÓN D', ''),
+    campo('EXPLICACIÓN DE LA RESPUESTA CORRECTA', ''),
+  ]}]});
+  const blob = await Packer.toBlob(doc);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'Plantilla_Caso_CapitalLab_Academy.txt';
+  a.href = url; a.download = 'Plantilla_Caso_CapitalLab_Academy.docx';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -3134,7 +3139,14 @@ async function importarCasoDesdeArchivo(evento){
   const msg = $('ac-import-msg');
   msg.className = 'auth-msg';
   try {
-    const texto = await archivo.text();
+    let texto;
+    if(archivo.name.toLowerCase().endsWith('.docx')){
+      const arrayBuffer = await archivo.arrayBuffer();
+      const resultado = await mammoth.extractRawText({ arrayBuffer });
+      texto = resultado.value;
+    } else {
+      texto = await archivo.text();
+    }
     const lineas = texto.split('\n');
 
     const title = leerCampo(texto, 'TÍTULO DEL CASO');
@@ -3327,12 +3339,12 @@ function renderTeacherView(){
         </div>
         <div class="card" style="margin-top:16px;">
           <div class="card-title"><i class="ti ti-file-import"></i> O importar un caso ya redactado</div>
-          <div class="card-sub">Descarga la plantilla, complétala en cualquier editor de texto (o Word, guardando como .txt), y súbela — se convierte en un caso interactivo automáticamente. Ideal si ya tienes el caso escrito y no quieres rehacerlo campo por campo.</div>
+          <div class="card-sub">Descarga la plantilla en Word, complétala encima del ejemplo, y súbela — se convierte en un caso interactivo automáticamente. Ideal si ya tienes el caso escrito y no quieres rehacerlo campo por campo.</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <button class="btn btn-ghost" onclick="descargarPlantillaCaso()"><i class="ti ti-download"></i> Descargar plantilla</button>
             <label class="btn" style="cursor:pointer;margin:0;">
               <i class="ti ti-upload"></i> Subir plantilla completada
-              <input type="file" accept=".txt" onchange="importarCasoDesdeArchivo(event)" style="display:none;">
+              <input type="file" accept=".docx,.txt" onchange="importarCasoDesdeArchivo(event)" style="display:none;">
             </label>
           </div>
           <div class="auth-msg" id="ac-import-msg"></div>
