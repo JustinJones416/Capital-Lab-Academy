@@ -2341,11 +2341,14 @@ function renderProgressView(){
 }
 
 // ───── Vista de materia ─────
-function navSubject(subjectId){
+async function navSubject(subjectId){
   currentSubjectId=subjectId; currentCaseId=null;
   applyAccent(subjectId);
   const s=SUBJECTS.find(x=>x.id===subjectId);
   $('brand-sub').textContent=s.title;
+  if(currentUser?.grupo_id && currentUser?.materia_id===subjectId){
+    await cargarCasosPersonalizados(subjectId);
+  }
   renderSubjectView(subjectId);
   showView('view-subject');
   setActiveNav(null); setActiveSubjectPill(subjectId);
@@ -2365,6 +2368,7 @@ function renderSubjectView(subjectId){
     return `<div class="case-card" onclick="openCase('${c.id}')">
       <div class="status ${st==='completo'?'done':''}"></div>
       ${c.id===destacadoId ? `<div class="lock-badge" style="background:var(--gold);color:#1a1404;"><i class="ti ti-star"></i> Recomendado</div>` : ''}
+      ${c.personalizado ? `<div class="lock-badge" style="background:var(--accent2);color:#fff;"><i class="ti ti-chalkboard"></i> Creado por tu profesor</div>` : ''}
       <div class="tab"><span>Expediente ${c.expediente}</span><span class="role">${c.role}</span></div>
       <div class="body-p">
         <span class="casetype"><i class="ti ti-layers-intersect"></i> Caso extenso · 5 etapas</span>
@@ -2787,36 +2791,51 @@ function dibujarMapaMental(subjectId){
   const terminos = obtenerGlosarioEfectivo(subjectId) || [];
   if(!terminos.length){ cont.innerHTML = '<div class="auth-hint">Esta materia todavía no tiene términos de glosario para armar un mapa.</div>'; return; }
 
-  const W = 720, H = 480, cx = W/2, cy = H/2;
-  const radio = Math.min(W,H)/2 - 90;
+  const W = 760, H = 520, cx = W/2, cy = H/2;
+  const radio = Math.min(W,H)/2 - 110;
   const nodos = terminos.map((t,i) => {
     const angulo = (i / terminos.length) * Math.PI*2 - Math.PI/2;
     return { ...t, x: cx + radio*Math.cos(angulo), y: cy + radio*Math.sin(angulo) };
   });
-  const lineas = nodos.map(n => `<line x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="var(--c4)" stroke-width="1.5"/>`).join('');
+  // Antes las líneas eran decorativas y no reaccionaban a nada — ahora,
+  // al tocar un término, SU línea se pone gruesa y del color de la
+  // materia, para que se sienta realmente conectado al centro, no solo
+  // dibujado ahí al lado.
+  const lineas = nodos.map((n,i) => `<line id="mapa-linea-${i}" x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="var(--c4)" stroke-width="1.5"/>`).join('');
   const ramas = nodos.map((n,i) => `
     <g class="mapa-nodo" style="cursor:pointer;" onclick="mostrarDefinicionMapa(${i})">
-      <circle cx="${n.x}" cy="${n.y}" r="22" fill="transparent"/>
-      <circle cx="${n.x}" cy="${n.y}" r="7" fill="${s?.color||'var(--gold)'}"/>
-      <text x="${n.x}" y="${n.y + (n.y>cy?22:-14)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--t1)" style="font-family:var(--font-body);pointer-events:none;">${(n.t.length>22?n.t.slice(0,20)+'…':n.t)}</text>
+      <circle cx="${n.x}" cy="${n.y}" r="26" fill="transparent"/>
+      <circle id="mapa-circulo-${i}" cx="${n.x}" cy="${n.y}" r="9" fill="${s?.color||'var(--gold)'}"/>
+      <text x="${n.x}" y="${n.y + (n.y>cy?26:-16)}" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--t1)" style="font-family:var(--font-body);pointer-events:none;">${(n.t.length>24?n.t.slice(0,22)+'…':n.t)}</text>
     </g>`).join('');
 
   cont.innerHTML = `
     <div style="overflow-x:auto;">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:720px;height:auto;display:block;margin:0 auto;">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:760px;height:auto;display:block;margin:0 auto;">
         ${lineas}
-        <circle cx="${cx}" cy="${cy}" r="46" fill="${s?.color||'var(--gold)'}" opacity="0.15"/>
-        <circle cx="${cx}" cy="${cy}" r="46" fill="none" stroke="${s?.color||'var(--gold)'}" stroke-width="2"/>
-        <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" font-weight="800" fill="var(--t1)" style="font-family:var(--font-head);">${(s?.title||'').split(' ').slice(0,2).join(' ')}</text>
+        <circle cx="${cx}" cy="${cy}" r="54" fill="${s?.color||'var(--gold)'}" opacity="0.15"/>
+        <circle cx="${cx}" cy="${cy}" r="54" fill="none" stroke="${s?.color||'var(--gold)'}" stroke-width="2.5"/>
+        <text x="${cx}" y="${cy+6}" text-anchor="middle" font-size="15.5" font-weight="800" fill="var(--t1)" style="font-family:var(--font-head);">${(s?.title||'').split(' ').slice(0,2).join(' ')}</text>
         ${ramas}
       </svg>
     </div>
-    <div id="mapa-definicion" class="summary-box" style="margin-top:14px;display:none;"></div>
-    <div class="auth-hint" style="text-align:center;">Toca cualquier término para ver su definición.</div>`;
+    <div id="mapa-definicion" class="summary-box" style="margin-top:14px;display:none;font-size:14px;line-height:1.6;"></div>
+    <div class="auth-hint" style="text-align:center;font-size:12.5px;">Toca cualquier término para ver su definición y resaltar su conexión con la materia.</div>`;
   window.__mapaNodos = nodos;
+  window.__mapaColor = s?.color || 'var(--gold)';
 }
 function mostrarDefinicionMapa(i){
   const n = window.__mapaNodos[i];
+  // Devolver todas las líneas y círculos a su estado normal antes de
+  // resaltar solo la del término elegido.
+  window.__mapaNodos.forEach((_,j) => {
+    $('mapa-linea-'+j)?.setAttribute('stroke', 'var(--c4)');
+    $('mapa-linea-'+j)?.setAttribute('stroke-width', '1.5');
+    $('mapa-circulo-'+j)?.setAttribute('r', '9');
+  });
+  $('mapa-linea-'+i)?.setAttribute('stroke', window.__mapaColor);
+  $('mapa-linea-'+i)?.setAttribute('stroke-width', '3.5');
+  $('mapa-circulo-'+i)?.setAttribute('r', '13');
   const el = $('mapa-definicion');
   el.style.display = 'block';
   el.innerHTML = `<b>${n.t}</b><br>${n.d}`;
@@ -2972,72 +2991,163 @@ function exportCase(caseId){
 
 // ───── Modo profesor ─────
 // ───── Modo profesor ─────
-let teacherCases = JSON.parse(localStorage.getItem('academy_teacher_cases_v1')||'[]');
-
-function saveTeacherCase(){
-  const title=$('t-title').value.trim();
-  const subject=$('t-subject').value;
-  const role=$('t-role').value.trim();
-  const brief=$('t-brief').value.trim();
-  const character=$('t-character').value.trim();
-  const facts=$('t-facts').value.trim();
-  const openprompt=$('t-openprompt').value.trim();
-  if(!title){ toast('El título del caso es obligatorio.'); return; }
-  if(!brief){ toast('Completa el contexto del caso antes de guardar.'); return; }
-  const subjName = SUBJECTS.find(s=>s.id===subject)?.title || subject;
-  const newCase = {
-    id:'teacher-'+Date.now(), subject, subjName, title, role, brief, character, facts, openprompt,
-    createdAt:new Date().toLocaleDateString('es-PA'), status:'Pendiente de revisión'
-  };
-  teacherCases.unshift(newCase);
-  localStorage.setItem('academy_teacher_cases_v1', JSON.stringify(teacherCases));
-  $('t-title').value=''; $('t-brief').value=''; $('t-facts').value='';
-  $('t-openprompt').value=''; $('t-character').value=''; $('t-role').value='';
-  toast('Caso guardado correctamente en el banco.');
-  renderTeacherCaseBank();
-}
-
-function deleteTeacherCase(id){
-  teacherCases = teacherCases.filter(c=>c.id!==id);
-  localStorage.setItem('academy_teacher_cases_v1', JSON.stringify(teacherCases));
-  renderTeacherCaseBank();
-  toast('Caso eliminado del banco.');
-}
-
-function renderTeacherCaseBank(){
-  const bank=$('teacher-case-bank');
-  if(!bank) return;
-  if(teacherCases.length===0){
-    bank.innerHTML='<div class="card-sub" style="padding:14px 0;"><i class="ti ti-inbox"></i> No hay casos importados aún. Completa el formulario de arriba para añadir el primero.</div>';
-    return;
-  }
-  bank.innerHTML = teacherCases.map(c=>`
-    <div class="card" style="margin-bottom:10px;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);margin-bottom:4px;">${c.subjName} · ${c.createdAt} · <span style="color:var(--amber)">${c.status}</span></div>
-          <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${c.title}</div>
-          ${c.role ? `<div style="font-size:12px;color:var(--ac);margin-bottom:5px;">${c.role}</div>` : ''}
-          ${c.character ? `<div style="font-size:12px;color:var(--t3);margin-bottom:5px;"><i class="ti ti-user"></i> ${c.character}</div>` : ''}
-          ${c.brief ? `<div style="font-size:12px;color:var(--t2);line-height:1.5;">${c.brief.slice(0,180)}${c.brief.length>180?'…':''}</div>` : ''}
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="deleteTeacherCase('${c.id}')" style="flex-shrink:0;" title="Eliminar caso"><i class="ti ti-trash"></i></button>
-      </div>
-      ${c.facts ? `<div class="databox" style="margin-top:10px;">${c.facts.split('\n').filter(Boolean).map(l=>{const[k,...v]=l.split(':');return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 4px;border-bottom:1px solid var(--c3);"><span style="color:var(--t2)">${k}</span><span style="font-family:var(--font-mono);font-weight:700">${v.join(':')}</span></div>`;}).join('')}</div>` : ''}
-      ${c.openprompt ? `<div style="font-size:11.5px;color:var(--t3);margin-top:8px;font-style:italic;"><i class="ti ti-pencil"></i> ${c.openprompt}</div>` : ''}
+// ═══════════════════════════════════════════════════════
+// ASISTENTE DE CREACIÓN DE CASOS — reemplaza el formulario anterior, que
+// solo guardaba una idea de texto en el propio dispositivo del docente
+// (con estado "Pendiente de revisión" que nadie revisaba nunca) y no
+// producía nada realmente interactivo. Esto crea un caso de verdad: con
+// etapas y preguntas de opción múltiple con respuesta correcta, que se
+// mezcla con los casos oficiales de la materia para los estudiantes de
+// esta sesión específica — nadie más lo ve.
+// ═══════════════════════════════════════════════════════
+let asistenteCasoEtapas = [];
+function abrirAsistenteCaso(){
+  if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  asistenteCasoEtapas = [{ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }];
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'asistente-caso-overlay';
+  overlay.innerHTML = `<div class="export-modal" style="max-width:640px;">
+    <h2><i class="ti ti-wand" style="color:var(--gold)"></i> Crear caso interactivo</h2>
+    <p>Para tu sesión "<b>${currentUser.grupo_nombre}</b>" — materia: <b>${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title||'—'}</b>.</p>
+    <div class="form-field"><label>Título del caso *</label><input type="text" id="ac-title" placeholder="Ej: Análisis de fondo de inversión panameño"></div>
+    <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="ac-role" placeholder="Ej: Analista de Inversiones"></div>
+    <div class="form-field"><label>Contexto del caso *</label><textarea id="ac-brief" placeholder="Describe la situación que el estudiante debe analizar…"></textarea></div>
+    <div class="form-field"><label>Nombre y rol de la contraparte</label><input type="text" id="ac-character" placeholder="Ej: Marta Solís, Gerente de Tesorería"></div>
+    <div class="form-field"><label>Datos / cifras clave (un dato por línea, formato: etiqueta: valor)</label><textarea id="ac-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%"></textarea></div>
+    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin:14px 0 6px;">Etapas — cada una con su propia pregunta</label>
+    <div id="ac-etapas-lista"></div>
+    <button class="btn btn-ghost btn-sm" onclick="acAgregarEtapa()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir etapa</button>
+    <div class="auth-msg" id="ac-msg"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="auth-submit" onclick="guardarCasoPersonalizado()">Crear caso</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="$('asistente-caso-overlay').remove()">Cancelar</button>
     </div>
-  `).join('');
+  </div>`;
+  document.body.appendChild(overlay);
+  acRenderEtapas();
+}
+function acRenderEtapas(){
+  $('ac-etapas-lista').innerHTML = asistenteCasoEtapas.map((e,i) => `
+    <div style="background:var(--c2);border-radius:var(--r);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="font-size:12.5px;">Etapa ${i+1}</b>
+        ${asistenteCasoEtapas.length>1 ? `<i class="ti ti-trash" style="cursor:pointer;color:var(--red);" onclick="acQuitarEtapa(${i})"></i>` : ''}
+      </div>
+      <input type="text" value="${(e.titulo||'').replace(/"/g,'&quot;')}" placeholder="Título de la etapa" oninput="asistenteCasoEtapas[${i}].titulo=this.value" style="width:100%;padding:8px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;margin-bottom:6px;">
+      <textarea rows="2" placeholder="Texto de introducción de la etapa" oninput="asistenteCasoEtapas[${i}].intro=this.value" style="width:100%;padding:8px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-bottom:6px;">${e.intro||''}</textarea>
+      <input type="text" value="${(e.pregunta||'').replace(/"/g,'&quot;')}" placeholder="Pregunta de opción múltiple" oninput="asistenteCasoEtapas[${i}].pregunta=this.value" style="width:100%;padding:8px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;margin-bottom:6px;">
+      ${e.opciones.map((op,oi) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <input type="radio" name="ac-correcta-${i}" ${e.correcta===oi?'checked':''} onchange="asistenteCasoEtapas[${i}].correcta=${oi}" title="Marcar como correcta">
+        <input type="text" value="${(op||'').replace(/"/g,'&quot;')}" placeholder="Opción ${oi+1}" oninput="asistenteCasoEtapas[${i}].opciones[${oi}]=this.value" style="flex:1;padding:7px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+      </div>`).join('')}
+      <textarea rows="2" placeholder="Explicación de por qué esa es la respuesta correcta" oninput="asistenteCasoEtapas[${i}].explicacion=this.value" style="width:100%;padding:8px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:6px;">${e.explicacion||''}</textarea>
+    </div>`).join('');
+}
+function acAgregarEtapa(){ asistenteCasoEtapas.push({ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }); acRenderEtapas(); }
+function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
+
+async function guardarCasoPersonalizado(){
+  const title = $('ac-title').value.trim();
+  const brief = $('ac-brief').value.trim();
+  const role = $('ac-role').value.trim() || 'Analista';
+  const characterRaw = $('ac-character').value.trim();
+  const factsRaw = $('ac-facts').value.trim();
+  const msg = $('ac-msg');
+  if(!title){ msg.className='auth-msg show error'; msg.textContent='El título es obligatorio.'; return; }
+  if(!brief){ msg.className='auth-msg show error'; msg.textContent='Completa el contexto del caso.'; return; }
+  const etapasValidas = asistenteCasoEtapas.filter(e => e.titulo.trim() && e.pregunta.trim() && e.opciones.every(o=>o.trim()));
+  if(!etapasValidas.length){ msg.className='auth-msg show error'; msg.textContent='Completa al menos una etapa con su título, pregunta y las cuatro opciones.'; return; }
+
+  const [nombreContraparte, ...rolContraparte] = characterRaw.split(',');
+  const facts = factsRaw.split('\n').filter(Boolean).map(l => { const [k,...v]=l.split(':'); return [k.trim(), v.join(':').trim()]; });
+
+  const caso = {
+    id: 'personalizado-' + Date.now(),
+    expediente: 'DOC-' + Date.now().toString().slice(-6),
+    role, title, brief,
+    character: { name: (nombreContraparte||'Contraparte').trim(), role: rolContraparte.join(',').trim() || 'Contraparte del caso', quote: '' },
+    facts,
+    personalizado: true, docenteNombre: currentUser.nombre,
+    stages: etapasValidas.map((e,i) => ({
+      id: 's'+(i+1), title: e.titulo, icon: 'ti-file-text', intro: e.intro,
+      questions: [{ type:'mc', q: e.pregunta, opts: e.opciones, correct: e.correcta, explain: e.explicacion || 'Respuesta correcta.' }],
+    })),
+  };
+
+  try {
+    const { error } = await sb.from('academy_casos_personalizados').insert({
+      grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, contenido: caso,
+    });
+    if(error) throw error;
+    $('asistente-caso-overlay').remove();
+    toast('Caso creado — ya lo pueden ver tus estudiantes.');
+    await cargarCasosPersonalizados(currentUser.materia_id);
+    renderTeacherCaseBank();
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e);
+  }
+}
+
+// Trae los casos que el docente ya creó para esta materia en su sesión,
+// y los mezcla con los oficiales — así toda la maquinaria existente de
+// abrir, responder y calificar un caso funciona igual para ambos, sin
+// duplicar código.
+async function cargarCasosPersonalizados(subjectId){
+  if(!sb || !currentUser?.grupo_id || !SUBJECT_DATA[subjectId]) return;
+  // Se quitan los personalizados de una carga anterior antes de volver a
+  // traerlos, para no duplicarlos si se entra varias veces a la materia.
+  SUBJECT_DATA[subjectId].cases = SUBJECT_DATA[subjectId].cases.filter(c => !c.personalizado);
+  try {
+    const { data, error } = await sb.from('academy_casos_personalizados').select('contenido').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId);
+    if(error) throw error;
+    (data||[]).forEach(row => SUBJECT_DATA[subjectId].cases.push(row.contenido));
+  } catch(e){ /* silencioso — los casos oficiales siguen funcionando igual */ }
+}
+
+async function renderTeacherCaseBank(){
+  const bank=$('teacher-case-bank');
+  if(!bank || !currentUser?.grupo_id) return;
+  try {
+    const { data, error } = await sb.from('academy_casos_personalizados').select('id,materia_id,contenido').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    if(error) throw error;
+    $('teacher-count-badge').textContent = (data||[]).length;
+    if(!data || !data.length){
+      bank.innerHTML='<div class="card-sub" style="padding:14px 0;"><i class="ti ti-inbox"></i> No has creado ningún caso todavía.</div>';
+      return;
+    }
+    bank.innerHTML = data.map(row => {
+      const c = row.contenido;
+      const materiaNombre = SUBJECTS.find(s=>s.id===row.materia_id)?.title || row.materia_id;
+      return `<div class="card" style="margin-bottom:10px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);margin-bottom:4px;">${materiaNombre} · ${c.stages?.length||0} etapa${(c.stages?.length||0)===1?'':'s'}</div>
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${c.title}</div>
+            <div style="font-size:12px;color:var(--t2);line-height:1.5;">${(c.brief||'').slice(0,140)}${(c.brief||'').length>140?'…':''}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="eliminarCasoPersonalizado('${row.id}')" style="flex-shrink:0;" title="Eliminar caso"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    bank.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function eliminarCasoPersonalizado(id){
+  if(!confirm('¿Eliminar este caso? Tus estudiantes ya no podrán verlo, y perderán el progreso que tuvieran ahí.')) return;
+  try {
+    await sb.from('academy_casos_personalizados').delete().eq('id', id);
+    toast('Caso eliminado.');
+    if(currentUser?.materia_id) await cargarCasosPersonalizados(currentUser.materia_id);
+    renderTeacherCaseBank();
+  } catch(e){
+    toast('No se pudo eliminar: ' + (e.message||e));
+  }
 }
 
 function renderTeacherView(){
-  const demoStudents=[
-    {name:'Dustin Jones', cases:9, avg:88},
-    {name:'Emanuel Iturriaga', cases:6, avg:76},
-    {name:'Fabián Montenegro', cases:10, avg:91},
-    {name:'María Cedeño', cases:4, avg:64},
-  ];
   const totalDoneLocal=SUBJECTS.filter(s=>{const p=subjectProgress(s.id);return p.done>=p.total&&p.total>0;}).length;
-  const localList = studentName ? [{name:studentName+' (este dispositivo)', cases:totalDoneLocal, avg:null, local:true}] : [];
 
   $('view-teacher').innerHTML = `
     <div class="hero" style="padding-top:18px;">
@@ -3048,51 +3158,60 @@ function renderTeacherView(){
     <div class="prof-grid">
       <div>
         <div class="card">
-          <div class="card-title"><i class="ti ti-file-upload"></i> Importar un caso nuevo</div>
-          <div class="card-sub">Los campos marcados con * son obligatorios.</div>
-          <div class="form-field"><label>Materia *</label><select id="t-subject">${SUBJECTS.map(s=>`<option value="${s.id}">${s.title}</option>`).join('')}</select></div>
-          <div class="form-field"><label>Título del caso *</label><input type="text" id="t-title" placeholder="Ej: Análisis de fondo de inversión panameño"></div>
-          <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="t-role" placeholder="Ej: Analista de Inversiones"></div>
-          <div class="form-field"><label>Contexto del caso *</label><textarea id="t-brief" placeholder="Describe la situación que el estudiante debe analizar…"></textarea></div>
-          <div class="form-field"><label>Nombre y rol de la contraparte</label><input type="text" id="t-character" placeholder="Ej: Marta Solís, Gerente de Tesorería"></div>
-          <div class="form-field"><label>Datos / cifras clave (un dato por línea, formato: etiqueta: valor)</label><textarea id="t-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%&#10;Plazo: 5 años"></textarea></div>
-          <div class="form-field"><label>Consigna de análisis abierto</label><textarea id="t-openprompt" placeholder="¿Qué debe argumentar el estudiante en su análisis final?"></textarea></div>
-          <button class="btn" onclick="saveTeacherCase()"><i class="ti ti-device-floppy"></i> Guardar caso en el banco</button>
+          <div class="card-title"><i class="ti ti-sparkles"></i> Crear un caso interactivo para mi clase</div>
+          <div class="card-sub">A diferencia del formulario anterior, esto crea un caso de verdad interactivo: tus estudiantes responden preguntas reales y reciben retroalimentación, no solo leen un texto. Solo lo ven los estudiantes de tu sesión activa.</div>
+          <button class="btn" onclick="abrirAsistenteCaso()"><i class="ti ti-wand"></i> Empezar</button>
         </div>
         <div class="card" style="margin-top:16px;">
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
-            <span><i class="ti ti-database"></i> Banco de casos importados</span>
-            <span class="nav-badge" id="teacher-count-badge">${teacherCases.length}</span>
+            <span><i class="ti ti-database"></i> Mis casos creados</span>
+            <span class="nav-badge" id="teacher-count-badge">0</span>
           </div>
-          <div id="teacher-case-bank"></div>
+          <div id="teacher-case-bank"><div class="auth-hint">Cargando…</div></div>
         </div>
       </div>
       <div class="card">
         <div class="card-title"><i class="ti ti-users"></i> Avance de estudiantes</div>
-        <div class="card-sub">Materias completadas y calificación automática promedio. El seguimiento real entre dispositivos requeriría una base de datos compartida del curso.</div>
-        ${[...localList,...demoStudents].map(s=>{
-          const initials=s.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-          const avgCls = s.avg===null?'':(s.avg>=80?'high':s.avg>=65?'mid':'low');
-          return `<div class="student-row" onclick="${s.local?'reviewLocalStudent()':"toast('Vista de detalle disponible al integrar la base de datos compartida del curso.')"}">
-            <div class="student-avatar">${initials}</div>
-            <div class="student-info"><div class="name">${s.name}</div><div class="meta">${s.cases}/10 materias con caso completado</div></div>
-            <div class="student-score ${avgCls}">${s.avg!==null?s.avg+'%':'—'}</div>
-          </div>`;
-        }).join('')}
+        <div class="card-sub">${currentUser?.grupo_nombre ? `Estudiantes reales de tu sesión "${currentUser.grupo_nombre}", en tiempo real.` : 'Entra a una sesión de clase para ver a tus estudiantes reales aquí.'}</div>
+        <div id="prof-lista-estudiantes-reales"><div class="auth-hint">Cargando…</div></div>
       </div>
     </div>
   `;
   renderTeacherCaseBank();
+  cargarEstudiantesRealesModoProfesor();
 }
 
-function reviewLocalStudent(){
-  const lines=[`Materias con caso completado por ${studentName}:`];
-  SUBJECTS.forEach(s=>{ const p=subjectProgress(s.id); if(p.done>=p.total&&p.total>0) lines.push('• '+s.title); });
-  if(lines.length===1) lines.push('(Aún no hay materias completadas en este dispositivo.)');
-  alert(lines.join('\n'));
+// Antes esta sección mostraba cuatro nombres inventados con progreso de
+// muestra — nunca se conectó a la base de datos real que ya existe para
+// el resto de Academy. Ahora consulta la MISMA fuente de verdad que
+// "Ver estudiantes" en Mis Grupos: los estudiantes reales, en tiempo
+// real, de la sesión activa del docente.
+async function cargarEstudiantesRealesModoProfesor(){
+  const cont = $('prof-lista-estudiantes-reales');
+  if(!cont) return;
+  if(!currentUser?.grupo_id){ cont.innerHTML = '<div class="auth-hint">No hay una sesión activa.</div>'; return; }
+  try {
+    const { data: membresias, error } = await sb.from('academy_membresias')
+      .select('progreso, academy_usuarios!inner(nombre,rol)')
+      .eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    if(error) throw error;
+    if(!membresias || !membresias.length){
+      cont.innerHTML = '<div class="auth-hint">Todavía no hay estudiantes inscritos en esta sesión — comparte tu código de grupo para que se unan.</div>';
+      return;
+    }
+    cont.innerHTML = membresias.map(m => {
+      const nombre = m.academy_usuarios.nombre;
+      const casosCompletados = Object.keys(m.progreso||{}).length;
+      const initials = nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      return `<div class="student-row" style="cursor:default;">
+        <div class="student-avatar">${initials}</div>
+        <div class="student-info"><div class="name">${nombre}</div><div class="meta">${casosCompletados} caso${casosCompletados===1?'':'s'} completado${casosCompletados===1?'':'s'} en esta materia</div></div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
 }
-
-
 // ───── Exportación masiva y modal ─────
 function openExportModal(){ $('export-modal-overlay').classList.remove('hidden'); }
 function closeExportModal(){ $('export-modal-overlay').classList.add('hidden'); }
