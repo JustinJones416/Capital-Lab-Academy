@@ -479,6 +479,7 @@ h1,h2,h3{font-family:var(--font-head);}
   <button class="nav-toggle" id="nav-toggle" onclick="toggleSidebar()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
   <div class="brand" onclick="irAInicioSegunSesion()">CapitalLab<span class="dot">.</span>Academy <span class="brand-sub" id="brand-sub">Portal de materias</span></div>
   <div class="topbar-spacer"></div>
+  <button class="btn btn-ghost btn-sm" onclick="abrirBusquedaGlobal()" title="Buscar en todas las materias" style="flex-shrink:0;"><i class="ti ti-search"></i></button>
   <div class="mode-toggle">
     <button id="mode-student" class="active" onclick="setMode('student')"><i class="ti ti-school"></i> <span>Estudiante</span></button>
     <button id="mode-teacher" onclick="setMode('teacher')"><i class="ti ti-chalkboard"></i> <span>Profesor</span></button>
@@ -490,6 +491,7 @@ h1,h2,h3{font-family:var(--font-head);}
   <div style="position:relative;flex-shrink:0;">
     <button class="btn btn-ghost btn-sm" onclick="alternarMenuTopbarMas(event)" title="Más opciones"><i class="ti ti-dots-vertical"></i></button>
     <div id="menu-topbar-mas" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r2);box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:200;min-width:200px;padding:6px;">
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirPanelProgreso();"><i class="ti ti-chart-donut"></i> Mi progreso general</button>
       <button class="btn btn-ghost btn-sm" id="menu-btn-companeros" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirCompaneros();"><i class="ti ti-users"></i> Compañeros de clase</button>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;" onclick="cerrarMenuTopbarMas();openExportModal();"><i class="ti ti-package-export"></i> Exportar material</button>
     </div>
@@ -578,10 +580,6 @@ h1,h2,h3{font-family:var(--font-head);}
       <div class="export-opt" onclick="exportPDFCurrentSubject()">
         <i class="ti ti-file-type-pdf"></i>
         <div><b>PDF — Esta materia</b><span>Resumen y glosario, listos para imprimir o guardar como PDF.</span></div>
-      </div>
-      <div class="export-opt" onclick="exportWordCurrentSubject()">
-        <i class="ti ti-file-type-doc"></i>
-        <div><b>Word — Esta materia</b><span>El mismo contenido, en un archivo que se puede editar en Word.</span></div>
       </div>
       <div class="export-opt" onclick="exportMyAnalysis()">
         <i class="ti ti-user-check"></i>
@@ -1033,19 +1031,19 @@ SUBJECT_DATA.banmer.studyMaterial = {
     {q:'¿Para qué sirve una prueba de estrés de liquidez?', a:'Para simular cómo resistiría un banco un escenario adverso específico, revelando vulnerabilidades que los indicadores normales no capturan.'},
   ],
   glossary:[
-    {t:'Índice de Adecuación de Capital (IAC)', d:'Razón entre el capital regulatorio de un banco y sus activos ponderados por riesgo; en Panamá el mínimo exigido por la SBP es 8%.'},
-    {t:'Cartera vencida', d:'Conjunto de préstamos cuyo pago de capital o intereses presenta mora, típicamente superior a 90 días.'},
-    {t:'Provisiones', d:'Reservas contables que un banco constituye para cubrir pérdidas esperadas por incobrabilidad de su cartera de préstamos.'},
-    {t:'Razón de liquidez legal', d:'Proporción de activos líquidos que un banco debe mantener frente a sus depósitos exigibles, según el mínimo regulatorio de la SBP.'},
-    {t:'Superintendencia de Bancos de Panamá (SBP)', d:'Entidad reguladora y supervisora del sistema bancario panameño.'},
-    {t:'Prueba de estrés', d:'Simulación de un escenario adverso (como una salida masiva de depósitos) para evaluar la resiliencia de un banco más allá de sus indicadores en condiciones normales.'},
+    {t:'Índice de Adecuación de Capital (IAC)', d:'Razón entre el capital regulatorio de un banco y sus activos ponderados por riesgo; en Panamá el mínimo exigido por la SBP es 8%. <br><br><b>Ejemplo:</b> un banco con US$ 40 millones de capital regulatorio y US$ 380 millones de activos ponderados por riesgo tiene un IAC de 40/380 = 10.5% — por encima del mínimo, pero solo 2.5 puntos de colchón real ante pérdidas inesperadas.'},
+    {t:'Cartera vencida', d:'Conjunto de préstamos cuyo pago de capital o intereses presenta mora, típicamente superior a 90 días. <br><br><b>Ejemplo:</b> si un banco tiene US$ 200 millones en préstamos y US$ 8.6 millones están en mora de más de 90 días, su índice de morosidad es 8,600,000 / 200,000,000 = 4.3%.'},
+    {t:'Provisiones', d:'Reservas contables que un banco constituye para cubrir pérdidas esperadas por incobrabilidad de su cartera de préstamos. <br><br><b>Ejemplo:</b> con US$ 8.6 millones de cartera vencida y US$ 7.2 millones ya provisionados, la cobertura de provisiones es 7.2/8.6 = 83.7% — todavía falta cubrir el 16.3% restante si esos préstamos no se recuperan.'},
+    {t:'Razón de liquidez legal', d:'Proporción de activos líquidos que un banco debe mantener frente a sus depósitos exigibles, según el mínimo regulatorio de la SBP. <br><br><b>Ejemplo:</b> un banco con US$ 45 millones en activos líquidos y US$ 300 millones en depósitos exigibles a la vista tiene una razón de liquidez de 45/300 = 15%.'},
+    {t:'Superintendencia de Bancos de Panamá (SBP)', d:'Entidad reguladora y supervisora del sistema bancario panameño — fija los mínimos de capital y liquidez, y puede intervenir un banco que los incumpla de forma sostenida.'},
+    {t:'Prueba de estrés', d:'Simulación de un escenario adverso (como una salida masiva de depósitos) para evaluar la resiliencia de un banco más allá de sus indicadores en condiciones normales. <br><br><b>Ejemplo:</b> si se simula una salida del 15% de los depósitos en una semana, y el banco solo tiene liquidez para cubrir el 10% sin vender cartera a pérdida, la prueba revela una vulnerabilidad que sus indicadores normales no muestran.'},
   ],
   quiz:[
-    {q:'¿Cuál es el mínimo regulatorio de IAC exigido por la SBP en Panamá?', opts:['6%','8%','10%','12%'], correct:1},
-    {q:'¿Qué entidad supervisa el sistema bancario panameño?', opts:['Bolsa de Valores de Panamá','Banco Nacional de Panamá','Superintendencia de Bancos de Panamá','Ministerio de Economía y Finanzas'], correct:2},
-    {q:'Si la cartera vencida sube y las provisiones no aumentan al mismo ritmo, ¿qué pasa con la cobertura de provisiones?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1},
-    {q:'¿Qué mide una prueba de estrés de liquidez?', opts:['La rentabilidad futura del banco','Cómo resistiría el banco un escenario adverso específico, como una salida de depósitos','El valor de mercado de las acciones del banco','El cumplimiento fiscal del banco'], correct:1},
-    {q:'¿Por qué cumplir exactamente el mínimo de liquidez es una señal de atención?', opts:['No lo es, cumplir el mínimo siempre es suficiente','Porque no deja margen ante una salida inesperada de depósitos','Porque significa que el banco está en incumplimiento','Porque afecta directamente la solvencia'], correct:1},
+    {q:'¿Cuál es el mínimo regulatorio de IAC exigido por la SBP en Panamá?', opts:['6%','8%','10%','12%'], correct:1, explain:'La SBP exige un mínimo de 8% — un banco con, por ejemplo, 10.5% opera con un colchón adicional de 2.5 puntos por encima del piso regulatorio.'},
+    {q:'¿Qué entidad supervisa el sistema bancario panameño?', opts:['Bolsa de Valores de Panamá','Banco Nacional de Panamá','Superintendencia de Bancos de Panamá','Ministerio de Economía y Finanzas'], correct:2, explain:'La SBP es la entidad que fija y supervisa los mínimos de capital y liquidez de todos los bancos que operan en Panamá.'},
+    {q:'Si la cartera vencida sube y las provisiones no aumentan al mismo ritmo, ¿qué pasa con la cobertura de provisiones?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1, explain:'La cobertura es provisiones/cartera vencida — si el denominador crece más rápido que el numerador, el resultado necesariamente baja.'},
+    {q:'¿Qué mide una prueba de estrés de liquidez?', opts:['La rentabilidad futura del banco','Cómo resistiría el banco un escenario adverso específico, como una salida de depósitos','El valor de mercado de las acciones del banco','El cumplimiento fiscal del banco'], correct:1, explain:'Simula un escenario adverso concreto —como retirar el 15% de los depósitos en una semana— para ver si la liquidez disponible alcanzaría a cubrirlo.'},
+    {q:'¿Por qué cumplir exactamente el mínimo de liquidez es una señal de atención?', opts:['No lo es, cumplir el mínimo siempre es suficiente','Porque no deja margen ante una salida inesperada de depósitos','Porque significa que el banco está en incumplimiento','Porque afecta directamente la solvencia'], correct:1, explain:'Un banco con 15% de liquidez frente a un mínimo de 10%, por ejemplo, tiene margen real; uno que apenas roza el mínimo no tiene ese colchón si los depósitos empiezan a salir.'},
   ],
 };
 
@@ -2417,14 +2415,12 @@ function renderSubjectView(subjectId){
       </div>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
-        <button class="tool-tab" id="subj-tab-mapa" onclick="showSubjTool('mapa')"><i class="ti ti-sitemap"></i> Mapa mental</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
         <button class="tool-tab" id="subj-tab-gloss" onclick="showSubjTool('gloss')"><i class="ti ti-book"></i> Glosario</button>
         <button class="tool-tab" id="subj-tab-quiz" onclick="showSubjTool('quiz')"><i class="ti ti-bolt"></i> Quiz rápido</button>
         <button class="tool-tab" id="subj-tab-notas" onclick="showSubjTool('notas')"><i class="ti ti-notes"></i> Mis apuntes</button>
       </div>
       <div id="subj-tool-summary"><div class="summary-box">${obtenerResumenEfectivo(subjectId)}</div></div>
-      <div id="subj-tool-mapa" class="hidden"></div>
       <div id="subj-tool-flash" class="hidden"></div>
       <div id="subj-tool-gloss" class="hidden"></div>
       <div id="subj-tool-quiz" class="hidden"></div>
@@ -2440,12 +2436,11 @@ function renderSubjectView(subjectId){
 }
 
 function showSubjTool(which){
-  ['summary','mapa','flash','gloss','quiz','notas'].forEach(t=>{
+  ['summary','flash','gloss','quiz','notas'].forEach(t=>{
     $('subj-tab-'+t).classList.toggle('active', t===which);
     $('subj-tool-'+t).classList.toggle('hidden', t!==which);
   });
   if(which==='notas') renderApuntesMateria(currentSubjectId);
-  if(which==='mapa') dibujarMapaMental(currentSubjectId);
 }
 
 // ───── Utilidades de respuestas ─────
@@ -2616,7 +2611,7 @@ function renderCase(){
       <div class="card" id="stage-anchor">
         <div class="card-title"><i class="ti ${stage.icon}"></i> ${stage.title}</div>
         <div class="card-sub">${stage.intro}</div>
-        <div class="databox"><table>${stage.databox.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div>
+        ${stage.databox ? `<div class="databox"><table>${stage.databox.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div>` : ''}
         ${stage.chart?`<div class="chart-box"><canvas id="chart-${stage.id}"></canvas></div>`:''}
       </div>
       <div class="card">
@@ -2625,7 +2620,9 @@ function renderCase(){
       </div>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStage(${currentStage-1})" ${currentStage===0?'disabled style="opacity:.4;pointer-events:none;"':''}><i class="ti ti-arrow-left"></i> Etapa anterior</button>
-        <button class="btn" onclick="goStage(${currentStage+1})"><i class="ti ti-arrow-right"></i> Siguiente etapa</button>
+        ${currentStage === c.stages.length-1
+          ? `<button class="btn btn-ghost" onclick="exportCase('${c.id}')"><i class="ti ti-download"></i> Exportar mi análisis</button><button class="btn" onclick="finishCase('${c.id}')"><i class="ti ti-check"></i> Finalizar caso</button>`
+          : `<button class="btn" onclick="goStage(${currentStage+1})"><i class="ti ti-arrow-right"></i> Siguiente etapa</button>`}
       </div>
     `;
   }
@@ -2694,9 +2691,14 @@ function finishCase(caseId){
   const c=found.case;
   const ans=ensureAnswers(caseId);
   const lastStage=c.stages[c.stages.length-1];
-  const lastAns=ans.stages[lastStage.id]||{};
-  if(!lastAns.verdict){ toast('Selecciona una decisión en la última etapa antes de finalizar.'); return; }
-  if(!lastAns.open || lastAns.open.trim().length<20){ toast('Completa la justificación de tu decisión.'); return; }
+  // Un caso creado por el docente puede no tener etapa de veredicto —
+  // en ese caso, finalizar solo depende de haber respondido las
+  // preguntas, no de una decisión que la propia etapa nunca ofreció.
+  if(lastStage.verdictOptions){
+    const lastAns=ans.stages[lastStage.id]||{};
+    if(!lastAns.verdict){ toast('Selecciona una decisión en la última etapa antes de finalizar.'); return; }
+    if(!lastAns.open || lastAns.open.trim().length<20){ toast('Completa la justificación de tu decisión.'); return; }
+  }
   let totalQ=0, correctQ=0;
   c.stages.forEach(s=>{
     if(s.questions){
@@ -2717,16 +2719,56 @@ function finishCase(caseId){
 // ───── Tarjetas didácticas — sección de materia ─────
 let subjFcState={cards:[],index:0,flipped:false};
 function renderSubjectFlashcards(cards){
-  subjFcState={cards, index:0, flipped:false};
+  subjFcState={cards, index:0, flipped:false, modoRepaso:false, cola:[], sabidas:0, porRepasar:0};
   $('subj-tool-flash').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <button class="btn btn-ghost btn-sm" id="subj-fc-modo-btn" onclick="alternarModoRepasoFC()"><i class="ti ti-brain"></i> Modo repaso</button>
+    </div>
     <div class="fc-deck"><div class="flashcard" id="subj-fc-card" onclick="flipSubjCard()"></div></div>
-    <div class="fc-controls">
+    <div class="fc-controls" id="subj-fc-controls">
       <button onclick="prevSubjCard()"><i class="ti ti-chevron-left"></i></button>
       <span class="fc-counter" id="subj-fc-counter"></span>
       <button onclick="nextSubjCard()"><i class="ti ti-chevron-right"></i></button>
     </div>
-    <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--t3);">Toca la tarjeta para ver la respuesta</div>
+    <div id="subj-fc-repaso-controles" class="hidden" style="display:flex;gap:10px;margin-top:12px;"></div>
+    <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--t3);" id="subj-fc-hint">Toca la tarjeta para ver la respuesta</div>
   `;
+  drawSubjCard();
+}
+// Modo repaso — a diferencia de solo hojear las tarjetas, aquí cada
+// tarjeta que se marca "para repasar" vuelve a aparecer más adelante en
+// la misma sesión, en vez de perderse entre las demás. Es la diferencia
+// entre ver contenido y practicarlo de verdad.
+function alternarModoRepasoFC(){
+  subjFcState.modoRepaso = !subjFcState.modoRepaso;
+  const activo = subjFcState.modoRepaso;
+  $('subj-fc-modo-btn').classList.toggle('active', activo);
+  $('subj-fc-controls').classList.toggle('hidden', activo);
+  $('subj-fc-repaso-controles').classList.toggle('hidden', !activo);
+  $('subj-fc-hint').textContent = activo ? 'Toca la tarjeta, léela, y marca si ya la sabías.' : 'Toca la tarjeta para ver la respuesta';
+  if(activo){
+    subjFcState.cola = subjFcState.cards.map((_,i)=>i);
+    subjFcState.sabidas = 0; subjFcState.porRepasar = 0;
+    subjFcState.index = subjFcState.cola[0];
+    subjFcState.flipped = false;
+  }
+  drawSubjCard();
+}
+function marcarTarjeta(seSabia){
+  if(seSabia){ subjFcState.sabidas++; subjFcState.cola.shift(); }
+  else { subjFcState.porRepasar++; subjFcState.cola.push(subjFcState.cola.shift()); }
+  if(!subjFcState.cola.length){
+    $('subj-tool-flash').innerHTML = `
+      <div class="summary-box" style="text-align:center;">
+        <i class="ti ti-confetti" style="font-size:32px;color:var(--gold);"></i>
+        <h3 style="margin:10px 0 4px;">Repaso terminado</h3>
+        <p>${subjFcState.sabidas} tarjeta${subjFcState.sabidas===1?'':'s'} dominada${subjFcState.sabidas===1?'':'s'} · ${subjFcState.porRepasar} necesitaron repasarse más de una vez.</p>
+        <button class="btn" onclick="renderSubjectFlashcards(subjFcState.cards)" style="margin-top:12px;"><i class="ti ti-refresh"></i> Repasar de nuevo</button>
+      </div>`;
+    return;
+  }
+  subjFcState.index = subjFcState.cola[0];
+  subjFcState.flipped = false;
   drawSubjCard();
 }
 function drawSubjCard(){
@@ -2734,7 +2776,16 @@ function drawSubjCard(){
   const el=$('subj-fc-card');
   el.className='flashcard'+(subjFcState.flipped?' answer':'');
   el.innerHTML = `<span class="tag">${subjFcState.flipped?'Respuesta':'Concepto'}</span><div class="face">${subjFcState.flipped?card.a:card.q}</div>`;
-  $('subj-fc-counter').textContent=(subjFcState.index+1)+' / '+subjFcState.cards.length;
+  if(subjFcState.modoRepaso){
+    $('subj-fc-counter')?.remove?.();
+    const controles = $('subj-fc-repaso-controles');
+    controles.innerHTML = subjFcState.flipped ? `
+      <button class="btn btn-ghost" style="flex:1;border-color:var(--red);color:var(--red);" onclick="marcarTarjeta(false)"><i class="ti ti-repeat"></i> Repasar de nuevo</button>
+      <button class="btn" style="flex:1;" onclick="marcarTarjeta(true)"><i class="ti ti-check"></i> Ya lo sabía</button>
+    ` : `<div class="auth-hint" style="width:100%;text-align:center;">Toca la tarjeta para ver la respuesta — quedan ${subjFcState.cola.length} en esta ronda.</div>`;
+  } else {
+    $('subj-fc-counter').textContent=(subjFcState.index+1)+' / '+subjFcState.cards.length;
+  }
 }
 function flipSubjCard(){ subjFcState.flipped=!subjFcState.flipped; drawSubjCard(); }
 function nextSubjCard(){ subjFcState.index=(subjFcState.index+1)%subjFcState.cards.length; subjFcState.flipped=false; drawSubjCard(); }
@@ -2773,73 +2824,12 @@ function drawSubjQuiz(){
     <div class="quiz-progress">${dots}</div>
     <div class="q-text" style="margin-bottom:14px;">${q.q}</div>
     <div class="q-options" style="margin-left:0;" id="subj-quiz-opts"></div>
+    <div id="subj-quiz-feedback" class="hidden" style="margin-top:12px;"></div>
   `;
   const optsEl=$('subj-quiz-opts');
   optsEl.innerHTML = q.opts.map((o,oi)=>`<div class="q-opt" onclick="answerSubjQuiz(${oi})"><span class="dot"></span>${o}</div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════
-// MAPA MENTAL — se genera solo, a partir del glosario que ya existe en
-// cada materia (o del editado por el docente, si lo hay), así funciona
-// de inmediato en las doce materias sin tener que escribir contenido
-// nuevo aparte. La materia queda en el centro, y cada término del
-// glosario sale como una rama — al tocar una rama se ve su definición.
-// ═══════════════════════════════════════════════════════
-function dibujarMapaMental(subjectId){
-  const cont = $('subj-tool-mapa');
-  const s = SUBJECTS.find(x=>x.id===subjectId);
-  const terminos = obtenerGlosarioEfectivo(subjectId) || [];
-  if(!terminos.length){ cont.innerHTML = '<div class="auth-hint">Esta materia todavía no tiene términos de glosario para armar un mapa.</div>'; return; }
-
-  const W = 760, H = 520, cx = W/2, cy = H/2;
-  const radio = Math.min(W,H)/2 - 110;
-  const nodos = terminos.map((t,i) => {
-    const angulo = (i / terminos.length) * Math.PI*2 - Math.PI/2;
-    return { ...t, x: cx + radio*Math.cos(angulo), y: cy + radio*Math.sin(angulo) };
-  });
-  // Antes las líneas eran decorativas y no reaccionaban a nada — ahora,
-  // al tocar un término, SU línea se pone gruesa y del color de la
-  // materia, para que se sienta realmente conectado al centro, no solo
-  // dibujado ahí al lado.
-  const lineas = nodos.map((n,i) => `<line id="mapa-linea-${i}" x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="var(--c4)" stroke-width="1.5"/>`).join('');
-  const ramas = nodos.map((n,i) => `
-    <g class="mapa-nodo" style="cursor:pointer;" onclick="mostrarDefinicionMapa(${i})">
-      <circle cx="${n.x}" cy="${n.y}" r="26" fill="transparent"/>
-      <circle id="mapa-circulo-${i}" cx="${n.x}" cy="${n.y}" r="9" fill="${s?.color||'var(--gold)'}"/>
-      <text x="${n.x}" y="${n.y + (n.y>cy?26:-16)}" text-anchor="middle" font-size="14.5" font-weight="700" fill="var(--t1)" style="font-family:var(--font-body);pointer-events:none;">${(n.t.length>24?n.t.slice(0,22)+'…':n.t)}</text>
-    </g>`).join('');
-
-  cont.innerHTML = `
-    <div style="overflow-x:auto;">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:760px;height:auto;display:block;margin:0 auto;">
-        ${lineas}
-        <circle cx="${cx}" cy="${cy}" r="54" fill="${s?.color||'var(--gold)'}" opacity="0.15"/>
-        <circle cx="${cx}" cy="${cy}" r="54" fill="none" stroke="${s?.color||'var(--gold)'}" stroke-width="2.5"/>
-        <text x="${cx}" y="${cy+6}" text-anchor="middle" font-size="15.5" font-weight="800" fill="var(--t1)" style="font-family:var(--font-head);">${(s?.title||'').split(' ').slice(0,2).join(' ')}</text>
-        ${ramas}
-      </svg>
-    </div>
-    <div id="mapa-definicion" class="summary-box" style="margin-top:14px;display:none;font-size:14px;line-height:1.6;"></div>
-    <div class="auth-hint" style="text-align:center;font-size:12.5px;">Toca cualquier término para ver su definición y resaltar su conexión con la materia.</div>`;
-  window.__mapaNodos = nodos;
-  window.__mapaColor = s?.color || 'var(--gold)';
-}
-function mostrarDefinicionMapa(i){
-  const n = window.__mapaNodos[i];
-  // Devolver todas las líneas y círculos a su estado normal antes de
-  // resaltar solo la del término elegido.
-  window.__mapaNodos.forEach((_,j) => {
-    $('mapa-linea-'+j)?.setAttribute('stroke', 'var(--c4)');
-    $('mapa-linea-'+j)?.setAttribute('stroke-width', '1.5');
-    $('mapa-circulo-'+j)?.setAttribute('r', '9');
-  });
-  $('mapa-linea-'+i)?.setAttribute('stroke', window.__mapaColor);
-  $('mapa-linea-'+i)?.setAttribute('stroke-width', '3.5');
-  $('mapa-circulo-'+i)?.setAttribute('r', '13');
-  const el = $('mapa-definicion');
-  el.style.display = 'block';
-  el.innerHTML = `<b>${n.t}</b><br>${n.d}`;
-}
 
 // ═══════════════════════════════════════════════════════
 // MIS APUNTES — cada estudiante puede llevar sus propias notas dentro
@@ -2939,9 +2929,19 @@ function answerSubjQuiz(oi){
   opts.forEach((el,i)=>{
     if(i===q.correct) el.classList.add('correct');
     else if(i===oi) el.classList.add('incorrect');
+    el.style.pointerEvents='none';
   });
   if(oi===q.correct) subjQuizState.correct++;
-  setTimeout(()=>{ subjQuizState.index++; subjQuizState.answered=false; drawSubjQuiz(); }, 1100);
+  const acerto = oi===q.correct;
+  const fb = $('subj-quiz-feedback');
+  fb.classList.remove('hidden');
+  fb.innerHTML = `
+    <div class="q-feedback show ${acerto?'ok':'bad'}"><b>${acerto?'Correcto.':'No es la opción correcta.'}</b> ${q.explain || `La respuesta correcta es: "${q.opts[q.correct]}".`}</div>
+    <button class="btn" style="margin-top:10px;width:100%;" onclick="siguientePreguntaQuiz()">${subjQuizState.index<subjQuizState.questions.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>
+  `;
+}
+function siguientePreguntaQuiz(){
+  subjQuizState.index++; subjQuizState.answered=false; drawSubjQuiz();
 }
 
 // ───── Exportación del análisis ─────
@@ -2951,41 +2951,25 @@ function exportCase(caseId){
   const name = currentUser?.nombre || studentName || 'Estudiante';
   studentName=name; localStorage.setItem('academy_student_name',name);
   const ans=ensureAnswers(caseId);
-  let lines=[];
-  lines.push('CAPITALLAB ACADEMY — EXPORTACIÓN DE ANÁLISIS');
-  lines.push('Estudiante: '+name);
-  lines.push('Materia: '+SUBJECTS.find(s=>s.id===found.subjId).title);
-  lines.push('Caso: '+c.title);
-  lines.push('Fecha: '+new Date().toLocaleDateString('es-PA'));
-  lines.push('');
+  let cuerpo = `<h1>${c.title}</h1><div class="sub">${name} · ${SUBJECTS.find(s=>s.id===found.subjId).title} · ${new Date().toLocaleDateString('es-PA')}</div>`;
   c.stages.forEach(s=>{
-    lines.push('── '+s.title+' ──');
+    cuerpo += `<h2>${s.title}</h2>`;
     const stAns=ans.stages[s.id]||{};
     if(s.questions){
       s.questions.forEach((q,i)=>{
         const given=stAns[i];
         const correctTxt = q.type==='mc' ? q.opts[q.correct] : q.correct;
         const givenTxt = q.type==='mc' ? (given!==undefined?q.opts[given]:'(sin responder)') : (given!==undefined?given:'(sin responder)');
-        lines.push(`P${i+1}. ${q.q}`);
-        lines.push('   Respuesta del estudiante: '+givenTxt);
-        lines.push('   Respuesta esperada: '+correctTxt);
+        cuerpo += `<div class="preg"><b>P${i+1}. ${q.q}</b><div class="resp">Mi respuesta: ${givenTxt}<br>Respuesta esperada: ${correctTxt}</div></div>`;
       });
     }
     if(s.verdictOptions){
       const v = stAns.verdict ? s.verdictOptions.find(x=>x.v===stAns.verdict).label : '(sin decisión)';
-      lines.push('Decisión: '+v);
-      lines.push('Justificación:');
-      lines.push(stAns.open||'(sin justificación)');
+      cuerpo += `<div class="preg"><b>Decisión:</b> ${v}<div class="resp">${stAns.open||'(sin justificación)'}</div></div>`;
     }
-    lines.push('');
   });
-  if(ans.score!==undefined){ lines.push('Calificación automática: '+ans.score+'/'+ans.total+' preguntas correctas'); }
-  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='CapitalLab_Academy_'+caseId+'_'+name.replace(/\s+/g,'_')+'.txt';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  if(ans.score!==undefined){ cuerpo += `<h2>Calificación</h2><p>${ans.score}/${ans.total} preguntas correctas</p>`; }
+  abrirVentanaImpresion(c.title+' — Mi análisis', cuerpo);
   toast('Análisis exportado correctamente.');
 }
 
@@ -3001,26 +2985,35 @@ function exportCase(caseId){
 // esta sesión específica — nadie más lo ve.
 // ═══════════════════════════════════════════════════════
 let asistenteCasoEtapas = [];
-function abrirAsistenteCaso(){
+function abrirAsistenteCaso(filaExistente){
   if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
-  asistenteCasoEtapas = [{ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }];
+  const c = filaExistente?.contenido;
+  window.__casoEditandoIdInterno = c?.id || null;
+  // Al editar, se reconstruyen las etapas desde el caso ya guardado —
+  // cada etapa del caso solo tiene una pregunta, que es exactamente lo
+  // que produce este asistente, así que el viaje de ida y vuelta es
+  // directo.
+  asistenteCasoEtapas = c ? c.stages.map(st => ({
+    titulo: st.title, intro: st.intro||'', pregunta: st.questions[0].q,
+    opciones: [...st.questions[0].opts], correcta: st.questions[0].correct, explicacion: st.questions[0].explain||'',
+  })) : [{ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }];
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'asistente-caso-overlay';
   overlay.innerHTML = `<div class="export-modal" style="max-width:640px;">
-    <h2><i class="ti ti-wand" style="color:var(--gold)"></i> Crear caso interactivo</h2>
+    <h2><i class="ti ti-wand" style="color:var(--gold)"></i> ${c?'Editar caso interactivo':'Crear caso interactivo'}</h2>
     <p>Para tu sesión "<b>${currentUser.grupo_nombre}</b>" — materia: <b>${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title||'—'}</b>.</p>
-    <div class="form-field"><label>Título del caso *</label><input type="text" id="ac-title" placeholder="Ej: Análisis de fondo de inversión panameño"></div>
-    <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="ac-role" placeholder="Ej: Analista de Inversiones"></div>
-    <div class="form-field"><label>Contexto del caso *</label><textarea id="ac-brief" placeholder="Describe la situación que el estudiante debe analizar…"></textarea></div>
-    <div class="form-field"><label>Nombre y rol de la contraparte</label><input type="text" id="ac-character" placeholder="Ej: Marta Solís, Gerente de Tesorería"></div>
-    <div class="form-field"><label>Datos / cifras clave (un dato por línea, formato: etiqueta: valor)</label><textarea id="ac-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%"></textarea></div>
+    <div class="form-field"><label>Título del caso *</label><input type="text" id="ac-title" placeholder="Ej: Análisis de fondo de inversión panameño" value="${(c?.title||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-field"><label>Rol profesional del expediente</label><input type="text" id="ac-role" placeholder="Ej: Analista de Inversiones" value="${(c?.role||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-field"><label>Contexto del caso *</label><textarea id="ac-brief" placeholder="Describe la situación que el estudiante debe analizar…">${c?.brief||''}</textarea></div>
+    <div class="form-field"><label>Nombre y rol de la contraparte</label><input type="text" id="ac-character" placeholder="Ej: Marta Solís, Gerente de Tesorería" value="${c ? `${c.character.name}, ${c.character.role}`.replace(/"/g,'&quot;') : ''}"></div>
+    <div class="form-field"><label>Datos / cifras clave (un dato por línea, formato: etiqueta: valor)</label><textarea id="ac-facts" placeholder="Precio actual: US$ 45.20&#10;Tasa de referencia: 5.1%">${c ? (c.facts||[]).map(f=>f.join(': ')).join('\n') : ''}</textarea></div>
     <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin:14px 0 6px;">Etapas — cada una con su propia pregunta</label>
     <div id="ac-etapas-lista"></div>
     <button class="btn btn-ghost btn-sm" onclick="acAgregarEtapa()" style="margin-bottom:14px;"><i class="ti ti-plus"></i> Añadir etapa</button>
     <div class="auth-msg" id="ac-msg"></div>
     <div style="display:flex;gap:10px;">
-      <button class="auth-submit" onclick="guardarCasoPersonalizado()">Crear caso</button>
+      <button class="auth-submit" onclick="guardarCasoPersonalizado('${filaExistente?.id||''}')">${c?'Guardar cambios':'Crear caso'}</button>
       <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="$('asistente-caso-overlay').remove()">Cancelar</button>
     </div>
   </div>`;
@@ -3047,7 +3040,7 @@ function acRenderEtapas(){
 function acAgregarEtapa(){ asistenteCasoEtapas.push({ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }); acRenderEtapas(); }
 function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
 
-async function guardarCasoPersonalizado(){
+async function guardarCasoPersonalizado(idExistente){
   const title = $('ac-title').value.trim();
   const brief = $('ac-brief').value.trim();
   const role = $('ac-role').value.trim() || 'Analista';
@@ -3063,7 +3056,7 @@ async function guardarCasoPersonalizado(){
   const facts = factsRaw.split('\n').filter(Boolean).map(l => { const [k,...v]=l.split(':'); return [k.trim(), v.join(':').trim()]; });
 
   const caso = {
-    id: 'personalizado-' + Date.now(),
+    id: idExistente ? window.__casoEditandoIdInterno : 'personalizado-' + Date.now(),
     expediente: 'DOC-' + Date.now().toString().slice(-6),
     role, title, brief,
     character: { name: (nombreContraparte||'Contraparte').trim(), role: rolContraparte.join(',').trim() || 'Contraparte del caso', quote: '' },
@@ -3076,12 +3069,12 @@ async function guardarCasoPersonalizado(){
   };
 
   try {
-    const { error } = await sb.from('academy_casos_personalizados').insert({
-      grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, contenido: caso,
-    });
+    const { error } = idExistente
+      ? await sb.from('academy_casos_personalizados').update({ contenido: caso }).eq('id', idExistente)
+      : await sb.from('academy_casos_personalizados').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, contenido: caso });
     if(error) throw error;
     $('asistente-caso-overlay').remove();
-    toast('Caso creado — ya lo pueden ver tus estudiantes.');
+    toast(idExistente ? 'Caso actualizado.' : 'Caso creado — ya lo pueden ver tus estudiantes.');
     await cargarCasosPersonalizados(currentUser.materia_id);
     renderTeacherCaseBank();
   } catch(e){
@@ -3116,7 +3109,8 @@ async function renderTeacherCaseBank(){
       bank.innerHTML='<div class="card-sub" style="padding:14px 0;"><i class="ti ti-inbox"></i> No has creado ningún caso todavía.</div>';
       return;
     }
-    bank.innerHTML = data.map(row => {
+    window.__misCasosPersonalizados = data;
+    bank.innerHTML = data.map((row,i) => {
       const c = row.contenido;
       const materiaNombre = SUBJECTS.find(s=>s.id===row.materia_id)?.title || row.materia_id;
       return `<div class="card" style="margin-bottom:10px;">
@@ -3126,7 +3120,10 @@ async function renderTeacherCaseBank(){
             <div style="font-weight:700;font-size:13.5px;margin-bottom:4px;">${c.title}</div>
             <div style="font-size:12px;color:var(--t2);line-height:1.5;">${(c.brief||'').slice(0,140)}${(c.brief||'').length>140?'…':''}</div>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="eliminarCasoPersonalizado('${row.id}')" style="flex-shrink:0;" title="Eliminar caso"><i class="ti ti-trash"></i></button>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="abrirAsistenteCaso(window.__misCasosPersonalizados[${i}])" title="Editar caso"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="eliminarCasoPersonalizado('${row.id}')" title="Eliminar caso"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -3251,32 +3248,6 @@ function exportPDFCurrentSubject(){
     ${glosario.map(g=>`<div class="gloss-t">${g.t}</div><div class="gloss-d">${g.d}</div>`).join('')}
   `;
   abrirVentanaImpresion(s.title+' — CapitalLab Academy', cuerpo);
-}
-
-// El truco para generar un archivo que Word abre directamente: es HTML
-// normal, pero con el tipo MIME y la extensión de Word — no hace falta
-// ninguna librería aparte para esto.
-function exportWordCurrentSubject(){
-  closeExportModal();
-  if(!currentSubjectId){ toast('Navega a una materia antes de exportar.'); return; }
-  const s = SUBJECTS.find(x=>x.id===currentSubjectId);
-  const resumen = obtenerResumenEfectivo(currentSubjectId);
-  const glosario = obtenerGlosarioEfectivo(currentSubjectId);
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${s.title}</title></head><body style="font-family:Georgia,serif;">
-    <h1>${s.title}</h1>
-    <p style="color:#555;font-size:12px;">CapitalLab Academy${currentUser?.grupo_nombre ? ' · '+currentUser.grupo_nombre : ''} · ${new Date().toLocaleDateString('es-PA')}</p>
-    <h2>Resumen</h2>
-    <p>${resumen}</p>
-    <h2>Glosario</h2>
-    ${glosario.map(g=>`<p><b>${g.t}</b><br>${g.d}</p>`).join('')}
-  </body></html>`;
-  const blob = new Blob(['\ufeff', html], { type:'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${s.title.replace(/\s+/g,'_')}_CapitalLab_Academy.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Documento de Word generado.');
 }
 
 function exportMyAnalysis(){
@@ -3864,6 +3835,96 @@ async function cargarNotificaciones(){
     badge.classList.toggle('hidden', cantidad === 0);
   } catch(e){ /* silencioso — no interrumpe el resto de la app */ }
 }
+// ═══════════════════════════════════════════════════════
+// BÚSQUEDA GLOBAL — antes, encontrar un concepto significaba adivinar
+// en cuál de las doce materias podía estar y entrar una por una. Ahora
+// se busca en el glosario, las tarjetas didácticas y los títulos de
+// casos de TODAS las materias a la vez, con un resultado que lleva
+// directo al lugar correcto.
+function abrirBusquedaGlobal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'busqueda-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-search" style="color:var(--gold)"></i> Buscar en todas las materias</h2>
+    <input type="text" id="busqueda-input" placeholder="Ej: liquidez, derivados, tasa de interés…" style="width:100%;padding:12px 14px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;margin-bottom:14px;" oninput="ejecutarBusquedaGlobal(this.value)">
+    <div id="busqueda-resultados"><div class="auth-hint">Escribe al menos 3 letras para buscar.</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('busqueda-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>$('busqueda-input').focus(), 100);
+}
+function ejecutarBusquedaGlobal(texto){
+  const cont = $('busqueda-resultados');
+  const q = texto.trim().toLowerCase();
+  if(q.length < 3){ cont.innerHTML = '<div class="auth-hint">Escribe al menos 3 letras para buscar.</div>'; return; }
+  const resultados = [];
+  SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+    const data = SUBJECT_DATA[s.id];
+    if(!data) return;
+    (data.studyMaterial?.glossary||[]).forEach(g => {
+      if(g.t.toLowerCase().includes(q) || g.d.toLowerCase().includes(q)){
+        resultados.push({ tipo:'Glosario', materia:s, titulo:g.t, extracto:g.d, accion:`navSubject('${s.id}');showSubjTool('gloss');$('busqueda-overlay').remove();` });
+      }
+    });
+    (data.studyMaterial?.flashcards||[]).forEach(f => {
+      if(f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)){
+        resultados.push({ tipo:'Tarjeta didáctica', materia:s, titulo:f.q, extracto:f.a, accion:`navSubject('${s.id}');showSubjTool('flash');$('busqueda-overlay').remove();` });
+      }
+    });
+    (data.cases||[]).forEach(c => {
+      if(c.title.toLowerCase().includes(q) || c.brief.toLowerCase().includes(q)){
+        resultados.push({ tipo:'Caso', materia:s, titulo:c.title, extracto:c.brief, accion:`navSubject('${s.id}');$('busqueda-overlay').remove();setTimeout(()=>openCase('${c.id}'),350);` });
+      }
+    });
+  });
+  cont.innerHTML = resultados.length ? resultados.slice(0,25).map(r => `
+    <div class="export-opt" style="cursor:pointer;" onclick="${r.accion}">
+      <i class="ti ${r.tipo==='Caso'?'ti-briefcase':r.tipo==='Tarjeta didáctica'?'ti-cards':'ti-book'}" style="color:${r.materia.color};"></i>
+      <div><b>${r.titulo}</b><span>${r.materia.title} · ${r.tipo} · ${r.extracto.slice(0,90)}${r.extracto.length>90?'…':''}</span></div>
+    </div>`).join('') : `<div class="auth-hint">Sin resultados para "${texto}".</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// PANEL DE PROGRESO GENERAL — antes no había ninguna vista que
+// resumiera el avance real de la persona a través de las materias que
+// ha tocado; solo se veía materia por materia. Esto da una foto
+// completa de un vistazo, y motiva a terminar lo que falta.
+// ═══════════════════════════════════════════════════════
+function abrirPanelProgreso(){
+  const materiasConAvance = SUBJECTS.filter(s=>s.kind==='academic').map(s => {
+    const data = SUBJECT_DATA[s.id];
+    const completados = data.cases.filter(c=>caseStatus(c.id)==='completo').length;
+    const enProgreso = data.cases.filter(c=>caseStatus(c.id)==='progreso').length;
+    return { s, completados, enProgreso, total: data.cases.length };
+  }).filter(m => m.completados>0 || m.enProgreso>0);
+
+  const totalCompletados = materiasConAvance.reduce((a,m)=>a+m.completados,0);
+  const totalCasos = SUBJECTS.filter(s=>s.kind==='academic').reduce((a,s)=>a+SUBJECT_DATA[s.id].cases.length,0);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'progreso-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-chart-donut" style="color:var(--gold)"></i> Mi progreso general</h2>
+    <div class="databox" style="margin-bottom:16px;"><table>
+      <tr><td>Casos completados en total</td><td style="font-weight:800;color:var(--gold);">${totalCompletados} / ${totalCasos}</td></tr>
+      <tr><td>Materias con al menos un caso terminado</td><td style="font-weight:800;">${materiasConAvance.filter(m=>m.completados>0).length}</td></tr>
+    </table></div>
+    ${materiasConAvance.length ? materiasConAvance.map(m => `
+      <div class="export-opt" style="cursor:pointer;" onclick="navSubject('${m.s.id}');$('progreso-overlay').remove();">
+        <i class="ti ti-book-2" style="color:${m.s.color};"></i>
+        <div style="flex:1;">
+          <b>${m.s.title}</b>
+          <span>${m.completados} de ${m.total} casos completados${m.enProgreso?` · ${m.enProgreso} en progreso`:''}</span>
+          <div style="background:var(--c3);border-radius:6px;height:6px;margin-top:6px;overflow:hidden;"><div style="background:${m.s.color};height:100%;width:${Math.round(m.completados/m.total*100)}%;"></div></div>
+        </div>
+      </div>`).join('') : '<div class="auth-hint">Todavía no has empezado ningún caso — entra a una materia para comenzar.</div>'}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('progreso-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
 async function abrirNotificaciones(){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
