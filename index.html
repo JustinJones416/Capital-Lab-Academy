@@ -693,11 +693,19 @@ function abrirEditorContenido(subjectId){
     <div id="ec-seccion-resumen">
       <div class="auth-field">
         <label>Resumen</label>
-        <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
           <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('bold')" title="Negrita" style="font-weight:800;width:34px;padding:0;">B</button>
           <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList')" title="Lista" style="width:34px;padding:0;"><i class="ti ti-list"></i></button>
+          <select id="ec-plantilla-resumen" onchange="ecInsertarPlantilla(this.value)" style="padding:0 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t2);font-size:11.5px;">
+            <option value="">+ Insertar una estructura sugerida…</option>
+            <option value="definicion">Definición → Ejemplo → Aplicación práctica</option>
+            <option value="comparacion">Comparación entre dos conceptos</option>
+            <option value="pasos">Guía paso a paso</option>
+            <option value="errores">Conceptos clave + errores comunes</option>
+          </select>
         </div>
         <div id="ec-resumen" contenteditable="true" style="width:100%;min-height:160px;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;line-height:1.6;overflow-y:auto;">${resumenActual}</div>
+        <div class="auth-hint">Las estructuras sugeridas se agregan al final de lo que ya tengas escrito — no borran nada.</div>
         <div class="auth-hint">Selecciona texto y usa los botones de arriba para darle formato — se ve exactamente así para tus estudiantes, sin símbolos de código.</div>
       </div>
     </div>
@@ -732,6 +740,22 @@ function abrirEditorContenido(subjectId){
   selectorCaso.innerHTML = SUBJECT_DATA[subjectId].cases.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
   selectorCaso.value = contenidoEditadoGrupo?.caso_destacado_id || SUBJECT_DATA[subjectId].cases[0].id;
 }
+// Plantillas de estructura para el resumen — pensadas para que el
+// docente nunca empiece desde un cuadro completamente vacío. Se
+// insertan al final de lo que ya haya escrito, con corchetes marcando
+// dónde debe completar cada parte.
+const PLANTILLAS_RESUMEN = {
+  definicion: '<br><br><b>[Concepto]:</b> [definición clara, en una o dos oraciones].<br><br><b>Ejemplo:</b> [un caso numérico o situación concreta que ilustre el concepto].<br><br><b>Aplicación práctica:</b> [cuándo y por qué esto le sirve a un profesional en el día a día].',
+  comparacion: '<br><br><b>[Concepto A]</b> vs. <b>[Concepto B]</b><br>Se parecen en: [similitud].<br>Se diferencian en: [diferencia clave].<br>Se usa [Concepto A] cuando [situación], y [Concepto B] cuando [otra situación].',
+  pasos: '<br><br><b>Paso 1:</b> [primera acción].<br><b>Paso 2:</b> [segunda acción].<br><b>Paso 3:</b> [tercera acción].<br>[Resultado o conclusión esperada al completar los pasos].',
+  errores: '<br><br><b>Lo esencial:</b> [uno o dos puntos que el estudiante debe recordar siempre].<br><br><b>Error común:</b> [una confusión frecuente y por qué está mal].',
+};
+function ecInsertarPlantilla(clave){
+  if(!clave) return;
+  document.getElementById('ec-resumen').innerHTML += PLANTILLAS_RESUMEN[clave];
+  document.getElementById('ec-plantilla-resumen').value = '';
+}
+
 function ecMostrarSeccion(cual){
   ['resumen','gloss','flash','caso'].forEach(s => {
     $('ec-tab-'+s).classList.toggle('active', s===cual);
@@ -3342,6 +3366,8 @@ function renderTeacherView(){
       <h1>Gestión de casos — CapitalLab Academy</h1>
       <p>Importa nuevos casos para cualquier materia del plan de estudio. Los casos guardados se muestran en el banco a continuación del formulario.</p>
     </div>
+    <div id="prof-stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
+    <button class="btn btn-ghost" onclick="generarGuiaDeClase()" style="margin-bottom:20px;"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
     <div class="prof-grid">
       <div>
         <div class="card">
@@ -3378,6 +3404,7 @@ function renderTeacherView(){
   `;
   renderTeacherCaseBank();
   cargarEstudiantesRealesModoProfesor();
+  cargarEstadisticasProfesor();
 }
 
 // Antes esta sección mostraba cuatro nombres inventados con progreso de
@@ -3411,6 +3438,70 @@ async function cargarEstudiantesRealesModoProfesor(){
     cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
 }
+
+// Franja de estadísticas rápidas del modo profesor — un vistazo real
+// antes de bajar a los detalles, no solo una lista de formularios.
+// Guía de clase — un resumen imprimible de todo lo que el docente ya
+// armó para su sesión: el contenido que editó, y cada caso disponible
+// con su expediente, para tenerlo a mano antes de dar la clase, sin
+// tener que entrar a revisar cada pieza por separado.
+async function generarGuiaDeClase(){
+  if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
+  const resumen = obtenerResumenEfectivo(currentUser.materia_id);
+  const glosario = obtenerGlosarioEfectivo(currentUser.materia_id);
+  await cargarCasosPersonalizados(currentUser.materia_id);
+  const casos = SUBJECT_DATA[currentUser.materia_id].cases;
+
+  let cuerpo = `
+    <h1>Guía de clase — ${s.title}</h1>
+    <div class="sub">${currentUser.grupo_nombre} · ${new Date().toLocaleDateString('es-PA',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    <h2>Resumen que verán tus estudiantes</h2>
+    <div>${resumen}</div>
+    <h2>Glosario (${glosario.length} términos)</h2>
+    ${glosario.map(g=>`<div class="gloss-t">${g.t}</div><div class="gloss-d">${g.d.replace(/<br><br>/g,' ')}</div>`).join('')}
+    <h2>Casos disponibles (${casos.length})</h2>
+  `;
+  casos.forEach((c,i) => {
+    cuerpo += `<div class="caso"><h2 style="border:none;margin-top:14px;">${i+1}. ${c.title} ${c.personalizado?'<span style="font-size:11px;color:#888;">(creado por ti)</span>':''}</h2>
+      <div class="sub">Expediente ${c.expediente} · ${c.role} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}</div>
+      <div>${c.brief}</div>
+      ${c.stages.map((st,j)=>{
+        const q = st.questions?.[0];
+        const respuestaCorrecta = q ? (q.type==='mc' ? q.opts[q.correct] : q.correct) : '';
+        return `<div class="preg"><b>Etapa ${j+1}: ${st.title}</b>${q ? `<div class="resp">Pregunta: ${q.q}<br>Respuesta correcta: ${respuestaCorrecta}</div>` : ''}</div>`;
+      }).join('')}
+    </div>`;
+  });
+  abrirVentanaImpresion('Guía de clase — '+s.title, cuerpo);
+}
+
+async function cargarEstadisticasProfesor(){
+  const cont = $('prof-stats-bar');
+  if(!cont || !currentUser?.grupo_id) return;
+  const tarjeta = (icono, valor, etiqueta, color) => `
+    <div class="card" style="padding:14px;text-align:center;">
+      <i class="ti ${icono}" style="font-size:20px;color:${color};margin-bottom:6px;display:block;"></i>
+      <div style="font-size:22px;font-weight:800;line-height:1.1;">${valor}</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${etiqueta}</div>
+    </div>`;
+  try {
+    const [{ data: membresias }, { data: casos }] = await Promise.all([
+      sb.from('academy_membresias').select('progreso, academy_usuarios!inner(rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante'),
+      sb.from('academy_casos_personalizados').select('id').eq('grupo_id', currentUser.grupo_id),
+    ]);
+    const totalEstudiantes = (membresias||[]).length;
+    const totalCasosOficiales = SUBJECT_DATA[currentUser.materia_id]?.cases.filter(c=>!c.personalizado).length || 0;
+    const totalCasosDisponibles = totalCasosOficiales + (casos||[]).length;
+    const promedioAvance = totalEstudiantes ? (membresias.reduce((s,m)=>s+Object.keys(m.progreso||{}).length,0) / totalEstudiantes) : 0;
+    cont.innerHTML =
+      tarjeta('ti-users', totalEstudiantes, `estudiante${totalEstudiantes===1?'':'s'} inscrito${totalEstudiantes===1?'':'s'}`, 'var(--accent2)') +
+      tarjeta('ti-briefcase', totalCasosDisponibles, `caso${totalCasosDisponibles===1?'':'s'} disponible${totalCasosDisponibles===1?'':'s'}`, 'var(--gold)') +
+      tarjeta('ti-sparkles', (casos||[]).length, `creado${(casos||[]).length===1?'':'s'} por ti`, 'var(--teal)') +
+      tarjeta('ti-chart-bar', promedioAvance.toFixed(1), 'promedio de avance', 'var(--green)');
+  } catch(e){ /* la franja es un extra — si falla, el resto del panel sigue funcionando */ }
+}
+
 // ───── Exportación masiva y modal ─────
 function openExportModal(){ $('export-modal-overlay').classList.remove('hidden'); }
 function closeExportModal(){ $('export-modal-overlay').classList.add('hidden'); }
@@ -3783,6 +3874,7 @@ async function entrarConSesion(membresia){
     navPortal();
   }
   cargarNotificaciones();
+  actualizarRachaDeEstudio();
 }
 
 // Oculta el portal completo y la lista de las diez materias — a un
@@ -3994,6 +4086,56 @@ async function cpCancelar(){
 // crear grupos nuevos sin tener que crear otra cuenta. Un estudiante ve
 // su propio grupo, sin poder editarlo.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// RACHA DE ESTUDIO — cuenta días CONSECUTIVOS de actividad real (entrar
+// a la sesión), no solo un contador cosmético. Si se salta un día, la
+// racha se reinicia — igual que cualquier mecánica de racha que
+// realmente motive a volver todos los días, no solo la mayoría.
+// ═══════════════════════════════════════════════════════
+const INSIGNIAS_RACHA = [
+  { dias:3, nombre:'Constancia', icono:'ti-flame', color:'var(--amber)' },
+  { dias:7, nombre:'Una semana completa', icono:'ti-flame', color:'var(--gold)' },
+  { dias:30, nombre:'Un mes de disciplina', icono:'ti-trophy', color:'var(--rose)' },
+];
+async function actualizarRachaDeEstudio(){
+  if(!sb || !currentUser?.usuario_id) return;
+  try {
+    const { data: perfil, error } = await sb.from('academy_usuarios').select('racha_actual,racha_mas_larga,ultima_actividad').eq('id', currentUser.usuario_id).single();
+    if(error) throw error;
+    const hoy = new Date().toISOString().slice(0,10);
+    if(perfil.ultima_actividad === hoy){
+      currentUser.racha_actual = perfil.racha_actual; currentUser.racha_mas_larga = perfil.racha_mas_larga;
+      return; // ya se contó hoy, no hacer nada más
+    }
+    const ayer = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    const nuevaRacha = (perfil.ultima_actividad === ayer) ? (perfil.racha_actual||0)+1 : 1;
+    const nuevaMasLarga = Math.max(nuevaRacha, perfil.racha_mas_larga||0);
+    await sb.from('academy_usuarios').update({ racha_actual: nuevaRacha, racha_mas_larga: nuevaMasLarga, ultima_actividad: hoy }).eq('id', currentUser.usuario_id);
+    currentUser.racha_actual = nuevaRacha; currentUser.racha_mas_larga = nuevaMasLarga;
+    // Si la racha justo alcanzó una insignia nueva, celebrar en el momento
+    // — no esperar a que la persona entre a revisar su cuenta por su cuenta.
+    const insigniaGanada = INSIGNIAS_RACHA.find(i => i.dias === nuevaRacha);
+    if(insigniaGanada) setTimeout(()=>toast(`🔥 ¡${nuevaRacha} días seguidos! Desbloqueaste "${insigniaGanada.nombre}".`), 1200);
+  } catch(e){ /* silencioso — no debe interrumpir el resto de la app */ }
+}
+function dibujarRachaEnCuenta(){
+  const el = $('racha-display');
+  if(!el || !currentUser?.racha_actual) { if(el) el.innerHTML=''; return; }
+  const racha = currentUser.racha_actual;
+  el.innerHTML = `
+    <div class="databox" style="text-align:center;padding:16px;">
+      <i class="ti ti-flame" style="font-size:28px;color:var(--amber);"></i>
+      <div style="font-size:24px;font-weight:800;margin-top:4px;">${racha} día${racha===1?'':'s'} seguido${racha===1?'':'s'}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px;">Racha más larga: ${currentUser.racha_mas_larga||racha} días</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:12px;">
+        ${INSIGNIAS_RACHA.map(i => `<div style="opacity:${racha>=i.dias?'1':'.25'};text-align:center;" title="${i.nombre} — ${i.dias} días">
+          <i class="ti ${i.icono}" style="font-size:20px;color:${i.color};"></i>
+          <div style="font-size:9px;color:var(--t3);">${i.dias}d</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 async function abrirMenuCuenta(){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
@@ -4002,12 +4144,14 @@ async function abrirMenuCuenta(){
   overlay.innerHTML = `<div class="export-modal">
     <h2><i class="ti ti-user-circle" style="color:var(--gold)"></i> Mi cuenta</h2>
     <p>${currentUser.nombre} · ${currentUser.correo}</p>
+    <div id="racha-display" style="margin-bottom:16px;"></div>
     <div id="cuenta-contenido"><div class="auth-hint">Cargando…</div></div>
     <button class="auth-submit" style="background:rgba(232,185,74,.1);color:var(--gold);border:1px solid var(--gold);margin-top:16px;" onclick="cambiarDeSesion()"><i class="ti ti-replace"></i> Cambiar de sesión</button>
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="cerrarMenuCuenta()">Cerrar</button>
     <button class="auth-submit" style="background:transparent;border:1px solid var(--red);color:var(--red);margin-top:10px;" onclick="authLogout()"><i class="ti ti-logout"></i> Cerrar sesión</button>
   </div>`;
   document.body.appendChild(overlay);
+  dibujarRachaEnCuenta();
 
   const cont = $('cuenta-contenido');
   if(currentUser.rol === 'docente'){
