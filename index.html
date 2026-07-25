@@ -688,8 +688,13 @@ function abrirEditorContenido(subjectId){
     </div>
     <div id="ec-seccion-resumen">
       <div class="auth-field">
-        <label>Resumen (admite &lt;b&gt;negrita&lt;/b&gt; y &lt;br&gt; para saltos de línea)</label>
-        <textarea id="ec-resumen" rows="8" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;resize:vertical;">${resumenActual}</textarea>
+        <label>Resumen</label>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('bold')" title="Negrita" style="font-weight:800;width:34px;padding:0;">B</button>
+          <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList')" title="Lista" style="width:34px;padding:0;"><i class="ti ti-list"></i></button>
+        </div>
+        <div id="ec-resumen" contenteditable="true" style="width:100%;min-height:160px;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-family:var(--font-body);font-size:13px;line-height:1.6;overflow-y:auto;">${resumenActual}</div>
+        <div class="auth-hint">Selecciona texto y usa los botones de arriba para darle formato — se ve exactamente así para tus estudiantes, sin símbolos de código.</div>
       </div>
     </div>
     <div id="ec-seccion-gloss" class="hidden">
@@ -756,7 +761,7 @@ function ecAgregarTerminoGlosario(){ window.__ecGlosario.push({t:'',d:''}); ecRe
 function ecQuitarTerminoGlosario(i){ window.__ecGlosario.splice(i,1); ecRenderGlosario(); }
 
 async function guardarContenidoEditado(subjectId){
-  const resumen = $('ec-resumen').value.trim();
+  const resumen = $('ec-resumen').innerHTML.trim();
   const glosario = window.__ecGlosario.filter(g => g.t.trim() && g.d.trim());
   const flashcards = window.__ecFlashcards.filter(f => f.q.trim() && f.a.trim());
   const casoDestacado = $('ec-caso-destacado').value;
@@ -3047,6 +3052,127 @@ function acRenderEtapas(){
 function acAgregarEtapa(){ asistenteCasoEtapas.push({ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }); acRenderEtapas(); }
 function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
 
+// ═══════════════════════════════════════════════════════
+// IMPORTAR CASO DESDE PLANTILLA — sin depender de ningún servicio de
+// IA: una plantilla de texto con una estructura fija y predecible, que
+// la propia aplicación sabe leer. El docente la completa en cualquier
+// editor (incluyendo Word, guardando como texto sin formato) y la sube
+// de vuelta — se convierte en un caso interactivo real.
+// ═══════════════════════════════════════════════════════
+function descargarPlantillaCaso(){
+  const plantilla = `PLANTILLA DE CASO — CAPITALLAB ACADEMY
+Completa cada línea después de los dos puntos, sin borrar ninguna de las etiquetas en mayúsculas ni la línea separadora de cada etapa — la aplicación las usa para leer tu caso. Puedes agregar tantas etapas como quieras, copiando el bloque de etapa completo (desde la línea separadora hasta el final de esa etapa).
+Guarda este archivo como .txt antes de subirlo (en Word: Archivo > Guardar como > Texto sin formato).
+
+TÍTULO DEL CASO: 
+ROL PROFESIONAL DEL EXPEDIENTE: 
+CONTEXTO: 
+CONTRAPARTE (nombre, rol): 
+DATOS CLAVE (una línea por dato, formato "Etiqueta: Valor"):
+
+
+=== ETAPA ===
+TÍTULO DE LA ETAPA: 
+INTRODUCCIÓN: 
+PREGUNTA: 
+OPCIÓN A: 
+OPCIÓN B: 
+OPCIÓN C: 
+OPCIÓN D: 
+RESPUESTA CORRECTA (escribe A, B, C o D): 
+EXPLICACIÓN DE LA RESPUESTA: 
+
+=== ETAPA ===
+TÍTULO DE LA ETAPA: 
+INTRODUCCIÓN: 
+PREGUNTA: 
+OPCIÓN A: 
+OPCIÓN B: 
+OPCIÓN C: 
+OPCIÓN D: 
+RESPUESTA CORRECTA (escribe A, B, C o D): 
+EXPLICACIÓN DE LA RESPUESTA: 
+`;
+  const blob = new Blob([plantilla], { type:'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'Plantilla_Caso_CapitalLab_Academy.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function leerCampo(texto, etiqueta){
+  const regex = new RegExp('^' + etiqueta.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*:\\s*(.*)', 'm');
+  const m = texto.match(regex);
+  return m ? m[1].trim() : '';
+}
+
+async function importarCasoDesdeArchivo(evento){
+  const archivo = evento.target.files[0];
+  if(!archivo) return;
+  const msg = $('ac-import-msg');
+  msg.className = 'auth-msg';
+  try {
+    const texto = await archivo.text();
+    const lineas = texto.split('\n');
+
+    const title = leerCampo(texto, 'TÍTULO DEL CASO');
+    const role = leerCampo(texto, 'ROL PROFESIONAL DEL EXPEDIENTE') || 'Analista';
+    const brief = leerCampo(texto, 'CONTEXTO');
+    const characterRaw = leerCampo(texto, 'CONTRAPARTE (nombre, rol)');
+    if(!title || !brief){ throw new Error('Faltan el título o el contexto del caso — revisa que la plantilla tenga esas líneas completadas.'); }
+
+    // Los datos clave son varias líneas seguidas después de su etiqueta,
+    // hasta la primera línea vacía o el inicio de la primera etapa.
+    const idxDatos = lineas.findIndex(l=>l.startsWith('DATOS CLAVE'));
+    const facts = [];
+    if(idxDatos >= 0){
+      for(let i=idxDatos+1; i<lineas.length; i++){
+        const l = lineas[i].trim();
+        if(!l || l.startsWith('===')) break;
+        const [k,...v] = l.split(':');
+        if(k && v.length) facts.push([k.trim(), v.join(':').trim()]);
+      }
+    }
+
+    // Cada bloque de etapa empieza con una línea que es EXACTAMENTE
+    // "=== ETAPA ===" — se separa así, y no por cualquier aparición del
+    // texto (la propia instrucción de arriba lo menciona entre
+    // comillas como ejemplo, y no debe contarse como una etapa real).
+    const bloquesEtapa = texto.split(/^=== ETAPA ===\s*$/m).slice(1);
+    const stages = bloquesEtapa.map((bloque, i) => {
+      const tituloEtapa = leerCampo(bloque, 'TÍTULO DE LA ETAPA');
+      const intro = leerCampo(bloque, 'INTRODUCCIÓN');
+      const pregunta = leerCampo(bloque, 'PREGUNTA');
+      const opciones = ['A','B','C','D'].map(letra => leerCampo(bloque, 'OPCIÓN '+letra));
+      const respuesta = leerCampo(bloque, 'RESPUESTA CORRECTA (escribe A, B, C o D)').toUpperCase();
+      const explicacion = leerCampo(bloque, 'EXPLICACIÓN DE LA RESPUESTA');
+      const indiceCorrecta = ['A','B','C','D'].indexOf(respuesta);
+      if(!tituloEtapa || !pregunta || opciones.some(o=>!o) || indiceCorrecta===-1) return null;
+      return { id:'s'+(i+1), title:tituloEtapa, icon:'ti-file-text', intro, questions:[{ type:'mc', q:pregunta, opts:opciones, correct:indiceCorrecta, explain: explicacion||'Respuesta correcta.' }] };
+    }).filter(Boolean);
+
+    if(!stages.length){ throw new Error('No se pudo leer ninguna etapa completa — revisa que cada etapa tenga título, pregunta, las cuatro opciones y la respuesta correcta marcada.'); }
+
+    const [nombreContraparte, ...rolContraparte] = characterRaw.split(',');
+    const caso = {
+      id: 'personalizado-' + Date.now(), expediente: 'DOC-' + Date.now().toString().slice(-6),
+      role, title, brief,
+      character: { name: (nombreContraparte||'Contraparte').trim(), role: rolContraparte.join(',').trim() || 'Contraparte del caso', quote:'' },
+      facts, personalizado: true, docenteNombre: currentUser.nombre, stages,
+    };
+    const { error } = await sb.from('academy_casos_personalizados').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, contenido: caso });
+    if(error) throw error;
+    msg.className = 'auth-msg show success'; msg.textContent = `Caso "${title}" importado con ${stages.length} etapa${stages.length===1?'':'s'} — ya lo pueden ver tus estudiantes.`;
+    await cargarCasosPersonalizados(currentUser.materia_id);
+    renderTeacherCaseBank();
+  } catch(e){
+    msg.className = 'auth-msg show error'; msg.textContent = 'No se pudo importar: ' + (e.message||e);
+  } finally {
+    evento.target.value = '';
+  }
+}
+
 async function guardarCasoPersonalizado(idExistente){
   const title = $('ac-title').value.trim();
   const brief = $('ac-brief').value.trim();
@@ -3165,6 +3291,18 @@ function renderTeacherView(){
           <div class="card-title"><i class="ti ti-sparkles"></i> Crear un caso interactivo para mi clase</div>
           <div class="card-sub">A diferencia del formulario anterior, esto crea un caso de verdad interactivo: tus estudiantes responden preguntas reales y reciben retroalimentación, no solo leen un texto. Solo lo ven los estudiantes de tu sesión activa.</div>
           <button class="btn" onclick="abrirAsistenteCaso()"><i class="ti ti-wand"></i> Empezar</button>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title"><i class="ti ti-file-import"></i> O importar un caso ya redactado</div>
+          <div class="card-sub">Descarga la plantilla, complétala en cualquier editor de texto (o Word, guardando como .txt), y súbela — se convierte en un caso interactivo automáticamente. Ideal si ya tienes el caso escrito y no quieres rehacerlo campo por campo.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="descargarPlantillaCaso()"><i class="ti ti-download"></i> Descargar plantilla</button>
+            <label class="btn" style="cursor:pointer;margin:0;">
+              <i class="ti ti-upload"></i> Subir plantilla completada
+              <input type="file" accept=".txt" onchange="importarCasoDesdeArchivo(event)" style="display:none;">
+            </label>
+          </div>
+          <div class="auth-msg" id="ac-import-msg"></div>
         </div>
         <div class="card" style="margin-top:16px;">
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
