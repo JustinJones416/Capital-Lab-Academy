@@ -3299,6 +3299,7 @@ async function renderTeacherCaseBank(){
             <div style="font-size:12px;color:var(--t2);line-height:1.5;">${(c.brief||'').slice(0,140)}${(c.brief||'').length>140?'…':''}</div>
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="btn btn-ghost btn-sm" onclick="previsualizarCaso(window.__misCasosPersonalizados[${i}])" title="Vista previa"><i class="ti ti-eye"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="abrirAsistenteCaso(window.__misCasosPersonalizados[${i}])" title="Editar caso"><i class="ti ti-edit"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="eliminarCasoPersonalizado('${row.id}')" title="Eliminar caso"><i class="ti ti-trash"></i></button>
           </div>
@@ -3309,6 +3310,17 @@ async function renderTeacherCaseBank(){
     bank.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
 }
+// Antes, para ver cómo quedaba un caso recién creado, había que salir
+// del formulario, tocar el interruptor de modo estudiante a mano, y
+// buscar el caso entre los demás. Esto lo hace de un solo clic: cambia
+// a vista previa y abre exactamente ese caso.
+async function previsualizarCaso(fila){
+  setMode('student');
+  await cargarCasosPersonalizados(fila.materia_id);
+  navSubject(fila.materia_id);
+  setTimeout(()=>openCase(fila.contenido.id), 300);
+}
+
 async function eliminarCasoPersonalizado(id){
   if(!confirm('¿Eliminar este caso? Tus estudiantes ya no podrán verlo, y perderán el progreso que tuvieran ahí.')) return;
   try {
@@ -4081,7 +4093,7 @@ function ejecutarBusquedaGlobal(texto){
 // ha tocado; solo se veía materia por materia. Esto da una foto
 // completa de un vistazo, y motiva a terminar lo que falta.
 // ═══════════════════════════════════════════════════════
-function abrirPanelProgreso(){
+async function abrirPanelProgreso(){
   const materiasConAvance = SUBJECTS.filter(s=>s.kind==='academic').map(s => {
     const data = SUBJECT_DATA[s.id];
     const completados = data.cases.filter(c=>caseStatus(c.id)==='completo').length;
@@ -4101,6 +4113,7 @@ function abrirPanelProgreso(){
       <tr><td>Casos completados en total</td><td style="font-weight:800;color:var(--gold);">${totalCompletados} / ${totalCasos}</td></tr>
       <tr><td>Materias con al menos un caso terminado</td><td style="font-weight:800;">${materiasConAvance.filter(m=>m.completados>0).length}</td></tr>
     </table></div>
+    <div id="progreso-vs-clase"></div>
     ${materiasConAvance.length ? materiasConAvance.map(m => `
       <div class="export-opt" style="cursor:pointer;" onclick="navSubject('${m.s.id}');$('progreso-overlay').remove();">
         <i class="ti ti-book-2" style="color:${m.s.color};"></i>
@@ -4113,6 +4126,39 @@ function abrirPanelProgreso(){
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('progreso-overlay').remove()">Cerrar</button>
   </div>`;
   document.body.appendChild(overlay);
+  cargarComparacionConClase();
+}
+
+// Compara el número de casos completados por esta persona, en la
+// materia de su sesión activa, contra el promedio real de sus
+// compañeros — usando los mismos datos que ya existen en la base de
+// datos, no un número inventado. Solo tiene sentido si hay una sesión
+// activa con más de una persona.
+async function cargarComparacionConClase(){
+  const cont = $('progreso-vs-clase');
+  if(!cont || !sb || !currentUser?.grupo_id || !currentUser?.materia_id) return;
+  try {
+    const { data: membresias, error } = await sb.from('academy_membresias')
+      .select('progreso, academy_usuarios!inner(rol)')
+      .eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    if(error) throw error;
+    if(!membresias || membresias.length < 2) return; // no tiene sentido comparar con una sola persona
+
+    const misCompletados = SUBJECT_DATA[currentUser.materia_id].cases.filter(c=>caseStatus(c.id)==='completo').length;
+    const promedioClase = membresias.reduce((suma,m) => suma + Object.keys(m.progreso||{}).length, 0) / membresias.length;
+    const materiaActual = SUBJECTS.find(s=>s.id===currentUser.materia_id);
+    const diferencia = misCompletados - promedioClase;
+
+    cont.innerHTML = `<div class="databox" style="margin-bottom:16px;border-color:${materiaActual?.color||'var(--gold)'};">
+      <table>
+        <tr><td>Tú en ${materiaActual?.title||'tu materia'}</td><td style="font-weight:800;">${misCompletados} caso${misCompletados===1?'':'s'}</td></tr>
+        <tr><td>Promedio de tu clase (${membresias.length} estudiantes)</td><td style="font-weight:800;">${promedioClase.toFixed(1)} casos</td></tr>
+      </table>
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:${diferencia>=0?'var(--green)':'var(--t3)'};font-weight:700;">
+        ${diferencia>0 ? `Vas ${diferencia.toFixed(1)} caso${diferencia>=2?'s':''} por encima del promedio de tu clase.` : diferencia<0 ? `Vas ${Math.abs(diferencia).toFixed(1)} caso${Math.abs(diferencia)>=2?'s':''} por debajo del promedio — todavía hay tiempo de alcanzarlo.` : 'Vas exactamente en el promedio de tu clase.'}
+      </div>
+    </div>`;
+  } catch(e){ /* silencioso — el resto del panel sigue siendo útil aunque esto falle */ }
 }
 
 async function abrirNotificaciones(){
