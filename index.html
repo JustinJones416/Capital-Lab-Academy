@@ -129,6 +129,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .case-card.locked{opacity:.55;cursor:default;}
 .case-card.locked:hover{transform:none;border-color:var(--c3);box-shadow:none;}
 .case-card .lock-badge{position:absolute;top:14px;right:14px;font-size:10px;color:var(--t3);display:flex;align-items:center;gap:4px;font-family:var(--font-mono);}
+.case-banner{width:100%;padding:7px 14px;font-size:11px;font-weight:800;display:flex;align-items:center;gap:6px;box-sizing:border-box;}
 
 /* ───── PERSONAJE / CONTRAPARTE ───── */
 .character-card{display:flex;gap:14px;align-items:flex-start;background:var(--c1);border:1px solid var(--c3);border-radius:var(--r2);padding:16px 18px;margin-bottom:18px;}
@@ -2377,8 +2378,7 @@ function renderSubjectView(subjectId){
     const st=caseStatus(c.id);
     return `<div class="case-card" onclick="openCase('${c.id}')">
       <div class="status ${st==='completo'?'done':''}"></div>
-      ${c.id===destacadoId ? `<div class="lock-badge" style="background:var(--gold);color:#1a1404;"><i class="ti ti-star"></i> Recomendado</div>` : ''}
-      ${c.personalizado ? `<div class="lock-badge" style="background:var(--accent2);color:#fff;"><i class="ti ti-chalkboard"></i> Creado por tu profesor</div>` : ''}
+      ${c.id===destacadoId ? `<div class="case-banner" style="background:var(--gold);color:#1a1404;"><i class="ti ti-star"></i> Recomendado por tu profesor</div>` : c.personalizado ? `<div class="case-banner" style="background:var(--accent2);color:#fff;"><i class="ti ti-chalkboard"></i> Creado por tu profesor</div>` : ''}
       <div class="tab"><span>Expediente ${c.expediente}</span><span class="role">${c.role}</span></div>
       <div class="body-p">
         <span class="casetype"><i class="ti ti-layers-intersect"></i> Caso extenso · 5 etapas</span>
@@ -3008,7 +3008,8 @@ function abrirAsistenteCaso(filaExistente){
   asistenteCasoEtapas = c ? c.stages.map(st => ({
     titulo: st.title, intro: st.intro||'', pregunta: st.questions[0].q,
     opciones: [...st.questions[0].opts], correcta: st.questions[0].correct, explicacion: st.questions[0].explain||'',
-  })) : [{ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }];
+    grafica: st.chart ? { activa:true, titulo:st.chart.title, puntos: st.chart.labels.map((l,li)=>({etiqueta:l, valor:st.chart.data[li]})) } : { activa:false, titulo:'', puntos:[{etiqueta:'',valor:''},{etiqueta:'',valor:''}] },
+  })) : [{ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'', grafica:{ activa:false, titulo:'', puntos:[{etiqueta:'',valor:''},{etiqueta:'',valor:''}] } }];
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'asistente-caso-overlay';
@@ -3047,9 +3048,25 @@ function acRenderEtapas(){
         <input type="text" value="${(op||'').replace(/"/g,'&quot;')}" placeholder="Opción ${oi+1}" oninput="asistenteCasoEtapas[${i}].opciones[${oi}]=this.value" style="flex:1;padding:7px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
       </div>`).join('')}
       <textarea rows="2" placeholder="Explicación de por qué esa es la respuesta correcta" oninput="asistenteCasoEtapas[${i}].explicacion=this.value" style="width:100%;padding:8px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:6px;">${e.explicacion||''}</textarea>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c4);">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" ${e.grafica?.activa?'checked':''} onchange="acAlternarGrafica(${i},this.checked)"> <i class="ti ti-chart-bar"></i> Agregar una gráfica a esta etapa (opcional)
+        </label>
+        ${e.grafica?.activa ? `
+          <div style="margin-top:8px;">
+            <input type="text" value="${(e.grafica.titulo||'').replace(/"/g,'&quot;')}" placeholder="Título de la gráfica, ej: Ingresos por trimestre" oninput="asistenteCasoEtapas[${i}].grafica.titulo=this.value" style="width:100%;padding:7px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;margin-bottom:6px;">
+            ${e.grafica.puntos.map((p,pi) => `<div style="display:flex;gap:6px;margin-bottom:5px;">
+              <input type="text" value="${(p.etiqueta||'').replace(/"/g,'&quot;')}" placeholder="Ej: Trimestre 1" oninput="asistenteCasoEtapas[${i}].grafica.puntos[${pi}].etiqueta=this.value" style="flex:2;padding:6px 8px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+              <input type="number" value="${p.valor||''}" placeholder="Valor" oninput="asistenteCasoEtapas[${i}].grafica.puntos[${pi}].valor=this.value" style="flex:1;padding:6px 8px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+            </div>`).join('')}
+            <button type="button" class="btn btn-ghost btn-sm" onclick="acAgregarPuntoGrafica(${i})" style="padding:5px 10px;font-size:11px;">+ Añadir barra</button>
+          </div>` : ''}
+      </div>
     </div>`).join('');
 }
-function acAgregarEtapa(){ asistenteCasoEtapas.push({ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'' }); acRenderEtapas(); }
+function acAgregarEtapa(){ asistenteCasoEtapas.push({ titulo:'', intro:'', pregunta:'', opciones:['','','',''], correcta:0, explicacion:'', grafica:{ activa:false, titulo:'', puntos:[{etiqueta:'',valor:''},{etiqueta:'',valor:''}] } }); acRenderEtapas(); }
+function acAlternarGrafica(i, activa){ asistenteCasoEtapas[i].grafica.activa = activa; acRenderEtapas(); }
+function acAgregarPuntoGrafica(i){ if(asistenteCasoEtapas[i].grafica.puntos.length>=6) return; asistenteCasoEtapas[i].grafica.puntos.push({etiqueta:'',valor:''}); acRenderEtapas(); }
 function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
 
 // ═══════════════════════════════════════════════════════
@@ -3061,17 +3078,33 @@ function acQuitarEtapa(i){ asistenteCasoEtapas.splice(i,1); acRenderEtapas(); }
 // ═══════════════════════════════════════════════════════
 function descargarPlantillaCaso(){
   const plantilla = `PLANTILLA DE CASO — CAPITALLAB ACADEMY
-Completa cada línea después de los dos puntos, sin borrar ninguna de las etiquetas en mayúsculas ni la línea separadora de cada etapa — la aplicación las usa para leer tu caso. Puedes agregar tantas etapas como quieras, copiando el bloque de etapa completo (desde la línea separadora hasta el final de esa etapa).
-Guarda este archivo como .txt antes de subirlo (en Word: Archivo > Guardar como > Texto sin formato).
 
-TÍTULO DEL CASO: 
-ROL PROFESIONAL DEL EXPEDIENTE: 
-CONTEXTO: 
-CONTRAPARTE (nombre, rol): 
-DATOS CLAVE (una línea por dato, formato "Etiqueta: Valor"):
+CÓMO USAR ESTA PLANTILLA
+Este archivo ya viene lleno con un caso de ejemplo completo, de principio a fin — ábrelo, mira cómo está armado, y escribe tu propio caso encima, reemplazando cada línea. No borres ninguna palabra en MAYÚSCULAS antes de los dos puntos, ni las líneas que dicen "--- NUEVA ETAPA ---": la aplicación las usa para saber dónde empieza y termina cada parte.
+Para marcar cuál opción es la correcta, escribe exactamente "[CORRECTA]" al final de esa opción — así, sin tener que recordar ninguna letra por separado.
+Guarda este archivo como texto sin formato antes de subirlo (en Word: Archivo > Guardar como > Texto sin formato, extensión .txt).
 
+TÍTULO DEL CASO: Evaluación de una línea de crédito rotativo
+MATERIA A LA QUE PERTENECE (referencia — la materia real es siempre la de tu sesión activa): Mercado Bancario
+ROL PROFESIONAL DEL EXPEDIENTE: Analista de Crédito Comercial
+CONTEXTO: Una empresa mediana solicita una línea de crédito rotativo de US$ 300,000 para financiar su capital de trabajo. El banco te pide evaluar si la solicitud es razonable antes de pasarla a comité.
+CONTRAPARTE (nombre, rol): Ricardo Aguilar, Dueño de la empresa solicitante
+DATOS CLAVE (una línea por dato, formato "Etiqueta: Valor" — agrega o quita las que necesites):
+Monto solicitado: US$ 300,000
+Ventas anuales de la empresa: US$ 1,800,000
+Razón corriente actual: 1.4
 
-=== ETAPA ===
+--- NUEVA ETAPA ---
+TÍTULO DE LA ETAPA: Capacidad de pago de la empresa
+INTRODUCCIÓN: Antes de aprobar cualquier línea de crédito, hay que confirmar que la empresa genera suficiente flujo para cubrirla sin ahogar su operación.
+PREGUNTA: Si el monto solicitado es de US$ 300,000 y las ventas anuales son de US$ 1,800,000, ¿qué porcentaje de las ventas anuales representa la línea solicitada?
+OPCIÓN A: 8.3%
+OPCIÓN B: 16.7% [CORRECTA]
+OPCIÓN C: 25.0%
+OPCIÓN D: 60.0%
+EXPLICACIÓN DE LA RESPUESTA CORRECTA: 300,000 dividido entre 1,800,000 es 16.7% — un dato de referencia útil para comparar contra el promedio del sector antes de decidir.
+
+--- NUEVA ETAPA (borra este bloque si tu caso solo necesita una etapa, o cópialo para agregar más) ---
 TÍTULO DE LA ETAPA: 
 INTRODUCCIÓN: 
 PREGUNTA: 
@@ -3079,19 +3112,7 @@ OPCIÓN A:
 OPCIÓN B: 
 OPCIÓN C: 
 OPCIÓN D: 
-RESPUESTA CORRECTA (escribe A, B, C o D): 
-EXPLICACIÓN DE LA RESPUESTA: 
-
-=== ETAPA ===
-TÍTULO DE LA ETAPA: 
-INTRODUCCIÓN: 
-PREGUNTA: 
-OPCIÓN A: 
-OPCIÓN B: 
-OPCIÓN C: 
-OPCIÓN D: 
-RESPUESTA CORRECTA (escribe A, B, C o D): 
-EXPLICACIÓN DE LA RESPUESTA: 
+EXPLICACIÓN DE LA RESPUESTA CORRECTA: 
 `;
   const blob = new Blob([plantilla], { type:'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -3135,24 +3156,29 @@ async function importarCasoDesdeArchivo(evento){
       }
     }
 
-    // Cada bloque de etapa empieza con una línea que es EXACTAMENTE
-    // "=== ETAPA ===" — se separa así, y no por cualquier aparición del
-    // texto (la propia instrucción de arriba lo menciona entre
-    // comillas como ejemplo, y no debe contarse como una etapa real).
-    const bloquesEtapa = texto.split(/^=== ETAPA ===\s*$/m).slice(1);
+    // Cada bloque de etapa empieza con una línea que arranca con
+    // "--- NUEVA ETAPA" (puede tener texto extra después, como en el
+    // bloque de ejemplo de la plantilla) — se separa por eso, anclado
+    // al inicio de línea para no confundirse con ninguna mención del
+    // texto dentro de las instrucciones.
+    const bloquesEtapa = texto.split(/^--- NUEVA ETAPA.*$/m).slice(1);
     const stages = bloquesEtapa.map((bloque, i) => {
       const tituloEtapa = leerCampo(bloque, 'TÍTULO DE LA ETAPA');
       const intro = leerCampo(bloque, 'INTRODUCCIÓN');
       const pregunta = leerCampo(bloque, 'PREGUNTA');
-      const opciones = ['A','B','C','D'].map(letra => leerCampo(bloque, 'OPCIÓN '+letra));
-      const respuesta = leerCampo(bloque, 'RESPUESTA CORRECTA (escribe A, B, C o D)').toUpperCase();
-      const explicacion = leerCampo(bloque, 'EXPLICACIÓN DE LA RESPUESTA');
-      const indiceCorrecta = ['A','B','C','D'].indexOf(respuesta);
+      // La opción correcta es la que termina en "[CORRECTA]" — se
+      // detecta y se limpia esa marca antes de mostrarla, en vez de
+      // pedir que se escriba una letra aparte que hay que hacer
+      // corresponder a mano con la opción de arriba.
+      const opcionesCrudas = ['A','B','C','D'].map(letra => leerCampo(bloque, 'OPCIÓN '+letra));
+      const indiceCorrecta = opcionesCrudas.findIndex(o => /\[CORRECTA\]\s*$/i.test(o));
+      const opciones = opcionesCrudas.map(o => o.replace(/\s*\[CORRECTA\]\s*$/i, '').trim());
+      const explicacion = leerCampo(bloque, 'EXPLICACIÓN DE LA RESPUESTA CORRECTA');
       if(!tituloEtapa || !pregunta || opciones.some(o=>!o) || indiceCorrecta===-1) return null;
       return { id:'s'+(i+1), title:tituloEtapa, icon:'ti-file-text', intro, questions:[{ type:'mc', q:pregunta, opts:opciones, correct:indiceCorrecta, explain: explicacion||'Respuesta correcta.' }] };
     }).filter(Boolean);
 
-    if(!stages.length){ throw new Error('No se pudo leer ninguna etapa completa — revisa que cada etapa tenga título, pregunta, las cuatro opciones y la respuesta correcta marcada.'); }
+    if(!stages.length){ throw new Error('No se pudo leer ninguna etapa completa — revisa que cada etapa tenga título, pregunta, las cuatro opciones, y que una de ellas termine en "[CORRECTA]".'); }
 
     const [nombreContraparte, ...rolContraparte] = characterRaw.split(',');
     const caso = {
@@ -3195,10 +3221,17 @@ async function guardarCasoPersonalizado(idExistente){
     character: { name: (nombreContraparte||'Contraparte').trim(), role: rolContraparte.join(',').trim() || 'Contraparte del caso', quote: '' },
     facts,
     personalizado: true, docenteNombre: currentUser.nombre,
-    stages: etapasValidas.map((e,i) => ({
-      id: 's'+(i+1), title: e.titulo, icon: 'ti-file-text', intro: e.intro,
-      questions: [{ type:'mc', q: e.pregunta, opts: e.opciones, correct: e.correcta, explain: e.explicacion || 'Respuesta correcta.' }],
-    })),
+    stages: etapasValidas.map((e,i) => {
+      const puntosValidos = (e.grafica?.puntos||[]).filter(p => p.etiqueta.trim() && p.valor !== '');
+      const chart = (e.grafica?.activa && e.grafica.titulo.trim() && puntosValidos.length>=2)
+        ? { type:'bar', title: e.grafica.titulo, labels: puntosValidos.map(p=>p.etiqueta), data: puntosValidos.map(p=>parseFloat(p.valor)||0), color: 'var(--accent2)' }
+        : undefined;
+      return {
+        id: 's'+(i+1), title: e.titulo, icon: 'ti-file-text', intro: e.intro,
+        questions: [{ type:'mc', q: e.pregunta, opts: e.opciones, correct: e.correcta, explain: e.explicacion || 'Respuesta correcta.' }],
+        ...(chart ? { chart } : {}),
+      };
+    }),
   };
 
   try {
