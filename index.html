@@ -3152,6 +3152,11 @@ async function descargarPlantillaCaso(){
     campo('OPCIÓN C', '25.0%'),
     campo('OPCIÓN D', '60.0%'),
     campo('EXPLICACIÓN DE LA RESPUESTA CORRECTA', '300,000 dividido entre 1,800,000 es 16.7% — un dato de referencia útil para comparar contra el promedio del sector antes de decidir.'),
+    new Paragraph({ children:[new TextRun({text:'GRÁFICA', bold:true}), new TextRun(' (opcional — borra estas líneas si esta etapa no necesita gráfica):')], spacing:{after:80} }),
+    campo('TÍTULO DE LA GRÁFICA', 'Ventas anuales vs. monto solicitado (US$)'),
+    new Paragraph({ children:[new TextRun({text:'DATOS DE LA GRÁFICA', bold:true}), new TextRun(' (una línea por barra, formato "Etiqueta: Valor"):')], spacing:{after:80} }),
+    new Paragraph({ text:'Ventas anuales: 1800000', spacing:{after:40} }),
+    new Paragraph({ text:'Monto solicitado: 300000', spacing:{after:200} }),
     new Paragraph({ text:'--- NUEVA ETAPA (borra este bloque si tu caso solo necesita una etapa, o cópialo para agregar más) ---', heading:HeadingLevel.HEADING_2, spacing:{before:200} }),
     campo('TÍTULO DE LA ETAPA', ''),
     campo('INTRODUCCIÓN', ''),
@@ -3161,6 +3166,9 @@ async function descargarPlantillaCaso(){
     campo('OPCIÓN C', ''),
     campo('OPCIÓN D', ''),
     campo('EXPLICACIÓN DE LA RESPUESTA CORRECTA', ''),
+    new Paragraph({ children:[new TextRun({text:'GRÁFICA', bold:true}), new TextRun(' (opcional — borra estas líneas si esta etapa no necesita gráfica):')], spacing:{after:80} }),
+    campo('TÍTULO DE LA GRÁFICA', ''),
+    new Paragraph({ children:[new TextRun({text:'DATOS DE LA GRÁFICA', bold:true}), new TextRun(' (una línea por barra, formato "Etiqueta: Valor"):')], spacing:{after:80} }),
   ]}]});
   const blob = await Packer.toBlob(doc);
   const url = URL.createObjectURL(blob);
@@ -3198,16 +3206,21 @@ async function importarCasoDesdeArchivo(evento){
     const characterRaw = leerCampo(texto, 'CONTRAPARTE (nombre, rol)');
     if(!title || !brief){ throw new Error('Faltan el título o el contexto del caso — revisa que la plantilla tenga esas líneas completadas.'); }
 
-    // Los datos clave son varias líneas seguidas después de su etiqueta,
-    // hasta la primera línea vacía o el inicio de la primera etapa.
+    // Los datos clave son varias líneas seguidas después de su etiqueta.
+    // Mammoth inserta una línea en blanco entre cada párrafo del Word,
+    // así que esas líneas vacías se ignoran en vez de tratarse como el
+    // final de la lista — se corta solo al llegar al siguiente campo en
+    // mayúsculas o al marcador de nueva etapa.
     const idxDatos = lineas.findIndex(l=>l.startsWith('DATOS CLAVE'));
     const facts = [];
     if(idxDatos >= 0){
       for(let i=idxDatos+1; i<lineas.length; i++){
         const l = lineas[i].trim();
-        if(!l || l.startsWith('===')) break;
+        if(!l) continue;
+        if(l.startsWith('---') || /^[A-ZÁÉÍÓÚÑ ]+\s*[:(]/.test(l)) break;
         const [k,...v] = l.split(':');
         if(k && v.length) facts.push([k.trim(), v.join(':').trim()]);
+        else break;
       }
     }
 
@@ -3230,7 +3243,28 @@ async function importarCasoDesdeArchivo(evento){
       const opciones = opcionesCrudas.map(o => o.replace(/\s*\[CORRECTA\]\s*$/i, '').trim());
       const explicacion = leerCampo(bloque, 'EXPLICACIÓN DE LA RESPUESTA CORRECTA');
       if(!tituloEtapa || !pregunta || opciones.some(o=>!o) || indiceCorrecta===-1) return null;
-      return { id:'s'+(i+1), title:tituloEtapa, icon:'ti-file-text', intro, questions:[{ type:'mc', q:pregunta, opts:opciones, correct:indiceCorrecta, explain: explicacion||'Respuesta correcta.' }] };
+      // La gráfica es opcional — si la etapa tiene un título de gráfica
+      // y al menos dos puntos de datos después de esa etiqueta, se
+      // arma; si no, la etapa se guarda igual, solo sin gráfica.
+      const tituloGrafica = leerCampo(bloque, 'TÍTULO DE LA GRÁFICA');
+      const lineasBloque = bloque.split('\n');
+      const idxDatosGrafica = lineasBloque.findIndex(l=>l.startsWith('DATOS DE LA GRÁFICA'));
+      const puntosGrafica = [];
+      if(idxDatosGrafica >= 0){
+        for(let j=idxDatosGrafica+1; j<lineasBloque.length; j++){
+          const l = lineasBloque[j].trim();
+          if(!l) continue;
+          if(l.startsWith('---') || /^[A-ZÁÉÍÓÚÑ ]+\s*[:(]/.test(l)) break;
+          const [k,...v] = l.split(':');
+          const valor = parseFloat(v.join(':'));
+          if(!k || v.length===0 || isNaN(valor)) break;
+          puntosGrafica.push([k.trim(), valor]);
+        }
+      }
+      const chart = (tituloGrafica && puntosGrafica.length>=2)
+        ? { type:'bar', title:tituloGrafica, labels:puntosGrafica.map(p=>p[0]), data:puntosGrafica.map(p=>p[1]), color:'var(--accent2)' }
+        : undefined;
+      return { id:'s'+(i+1), title:tituloEtapa, icon:'ti-file-text', intro, questions:[{ type:'mc', q:pregunta, opts:opciones, correct:indiceCorrecta, explain: explicacion||'Respuesta correcta.' }], ...(chart?{chart}:{}) };
     }).filter(Boolean);
 
     if(!stages.length){ throw new Error('No se pudo leer ninguna etapa completa — revisa que cada etapa tenga título, pregunta, las cuatro opciones, y que una de ellas termine en "[CORRECTA]".'); }
