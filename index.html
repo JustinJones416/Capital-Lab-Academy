@@ -3381,11 +3381,10 @@ function renderTeacherView(){
     <div id="prof-stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
       <button class="btn" onclick="abrirPreguntaRelampago()" style="background:linear-gradient(135deg,var(--rose),var(--gold));border:none;color:#1a1404;font-weight:800;"><i class="ti ti-bolt"></i> Lanzar pregunta en vivo</button>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-        <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
-        <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
-        <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
-      </div>
+      <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
+      <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
+      <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
+    </div>
     </div>
     <div class="prof-grid">
       <div>
@@ -3632,6 +3631,7 @@ async function publicarAnuncio(){
 // persona no haya visto todavía, recordando el último visto por grupo
 // en este dispositivo, para no repetirle lo mismo cada vez que entra.
 let __verificandoAnuncios = false;
+
 async function verificarAnunciosDeClase(){
   if(!sb || !currentUser?.grupo_id) return;
   if($('anuncios-ver-overlay') || __verificandoAnuncios) return; // ya se está mostrando, o ya hay una verificación en curso
