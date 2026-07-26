@@ -505,6 +505,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <button class="btn btn-ghost btn-sm" onclick="alternarMenuTopbarMas(event)" title="Más opciones"><i class="ti ti-dots-vertical"></i></button>
     <div id="menu-topbar-mas" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r2);box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:200;min-width:200px;padding:6px;">
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirPanelProgreso();"><i class="ti ti-chart-donut"></i> Mi progreso general</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirApuntesCentralizados();"><i class="ti ti-notes"></i> Mis apuntes (todas las materias)</button>
       <button class="btn btn-ghost btn-sm" id="menu-btn-companeros" style="width:100%;justify-content:flex-start;margin-bottom:2px;" onclick="cerrarMenuTopbarMas();abrirCompaneros();"><i class="ti ti-users"></i> Compañeros de clase</button>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;" onclick="cerrarMenuTopbarMas();openExportModal();"><i class="ti ti-package-export"></i> Exportar material</button>
     </div>
@@ -2411,6 +2412,7 @@ async function navSubject(subjectId){
   showView('view-subject');
   setActiveNav(null); setActiveSubjectPill(subjectId);
   afterNav();
+  if(currentUser?.grupo_id && currentUser?.materia_id===subjectId) verificarExamenAsignado(subjectId);
 }
 
 function renderSubjectView(subjectId){
@@ -2472,6 +2474,7 @@ function renderSubjectView(subjectId){
         <span><i class="ti ti-info-circle"></i> Repasa los conceptos clave de la materia antes de entrar a los casos. Te ayudará a resolverlos con más seguridad.</span>
         ${(currentUser?.rol==='docente' && currentUser?.materia_id===subjectId) ? `<button class="btn btn-ghost btn-sm" onclick="abrirEditorContenido('${subjectId}')" style="flex-shrink:0;"><i class="ti ti-edit"></i> Editar para mi clase</button>` : ''}
       </div>
+      <div id="examen-asignado-banner"></div>
       <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
@@ -3433,6 +3436,8 @@ function renderTeacherView(){
       <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
       <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
       <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
+      <button class="btn btn-ghost" onclick="abrirAsignarExamen()"><i class="ti ti-writing"></i> Asignar examen a la clase</button>
+      <button class="btn btn-ghost" onclick="abrirResultadosExamenAsignado()"><i class="ti ti-list-check"></i> Ver resultados de exámenes</button>
     </div>
     </div>
     <div class="prof-grid">
@@ -4587,14 +4592,26 @@ function dibujarPreguntaExamen(){
       if(r.correcta) porConcepto[r.stageTitle].correctas++;
     });
     const debiles = Object.entries(porConcepto).filter(([,v])=>v.correctas < v.total).sort((a,b)=>(a[1].correctas/a[1].total)-(b[1].correctas/b[1].total));
+    // Guarda qué preguntas ya se usaron y cuáles conceptos fallaron,
+    // para poder armar un reintento que se enfoque solo en eso — no es
+    // un examen nuevo al azar, es el mismo pero recortado a lo que de
+    // verdad hace falta repasar.
+    st.conceptosDebiles = debiles.map(([titulo])=>titulo);
+    if(st.examenAsignadoId && !st.resultadoYaGuardado){
+      st.resultadoYaGuardado = true;
+      sb.from('academy_examenes_resultados').insert({ examen_id: st.examenAsignadoId, usuario_id: currentUser.usuario_id, correctas, total: st.preguntas.length }).then(()=>{}).catch(()=>{});
+    }
     cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
+      ${st.examenAsignadoId ? '<div class="eyebrow" style="color:var(--gold);"><i class="ti ti-writing"></i> Examen asignado por tu profesor — resultado guardado</div>' : ''}
       <div class="score" style="font-size:48px;font-weight:800;color:var(--gold);">${correctas}/${st.preguntas.length}</div>
       <p>Preguntas correctas en tu examen de práctica</p>
     </div>
     <div class="card">
       <div class="card-title"><i class="ti ti-target-arrow" style="color:var(--red)"></i> Conceptos para repasar antes del examen real</div>
       ${debiles.length ? debiles.map(([titulo,v]) => `<div class="export-opt" style="cursor:default;"><i class="ti ti-alert-triangle" style="color:var(--red);"></i><div><b>${titulo}</b><span>${v.correctas}/${v.total} correctas</span></div></div>`).join('') : '<div class="auth-hint"><i class="ti ti-confetti"></i> Respondiste bien en todos los conceptos evaluados.</div>'}
-      <button class="btn" style="width:100%;justify-content:center;margin-top:14px;" onclick="navSubject('${st.subjectId}')"><i class="ti ti-arrow-left"></i> Volver a la materia</button>
+      ${debiles.length ? `<button class="btn" style="width:100%;justify-content:center;margin-top:14px;background:var(--red);" onclick="reintentarExamenEnfocado()"><i class="ti ti-refresh"></i> Reintentar enfatizando lo que fallé</button>` : ''}
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px;" onclick="abrirConstructorExamenPropio('${st.subjectId}')"><i class="ti ti-adjustments"></i> Armar mi propio repaso (elegir conceptos)</button>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px;" onclick="navSubject('${st.subjectId}')"><i class="ti ti-arrow-left"></i> Volver a la materia</button>
     </div>`;
     return;
   }
@@ -4632,6 +4649,161 @@ function responderExamenPracticaNum(){
   fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la respuesta correcta ('+q.correct+').'}</b> ${q.explain||''}</div>
     <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
 }
+// Reintento enfocado — usa las MISMAS preguntas ya cargadas (todas las
+// de la materia), pero recortadas solo a los conceptos donde falló, en
+// vez de armar un examen nuevo al azar que repita lo que ya domina.
+function reintentarExamenEnfocado(){
+  const st = examenPracticaState;
+  const preguntasEnfocadas = st.preguntas.filter(p => st.conceptosDebiles.includes(p.stageTitle));
+  for(let i=preguntasEnfocadas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntasEnfocadas[i],preguntasEnfocadas[j]]=[preguntasEnfocadas[j],preguntasEnfocadas[i]]; }
+  examenPracticaState = { subjectId: st.subjectId, preguntas: preguntasEnfocadas, index:0, respuestas:[] };
+  dibujarPreguntaExamen();
+}
+
+// Repaso propio — el estudiante elige exactamente qué conceptos/etapas
+// quiere practicar, en vez de recibir siempre todas las preguntas de
+// la materia. Útil cuando ya sabe en qué necesita enfocarse.
+function abrirConstructorExamenPropio(subjectId){
+  const data = SUBJECT_DATA[subjectId];
+  const conceptos = [];
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions?.length && !conceptos.some(x=>x.titulo===st.title)) conceptos.push({ titulo: st.title, caso: c.title }); }));
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'constructor-repaso-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-adjustments" style="color:var(--gold)"></i> Armar mi propio repaso</h2>
+    <p>Elige los conceptos que quieres practicar — puedes marcar solo los que te cuestan más.</p>
+    <div id="constructor-repaso-lista">
+      ${conceptos.map((c,i) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--c3);cursor:pointer;">
+        <input type="checkbox" class="concepto-check" value="${c.titulo.replace(/"/g,'&quot;')}" checked>
+        <div><b style="font-size:13px;">${c.titulo}</b><div style="font-size:11px;color:var(--t3);">${c.caso}</div></div>
+      </label>`).join('')}
+    </div>
+    <button class="auth-submit" style="margin-top:14px;" onclick="iniciarExamenPersonalizado('${subjectId}')">Empezar repaso con lo elegido</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('constructor-repaso-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+// ═══════════════════════════════════════════════════════
+// EXAMEN ASIGNADO POR EL DOCENTE — reutiliza las mismas preguntas reales
+// de la materia (no pide escribir un banco aparte), pero a diferencia
+// del repaso personal del estudiante, esto queda guardado como una
+// tarea formal para toda la clase, y el docente puede ver quién lo hizo
+// y con qué resultado.
+// ═══════════════════════════════════════════════════════
+function abrirAsignarExamen(){
+  if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const data = SUBJECT_DATA[currentUser.materia_id];
+  const conceptos = [];
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions?.length && !conceptos.some(x=>x.titulo===st.title)) conceptos.push({ titulo: st.title, caso: c.title }); }));
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'asignar-examen-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-writing" style="color:var(--gold)"></i> Asignar examen a la clase</h2>
+    <p>Tus estudiantes lo verán como una tarea pendiente al entrar a "${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title}".</p>
+    <div class="form-field"><label>Título del examen</label><input type="text" id="ax-titulo" placeholder="Ej: Examen parcial — Unidad 2" value="Examen asignado"></div>
+    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin:10px 0 6px;">Conceptos a incluir</label>
+    <div>
+      ${conceptos.map(c => `<label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--c3);cursor:pointer;">
+        <input type="checkbox" class="ax-concepto-check" value="${c.titulo.replace(/"/g,'&quot;')}" checked>
+        <div><b style="font-size:12.5px;">${c.titulo}</b><div style="font-size:10.5px;color:var(--t3);">${c.caso}</div></div>
+      </label>`).join('')}
+    </div>
+    <div class="auth-msg" id="ax-msg"></div>
+    <button class="auth-submit" style="margin-top:14px;" onclick="publicarExamenAsignado()">Asignar a la clase</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('asignar-examen-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function publicarExamenAsignado(){
+  const titulo = $('ax-titulo').value.trim() || 'Examen asignado';
+  const elegidos = [...document.querySelectorAll('.ax-concepto-check:checked')].map(el=>el.value);
+  const msg = $('ax-msg');
+  if(!elegidos.length){ msg.className='auth-msg show error'; msg.textContent='Elige al menos un concepto.'; return; }
+  try {
+    const { error } = await sb.from('academy_examenes_asignados').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos });
+    if(error) throw error;
+    $('asignar-examen-overlay').remove();
+    toast('Examen asignado — ya lo pueden ver tus estudiantes.');
+    notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Tu profesor asignó un examen: "${titulo}".`);
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo asignar: ' + (e.message||e);
+  }
+}
+// Resultados del examen asignado — cuántos lo han hecho y con qué nota,
+// para que el docente no tenga que preguntarlo uno por uno.
+async function abrirResultadosExamenAsignado(){
+  if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'resultados-examen-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-list-check" style="color:var(--gold)"></i> Resultados de exámenes asignados</h2>
+    <div id="resultados-examen-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('resultados-examen-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    if(error) throw error;
+    if(!examenes || !examenes.length){ $('resultados-examen-contenido').innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen.</div>'; return; }
+    const { count: totalEstudiantes } = await sb.from('academy_membresias').select('id', {count:'exact', head:true}).eq('grupo_id', currentUser.grupo_id);
+    let html = '';
+    for(const ex of examenes){
+      const { data: resultados } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', ex.id);
+      const n = (resultados||[]).length;
+      const promedio = n ? (resultados.reduce((s,r)=>s+r.correctas/r.total,0)/n*100).toFixed(0) : 0;
+      html += `<div class="card" style="margin-bottom:10px;">
+        <b>${ex.titulo}</b>
+        <div class="sub" style="margin-top:4px;">${SUBJECTS.find(s=>s.id===ex.materia_id)?.title||ex.materia_id}</div>
+        <div style="margin-top:8px;font-size:12.5px;color:var(--t2);">${n} de ${totalEstudiantes??'?'} estudiantes lo han completado · promedio: ${promedio}%</div>
+      </div>`;
+    }
+    $('resultados-examen-contenido').innerHTML = html;
+  } catch(e){
+    $('resultados-examen-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+// Se revisa al entrar a la materia — si hay un examen activo que el
+// estudiante todavía no completó, aparece como tarjeta destacada.
+async function verificarExamenAsignado(subjectId){
+  const cont = $('examen-asignado-banner');
+  if(!cont || !sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
+  try {
+    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
+    if(!examen) return;
+    const { data: yaHecho } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', examen.id).eq('usuario_id', currentUser.usuario_id).maybeSingle();
+    cont.innerHTML = yaHecho
+      ? `<div class="card" style="border-color:var(--green);margin-bottom:16px;"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-circle-check" style="font-size:24px;color:var(--green);"></i><div><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Ya lo completaste — ${yaHecho.correctas}/${yaHecho.total} correctas</div></div></div></div>`
+      : `<div class="card" style="border-color:var(--gold);margin-bottom:16px;cursor:pointer;" onclick="iniciarExamenAsignado('${examen.id}','${subjectId}',${JSON.stringify(examen.conceptos).replace(/"/g,'&quot;')})"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-writing" style="font-size:24px;color:var(--gold);"></i><div style="flex:1;"><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Tu profesor asignó este examen — toca para empezarlo</div></div><i class="ti ti-chevron-right"></i></div></div>`;
+  } catch(e){ /* silencioso */ }
+}
+function iniciarExamenAsignado(examenId, subjectId, conceptos){
+  const data = SUBJECT_DATA[subjectId];
+  const preguntas = [];
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  if(!preguntas.length){ toast('Este examen no tiene preguntas disponibles.'); return; }
+  for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
+  examenPracticaState = { subjectId, preguntas, index:0, respuestas:[], examenAsignadoId: examenId };
+  showView('view-examen-practica');
+  dibujarPreguntaExamen();
+}
+
+function iniciarExamenPersonalizado(subjectId){
+  const elegidos = [...document.querySelectorAll('.concepto-check:checked')].map(el=>el.value);
+  if(!elegidos.length){ toast('Elige al menos un concepto.'); return; }
+  const data = SUBJECT_DATA[subjectId];
+  const preguntas = [];
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && elegidos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  if(!preguntas.length){ toast('No hay preguntas para los conceptos elegidos.'); return; }
+  for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
+  $('constructor-repaso-overlay').remove();
+  examenPracticaState = { subjectId, preguntas, index:0, respuestas:[] };
+  showView('view-examen-practica');
+  dibujarPreguntaExamen();
+}
+
 function responderExamenPractica(oi){
   const st = examenPracticaState;
   const item = st.preguntas[st.index];
@@ -4790,6 +4962,48 @@ function ejecutarBusquedaGlobal(texto){
 // ha tocado; solo se veía materia por materia. Esto da una foto
 // completa de un vistazo, y motiva a terminar lo que falta.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// MIS APUNTES CENTRALIZADOS — a diferencia de "Mis apuntes" dentro de
+// cada materia (que solo muestra los de la sesión activa), esto reúne
+// TODOS los apuntes que la persona ha escrito, en cualquier materia que
+// haya tocado en el pasado — igual que "Mi progreso general" ya rompe
+// el bloqueo de sesión para mostrar avance de todas las materias. Sus
+// propios apuntes son información personal suya, no exploración de
+// contenido ajeno, así que no contradice el bloqueo de navegación.
+// ═══════════════════════════════════════════════════════
+async function abrirApuntesCentralizados(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'apuntes-central-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-notes" style="color:var(--gold)"></i> Mis apuntes — todas las materias</h2>
+    <div id="apuntes-central-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('apuntes-central-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data: apuntes, error } = await sb.from('academy_apuntes').select('id,materia_id,titulo,contenido,actualizado_en').eq('usuario_id', currentUser.usuario_id).order('actualizado_en',{ascending:false});
+    if(error) throw error;
+    if(!apuntes || !apuntes.length){
+      $('apuntes-central-contenido').innerHTML = '<div class="auth-hint">Todavía no has escrito ningún apunte en ninguna materia.</div>';
+      return;
+    }
+    $('apuntes-central-contenido').innerHTML = apuntes.map(a => {
+      const s = SUBJECTS.find(x=>x.id===a.materia_id);
+      return `<div class="export-opt" style="cursor:pointer;align-items:flex-start;" onclick="$('apuntes-central-overlay').remove();navSubject('${a.materia_id}');setTimeout(()=>showSubjTool('notas'),300);">
+        <i class="ti ti-notebook" style="color:${s?.color||'var(--gold)'};"></i>
+        <div style="flex:1;min-width:0;">
+          <b>${a.titulo||'(sin título)'}</b>
+          <span>${s?.title||a.materia_id} · ${new Date(a.actualizado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</span>
+          <div style="font-size:11.5px;color:var(--t2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(a.contenido||'').replace(/<[^>]+>/g,' ').slice(0,90)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    $('apuntes-central-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+
 async function abrirPanelProgreso(){
   const materiasConAvance = SUBJECTS.filter(s=>s.kind==='academic').map(s => {
     const data = SUBJECT_DATA[s.id];
