@@ -575,6 +575,7 @@ h1,h2,h3{font-family:var(--font-head);}
 
     <!-- ░░░ MODO PROFESOR ░░░ -->
     <section id="view-teacher" class="hidden"></section>
+    <section id="view-examen-practica" class="hidden"></section>
 
   </div>
 </div>
@@ -2226,7 +2227,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -2471,6 +2472,7 @@ function renderSubjectView(subjectId){
         <span><i class="ti ti-info-circle"></i> Repasa los conceptos clave de la materia antes de entrar a los casos. Te ayudará a resolverlos con más seguridad.</span>
         ${(currentUser?.rol==='docente' && currentUser?.materia_id===subjectId) ? `<button class="btn btn-ghost btn-sm" onclick="abrirEditorContenido('${subjectId}')" style="flex-shrink:0;"><i class="ti ti-edit"></i> Editar para mi clase</button>` : ''}
       </div>
+      <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
@@ -4545,6 +4547,107 @@ function dibujarRachaEnCuenta(){
 // equivocó — con un enlace directo para repasar justo esa etapa, no
 // solo un número de progreso sin contexto.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// EXAMEN DE PRÁCTICA — a diferencia del "Quiz rápido" (que solo usa un
+// puñado de preguntas de referencia), esto junta TODAS las preguntas de
+// TODOS los casos de la materia — oficiales y los que haya creado el
+// docente — las mezcla, y simula un examen real. Al final no solo da
+// una nota: muestra en qué etapas/conceptos específicos falló, para que
+// el repaso sea dirigido, no genérico.
+// ═══════════════════════════════════════════════════════
+let examenPracticaState = null;
+async function iniciarExamenPractica(subjectId){
+  await cargarCasosPersonalizados(subjectId);
+  const data = SUBJECT_DATA[subjectId];
+  const preguntas = [];
+  data.cases.forEach(c => {
+    c.stages.forEach(st => {
+      if(!st.questions) return;
+      st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title }));
+    });
+  });
+  if(preguntas.length < 3){ toast('Esta materia todavía no tiene suficientes preguntas para armar un examen de práctica.'); return; }
+  // Barajar sin sesgo de orden — el mismo patrón de mezcla aleatoria
+  // uniforme (Fisher-Yates), no un simple sort con Math.random.
+  for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
+  examenPracticaState = { subjectId, preguntas, index:0, respuestas:[] };
+  showView('view-examen-practica');
+  dibujarPreguntaExamen();
+}
+function dibujarPreguntaExamen(){
+  const st = examenPracticaState;
+  const cont = $('view-examen-practica');
+  if(st.index >= st.preguntas.length){
+    const correctas = st.respuestas.filter(r=>r.correcta).length;
+    // Agrupar por etapa/concepto para mostrar dónde repasar, no solo la nota final.
+    const porConcepto = {};
+    st.respuestas.forEach(r => {
+      if(!porConcepto[r.stageTitle]) porConcepto[r.stageTitle] = { correctas:0, total:0 };
+      porConcepto[r.stageTitle].total++;
+      if(r.correcta) porConcepto[r.stageTitle].correctas++;
+    });
+    const debiles = Object.entries(porConcepto).filter(([,v])=>v.correctas < v.total).sort((a,b)=>(a[1].correctas/a[1].total)-(b[1].correctas/b[1].total));
+    cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
+      <div class="score" style="font-size:48px;font-weight:800;color:var(--gold);">${correctas}/${st.preguntas.length}</div>
+      <p>Preguntas correctas en tu examen de práctica</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-target-arrow" style="color:var(--red)"></i> Conceptos para repasar antes del examen real</div>
+      ${debiles.length ? debiles.map(([titulo,v]) => `<div class="export-opt" style="cursor:default;"><i class="ti ti-alert-triangle" style="color:var(--red);"></i><div><b>${titulo}</b><span>${v.correctas}/${v.total} correctas</span></div></div>`).join('') : '<div class="auth-hint"><i class="ti ti-confetti"></i> Respondiste bien en todos los conceptos evaluados.</div>'}
+      <button class="btn" style="width:100%;justify-content:center;margin-top:14px;" onclick="navSubject('${st.subjectId}')"><i class="ti ti-arrow-left"></i> Volver a la materia</button>
+    </div>`;
+    return;
+  }
+  const item = st.preguntas[st.index];
+  const q = item.q;
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <div class="eyebrow"><i class="ti ti-clipboard-check"></i> Examen de práctica — pregunta ${st.index+1} de ${st.preguntas.length}</div>
+    <div style="background:var(--c3);border-radius:6px;height:6px;margin:10px 0 18px;overflow:hidden;"><div style="background:var(--accent2);height:100%;width:${Math.round(st.index/st.preguntas.length*100)}%;"></div></div>
+  </div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:8px;">${item.stageTitle}</div>
+    <div class="q-text" style="margin-bottom:14px;">${q.q}</div>
+    <div id="examen-opts"></div>
+    <div id="examen-feedback" class="hidden" style="margin-top:12px;"></div>
+  </div>`;
+  if(q.type==='num'){
+    $('examen-opts').innerHTML = `<input type="text" id="examen-num-input" placeholder="${q.placeholder||'Escribe tu respuesta'}" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;margin-bottom:10px;">
+      <button class="btn" style="width:100%;justify-content:center;" onclick="responderExamenPracticaNum()">Confirmar respuesta</button>`;
+  } else {
+    $('examen-opts').innerHTML = (q.opts||[]).map((o,oi)=>`<div class="q-opt" onclick="responderExamenPractica(${oi})"><span class="dot"></span>${o}</div>`).join('');
+  }
+}
+function responderExamenPracticaNum(){
+  const valor = $('examen-num-input').value.trim();
+  if(!valor) return;
+  const st = examenPracticaState;
+  const item = st.preguntas[st.index];
+  const q = item.q;
+  const correcta = esRespuestaCorrecta(q, valor);
+  st.respuestas.push({ correcta, stageTitle: item.stageTitle });
+  $('examen-num-input').disabled = true;
+  document.querySelector('#examen-opts button').style.display='none';
+  const fb = $('examen-feedback');
+  fb.classList.remove('hidden');
+  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la respuesta correcta ('+q.correct+').'}</b> ${q.explain||''}</div>
+    <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
+}
+function responderExamenPractica(oi){
+  const st = examenPracticaState;
+  const item = st.preguntas[st.index];
+  const q = item.q;
+  const correcta = esRespuestaCorrecta(q, oi);
+  st.respuestas.push({ correcta, stageTitle: item.stageTitle });
+  document.querySelectorAll('#examen-opts .q-opt').forEach((el,i)=>{
+    if(i===q.correct) el.classList.add('correct'); else if(i===oi) el.classList.add('incorrect');
+    el.style.pointerEvents='none';
+  });
+  const fb = $('examen-feedback');
+  fb.classList.remove('hidden');
+  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la opción correcta.'}</b> ${q.explain||''}</div>
+    <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
+}
+
 function abrirMisPuntosDebiles(){
   const debiles = [];
   SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
