@@ -2309,6 +2309,16 @@ function renderSidebarLists(){
 }
 
 // ───── Progreso por materia/caso ─────
+// Función compartida: determina si una respuesta dada fue correcta,
+// para preguntas de opción múltiple o numéricas — la usa tanto el
+// diagnóstico del estudiante como el de la clase, para no duplicar la
+// lógica ni arriesgar que se desincronicen.
+function esRespuestaCorrecta(pregunta, respuestaDada){
+  if(respuestaDada===undefined) return null; // no respondida — no cuenta como acierto ni como error
+  if(pregunta.type==='mc') return respuestaDada===pregunta.correct;
+  return Math.abs(parseFloat(respuestaDada)-pregunta.correct) <= (pregunta.tolerance||0);
+}
+
 function caseStatus(caseId){
   const a=studentAnswers[caseId];
   if(!a) return 'pendiente';
@@ -3367,7 +3377,13 @@ function renderTeacherView(){
       <p>Importa nuevos casos para cualquier materia del plan de estudio. Los casos guardados se muestran en el banco a continuación del formulario.</p>
     </div>
     <div id="prof-stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
-    <button class="btn btn-ghost" onclick="generarGuiaDeClase()" style="margin-bottom:20px;"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <button class="btn" onclick="abrirPreguntaRelampago()" style="background:linear-gradient(135deg,var(--rose),var(--gold));border:none;color:#1a1404;font-weight:800;"><i class="ti ti-bolt"></i> Lanzar pregunta en vivo</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
+        <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
+      </div>
+    </div>
     <div class="prof-grid">
       <div>
         <div class="card">
@@ -3445,6 +3461,203 @@ async function cargarEstudiantesRealesModoProfesor(){
 // armó para su sesión: el contenido que editó, y cada caso disponible
 // con su expediente, para tenerlo a mano antes de dar la clase, sin
 // tener que entrar a revisar cada pieza por separado.
+// ═══════════════════════════════════════════════════════
+// PREGUNTA RELÁMPAGO — el docente lanza una pregunta a toda su clase, y
+// ve las respuestas llegar en tiempo real, con una gráfica que se
+// actualiza sola cada pocos segundos. Pensado para usarse en vivo,
+// proyectado, durante la clase — no para revisar después.
+// ═══════════════════════════════════════════════════════
+let pollingPreguntaVivo = null;
+
+function abrirPreguntaRelampago(){
+  if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const casos = SUBJECT_DATA[currentUser.materia_id]?.cases || [];
+  const preguntasDisponibles = [];
+  casos.forEach(c => c.stages.forEach(st => { if(st.questions?.[0]?.type==='mc') preguntasDisponibles.push({ caso:c.title, etapa:st.title, q:st.questions[0] }); }));
+
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'relampago-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-bolt" style="color:var(--gold)"></i> Lanzar pregunta en vivo</h2>
+    <p>Se envía de inmediato a todos los estudiantes conectados de <b>${currentUser.grupo_nombre}</b>.</p>
+    <div id="relampago-lista">
+      ${preguntasDisponibles.length ? preguntasDisponibles.map((p,i) => `
+        <div class="export-opt" style="cursor:pointer;" onclick="lanzarPreguntaRelampago(${i})">
+          <i class="ti ti-help-circle"></i>
+          <div><b>${p.q.q}</b><span>${p.caso} · ${p.etapa}</span></div>
+        </div>`).join('') : '<div class="auth-hint">Todavía no tienes ningún caso con preguntas de opción múltiple para reutilizar.</div>'}
+    </div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('relampago-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  window.__preguntasRelampagoDisponibles = preguntasDisponibles;
+}
+
+async function lanzarPreguntaRelampago(indice){
+  const p = window.__preguntasRelampagoDisponibles[indice].q;
+  try {
+    const { data, error } = await sb.from('academy_preguntas_vivo').insert({
+      grupo_id: currentUser.grupo_id, pregunta: p.q, opciones: p.opts, correcta: p.correct,
+    }).select().single();
+    if(error) throw error;
+    $('relampago-overlay')?.remove();
+    // Avisar a los estudiantes conectados ahora mismo
+    const { data: membresias } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    const notifs = (membresias||[]).map(m => ({ usuario_id: m.academy_usuarios.id, tipo:'contenido_editado', mensaje:'¡Tu profesor lanzó una pregunta en vivo! Entra a responderla.', referencia_materia: currentUser.materia_id }));
+    if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
+    mostrarResultadosVivoDocente(data.id, p);
+  } catch(e){
+    toast('No se pudo lanzar la pregunta: ' + (e.message||e));
+  }
+}
+
+function mostrarResultadosVivoDocente(preguntaId, p){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'resultados-vivo-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-broadcast" style="color:var(--rose);"></i> En vivo</h2>
+    <p style="font-weight:700;font-size:14px;">${p.q}</p>
+    <div id="resultados-vivo-barras"></div>
+    <div id="resultados-vivo-total" class="auth-hint" style="text-align:center;margin-top:8px;"></div>
+    <button class="auth-submit" style="background:var(--red);margin-top:14px;" onclick="terminarPreguntaRelampago('${preguntaId}')"><i class="ti ti-player-stop"></i> Terminar pregunta</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  const actualizar = async () => {
+    const { data: respuestas } = await sb.from('academy_respuestas_vivo').select('opcion_elegida').eq('pregunta_id', preguntaId);
+    const conteos = p.opts.map((_,i) => (respuestas||[]).filter(r=>r.opcion_elegida===i).length);
+    const total = conteos.reduce((a,b)=>a+b,0);
+    $('resultados-vivo-barras').innerHTML = p.opts.map((op,i) => `
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${op}${i===p.correct?' ✓':''}</span><span>${conteos[i]}</span></div>
+        <div style="background:var(--c3);border-radius:6px;height:16px;overflow:hidden;"><div style="background:${i===p.correct?'var(--green)':'var(--accent2)'};height:100%;width:${total?Math.round(conteos[i]/total*100):0}%;transition:width .4s;"></div></div>
+      </div>`).join('');
+    $('resultados-vivo-total').textContent = `${total} respuesta${total===1?'':'s'} recibida${total===1?'':'s'}`;
+  };
+  actualizar();
+  pollingPreguntaVivo = setInterval(actualizar, 2500);
+}
+
+async function terminarPreguntaRelampago(preguntaId){
+  clearInterval(pollingPreguntaVivo);
+  await sb.from('academy_preguntas_vivo').update({ activa:false }).eq('id', preguntaId);
+  $('resultados-vivo-overlay')?.remove();
+  toast('Pregunta en vivo terminada.');
+}
+
+// Lado del estudiante — revisa si hay una pregunta activa para su
+// grupo al entrar a la sesión, y si la hay, la muestra de inmediato.
+async function revisarPreguntaVivoActiva(){
+  if(!sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
+  try {
+    const { data } = await sb.from('academy_preguntas_vivo').select('id,pregunta,opciones,correcta').eq('grupo_id', currentUser.grupo_id).eq('activa', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
+    if(!data) return;
+    const { data: yaRespondio } = await sb.from('academy_respuestas_vivo').select('id').eq('pregunta_id', data.id).eq('usuario_id', currentUser.usuario_id).maybeSingle();
+    if(yaRespondio || $('pregunta-vivo-overlay')) return;
+    mostrarPreguntaVivoParaEstudiante(data);
+  } catch(e){ /* silencioso */ }
+}
+function mostrarPreguntaVivoParaEstudiante(p){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'pregunta-vivo-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-broadcast" style="color:var(--rose);"></i> Pregunta en vivo de tu profesor</h2>
+    <p style="font-weight:700;font-size:14px;">${p.pregunta}</p>
+    <div id="pregunta-vivo-opciones">${p.opciones.map((op,i)=>`<div class="export-opt" style="cursor:pointer;" onclick="responderPreguntaVivo('${p.id}',${i})"><i class="ti ti-circle"></i><div>${op}</div></div>`).join('')}</div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function responderPreguntaVivo(preguntaId, opcion){
+  try {
+    await sb.from('academy_respuestas_vivo').insert({ pregunta_id: preguntaId, usuario_id: currentUser.usuario_id, opcion_elegida: opcion });
+    $('pregunta-vivo-opciones').innerHTML = '<div class="auth-hint" style="text-align:center;padding:20px 0;"><i class="ti ti-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:6px;"></i>Respuesta enviada — espera a que tu profesor cierre la pregunta.</div>';
+  } catch(e){
+    toast('No se pudo enviar tu respuesta: ' + (e.message||e));
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// DIAGNÓSTICO DE APRENDIZAJE DE LA CLASE — la pieza central de esta
+// función: no muestra cuántos casos completó cada estudiante, sino EN
+// QUÉ CONCEPTOS ESPECÍFICOS se está equivocando la clase entera, usando
+// cada respuesta real guardada, pregunta por pregunta. Esto le dice al
+// docente exactamente qué repasar en la próxima clase — la diferencia
+// entre "el 80% completó el caso" y "el 60% de la clase no entiende
+// cobertura de provisiones", que es la pregunta que de verdad importa.
+// ═══════════════════════════════════════════════════════
+async function abrirDiagnosticoClase(){
+  if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'diagnostico-overlay';
+  const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-brain" style="color:var(--gold)"></i> Diagnóstico de aprendizaje</h2>
+    <p>${s.title} · basado en cada respuesta real de tus estudiantes, no solo en si completaron el caso.</p>
+    <div id="diagnostico-contenido"><div class="auth-hint">Analizando respuestas…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('diagnostico-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  try {
+    await cargarCasosPersonalizados(currentUser.materia_id);
+    const { data: membresias, error } = await sb.from('academy_membresias')
+      .select('progreso, academy_usuarios!inner(rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    if(error) throw error;
+    if(!membresias || !membresias.length){
+      $('diagnostico-contenido').innerHTML = '<div class="auth-hint">Todavía no hay estudiantes inscritos en esta sesión.</div>';
+      return;
+    }
+
+    // Por cada pregunta de cada etapa de cada caso, contar cuántos
+    // estudiantes la respondieron y cuántos acertaron.
+    const porConcepto = {}; // clave: "casoId · etapaId · índice" → { titulo, materia, correctos, intentos }
+    SUBJECT_DATA[currentUser.materia_id].cases.forEach(c => {
+      c.stages.forEach(st => {
+        if(!st.questions) return;
+        st.questions.forEach((q,i) => {
+          const clave = `${c.id}·${st.id}·${i}`;
+          porConcepto[clave] = { titulo: st.title, caso: c.title, pregunta: q.q, correctos: 0, intentos: 0 };
+          membresias.forEach(m => {
+            const ans = (m.progreso||{})[c.id];
+            const dado = ans?.stages?.[st.id]?.[i];
+            const correcta = esRespuestaCorrecta(q, dado);
+            if(correcta !== null){ porConcepto[clave].intentos++; if(correcta) porConcepto[clave].correctos++; }
+          });
+        });
+      });
+    });
+
+    const conceptos = Object.values(porConcepto).filter(c => c.intentos > 0)
+      .map(c => ({ ...c, porcentaje: Math.round(c.correctos/c.intentos*100) }))
+      .sort((a,b) => a.porcentaje - b.porcentaje);
+
+    if(!conceptos.length){
+      $('diagnostico-contenido').innerHTML = '<div class="auth-hint">Todavía no hay suficientes respuestas de tus estudiantes para analizar.</div>';
+      return;
+    }
+
+    $('diagnostico-contenido').innerHTML = `
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">De lo que más le cuesta a tu clase, a lo que menos</div>
+      ${conceptos.map(c => {
+        const color = c.porcentaje<50?'var(--red)':c.porcentaje<75?'var(--amber)':'var(--green)';
+        return `<div class="export-opt" style="cursor:default;align-items:flex-start;">
+          <div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${c.porcentaje}%</div>
+          <div style="flex:1;">
+            <b>${c.titulo}</b>
+            <span>${c.caso} · ${c.correctos}/${c.intentos} respuestas correctas</span>
+            <div style="font-size:11px;color:var(--t3);margin-top:3px;">${c.pregunta}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+  } catch(e){
+    $('diagnostico-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+
 async function generarGuiaDeClase(){
   if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
   const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
@@ -3875,6 +4088,11 @@ async function entrarConSesion(membresia){
   }
   cargarNotificaciones();
   actualizarRachaDeEstudio();
+  if(currentUser.rol==='estudiante'){
+    revisarPreguntaVivoActiva();
+    clearInterval(window.__pollingEstudianteVivo);
+    window.__pollingEstudianteVivo = setInterval(revisarPreguntaVivoActiva, 6000);
+  }
 }
 
 // Oculta el portal completo y la lista de las diez materias — a un
@@ -4136,6 +4354,54 @@ function dibujarRachaEnCuenta(){
     </div>`;
 }
 
+// ═══════════════════════════════════════════════════════
+// MIS PUNTOS DÉBILES — a diferencia de "cuántos casos completaste", esto
+// analiza CADA PREGUNTA que ya respondió la persona, en todas las
+// materias que ha tocado, y le muestra exactamente en qué conceptos se
+// equivocó — con un enlace directo para repasar justo esa etapa, no
+// solo un número de progreso sin contexto.
+// ═══════════════════════════════════════════════════════
+function abrirMisPuntosDebiles(){
+  const debiles = [];
+  SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+    const data = SUBJECT_DATA[s.id];
+    if(!data) return;
+    data.cases.forEach(c => {
+      const ans = studentAnswers[c.id];
+      if(!ans || !ans.stages) return;
+      c.stages.forEach(st => {
+        if(!st.questions) return;
+        const stAns = ans.stages[st.id] || {};
+        st.questions.forEach((q,i) => {
+          const correcta = esRespuestaCorrecta(q, stAns[i]);
+          if(correcta === false){
+            debiles.push({ materia:s, caso:c, etapa:st, pregunta:q });
+          }
+        });
+      });
+    });
+  });
+
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'debiles-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-target-arrow" style="color:var(--red)"></i> Mis puntos débiles</h2>
+    <p>Preguntas que respondiste incorrectamente, agrupadas por concepto — repásalas antes de que aparezcan en un examen.</p>
+    ${debiles.length ? debiles.map(d => `
+      <div class="export-opt" style="cursor:pointer;align-items:flex-start;" onclick="navSubject('${d.materia.id}');$('debiles-overlay').remove();setTimeout(()=>openCase('${d.caso.id}'),300);">
+        <i class="ti ti-alert-triangle" style="color:var(--red);"></i>
+        <div style="flex:1;">
+          <b>${d.etapa.title}</b>
+          <span>${d.materia.title} · ${d.caso.title}</span>
+          <div style="font-size:11.5px;color:var(--t2);margin-top:4px;">${d.pregunta.q}</div>
+        </div>
+      </div>`).join('') : `<div class="auth-hint"><i class="ti ti-confetti"></i> No tienes ninguna pregunta pendiente de repasar — vas muy bien.</div>`}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('debiles-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
 async function abrirMenuCuenta(){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
@@ -4267,7 +4533,8 @@ async function abrirPanelProgreso(){
           <div style="background:var(--c3);border-radius:6px;height:6px;margin-top:6px;overflow:hidden;"><div style="background:${m.s.color};height:100%;width:${Math.round(m.completados/m.total*100)}%;"></div></div>
         </div>
       </div>`).join('') : '<div class="auth-hint">Todavía no has empezado ningún caso — entra a una materia para comenzar.</div>'}
-    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('progreso-overlay').remove()">Cerrar</button>
+    <button class="auth-submit" style="background:rgba(255,71,87,.1);color:var(--red);border:1px solid var(--red);margin-top:14px;" onclick="$('progreso-overlay').remove();abrirMisPuntosDebiles();"><i class="ti ti-target-arrow"></i> Ver mis puntos débiles</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('progreso-overlay').remove()">Cerrar</button>
   </div>`;
   document.body.appendChild(overlay);
   cargarComparacionConClase();
