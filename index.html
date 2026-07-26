@@ -812,13 +812,13 @@ async function guardarContenidoEditado(subjectId){
 // Avisa a cada estudiante del grupo que el material de su materia se
 // actualizó — no bloquea nada si falla, es un aviso, no una operación
 // crítica.
-async function notificarEstudiantesDeContenidoNuevo(subjectId){
+async function notificarEstudiantesDeContenidoNuevo(subjectId, mensajePersonalizado){
   try {
     const s = SUBJECTS.find(x=>x.id===subjectId);
     const { data: membresias } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
     const notifs = (membresias||[]).map(m => ({
       usuario_id: m.academy_usuarios.id, tipo:'contenido_editado',
-      mensaje: `Tu profesor actualizó el material de "${s?.title||subjectId}".`, referencia_materia: subjectId,
+      mensaje: mensajePersonalizado || `Tu profesor actualizó el material de "${s?.title||subjectId}".`, referencia_materia: subjectId,
     }));
     if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
   } catch(e){ /* silencioso */ }
@@ -3238,6 +3238,7 @@ async function importarCasoDesdeArchivo(evento){
     msg.className = 'auth-msg show success'; msg.textContent = `Caso "${title}" importado con ${stages.length} etapa${stages.length===1?'':'s'} — ya lo pueden ver tus estudiantes.`;
     await cargarCasosPersonalizados(currentUser.materia_id);
     renderTeacherCaseBank();
+    notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Tu profesor agregó un caso nuevo: "${title}".`);
   } catch(e){
     msg.className = 'auth-msg show error'; msg.textContent = 'No se pudo importar: ' + (e.message||e);
   } finally {
@@ -3289,6 +3290,7 @@ async function guardarCasoPersonalizado(idExistente){
     toast(idExistente ? 'Caso actualizado.' : 'Caso creado — ya lo pueden ver tus estudiantes.');
     await cargarCasosPersonalizados(currentUser.materia_id);
     renderTeacherCaseBank();
+    notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, idExistente ? `Tu profesor actualizó el caso "${caso.title}".` : `Tu profesor agregó un caso nuevo: "${caso.title}".`);
   } catch(e){
     msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e);
   }
@@ -3382,6 +3384,7 @@ function renderTeacherView(){
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
         <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
+        <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
       </div>
     </div>
     <div class="prof-grid">
@@ -3587,6 +3590,75 @@ async function responderPreguntaVivo(preguntaId, opcion){
 // entre "el 80% completó el caso" y "el 60% de la clase no entiende
 // cobertura de provisiones", que es la pregunta que de verdad importa.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// ANUNCIOS DE CLASE — a diferencia de las notificaciones automáticas
+// (que solo avisan de cambios de contenido), esto es el docente
+// hablándole directo a todos sus estudiantes: un examen que se mueve de
+// fecha, un recordatorio, una aclaración. Aparece como aviso apenas
+// entran a la sesión, no escondido en un menú.
+// ═══════════════════════════════════════════════════════
+function abrirPublicarAnuncio(){
+  if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'anuncio-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-speakerphone" style="color:var(--gold)"></i> Anuncio para tu clase</h2>
+    <p>Lo verán todos los estudiantes de "${currentUser.grupo_nombre}" apenas entren a Academy.</p>
+    <textarea id="anuncio-texto" rows="4" placeholder="Ej: El caso de la próxima semana se enfoca en el capítulo de liquidez — repásenlo antes de la clase." style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;resize:vertical;"></textarea>
+    <div class="auth-msg" id="anuncio-msg"></div>
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <button class="auth-submit" onclick="publicarAnuncio()">Publicar</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="$('anuncio-overlay').remove()">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function publicarAnuncio(){
+  const texto = $('anuncio-texto').value.trim();
+  const msg = $('anuncio-msg');
+  if(!texto){ msg.className='auth-msg show error'; msg.textContent='Escribe el anuncio antes de publicarlo.'; return; }
+  try {
+    const { error } = await sb.from('academy_anuncios').insert({ grupo_id: currentUser.grupo_id, texto });
+    if(error) throw error;
+    $('anuncio-overlay').remove();
+    toast('Anuncio publicado.');
+    notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Nuevo anuncio de tu profesor: "${texto.slice(0,80)}${texto.length>80?'…':''}"`);
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo publicar: ' + (e.message||e);
+  }
+}
+// Se revisa al entrar a la sesión — solo muestra anuncios que la
+// persona no haya visto todavía, recordando el último visto por grupo
+// en este dispositivo, para no repetirle lo mismo cada vez que entra.
+let __verificandoAnuncios = false;
+async function verificarAnunciosDeClase(){
+  if(!sb || !currentUser?.grupo_id) return;
+  if($('anuncios-ver-overlay') || __verificandoAnuncios) return; // ya se está mostrando, o ya hay una verificación en curso
+  __verificandoAnuncios = true;
+  try {
+    const claveVisto = 'academy_anuncio_visto_'+currentUser.grupo_id;
+    const ultimoVisto = localStorage.getItem(claveVisto);
+    const { data: anuncios, error } = await sb.from('academy_anuncios').select('id,texto,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false}).limit(5);
+    if(error) throw error;
+    if(!anuncios || !anuncios.length) return;
+    if(anuncios[0].id === ultimoVisto) return; // ya vio el más reciente, nada nuevo
+    const overlay = document.createElement('div');
+    overlay.className = 'export-modal-overlay';
+    overlay.id = 'anuncios-ver-overlay';
+    overlay.innerHTML = `<div class="export-modal">
+      <h2><i class="ti ti-speakerphone" style="color:var(--gold)"></i> Anuncios de tu clase</h2>
+      ${anuncios.map(a => `<div class="export-opt" style="cursor:default;align-items:flex-start;">
+        <i class="ti ti-message-circle" style="color:var(--gold);"></i>
+        <div><span>${a.texto}</span><div style="font-size:10px;color:var(--t3);margin-top:4px;">${new Date(a.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</div></div>
+      </div>`).join('')}
+      <button class="auth-submit" style="margin-top:14px;" onclick="localStorage.setItem('${claveVisto}','${anuncios[0].id}');$('anuncios-ver-overlay').remove();">Entendido</button>
+    </div>`;
+    document.body.appendChild(overlay);
+  } catch(e){ /* silencioso */
+  } finally { __verificandoAnuncios = false; }
+}
+
 async function abrirDiagnosticoClase(){
   if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
   const overlay = document.createElement('div');
@@ -4088,6 +4160,7 @@ async function entrarConSesion(membresia){
   }
   cargarNotificaciones();
   actualizarRachaDeEstudio();
+  verificarAnunciosDeClase();
   if(currentUser.rol==='estudiante'){
     revisarPreguntaVivoActiva();
     clearInterval(window.__pollingEstudianteVivo);
