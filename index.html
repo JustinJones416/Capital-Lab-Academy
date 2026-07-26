@@ -4735,6 +4735,7 @@ async function publicarExamenAsignado(){
 // para que el docente no tenga que preguntarlo uno por uno.
 async function abrirResultadosExamenAsignado(){
   if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  $('resultados-examen-overlay')?.remove();
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'resultados-examen-overlay';
@@ -4745,7 +4746,7 @@ async function abrirResultadosExamenAsignado(){
   </div>`;
   document.body.appendChild(overlay);
   try {
-    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
     if(error) throw error;
     if(!examenes || !examenes.length){ $('resultados-examen-contenido').innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen.</div>'; return; }
     const { count: totalEstudiantes } = await sb.from('academy_membresias').select('id', {count:'exact', head:true}).eq('grupo_id', currentUser.grupo_id);
@@ -4755,15 +4756,25 @@ async function abrirResultadosExamenAsignado(){
       const n = (resultados||[]).length;
       const promedio = n ? (resultados.reduce((s,r)=>s+r.correctas/r.total,0)/n*100).toFixed(0) : 0;
       html += `<div class="card" style="margin-bottom:10px;">
-        <b>${ex.titulo}</b>
-        <div class="sub" style="margin-top:4px;">${SUBJECTS.find(s=>s.id===ex.materia_id)?.title||ex.materia_id}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div><b>${ex.titulo}</b><div class="sub" style="margin-top:2px;">${SUBJECTS.find(s=>s.id===ex.materia_id)?.title||ex.materia_id}</div></div>
+          <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${ex.activo?'rgba(0,208,132,.15)':'rgba(122,138,176,.15)'};color:${ex.activo?'var(--green)':'var(--t3)'};flex-shrink:0;">${ex.activo?'ACTIVO':'CERRADO'}</span>
+        </div>
         <div style="margin-top:8px;font-size:12.5px;color:var(--t2);">${n} de ${totalEstudiantes??'?'} estudiantes lo han completado · promedio: ${promedio}%</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="alternarActivoExamenAsignado('${ex.id}',${!ex.activo})"><i class="ti ti-${ex.activo?'lock':'lock-open'}"></i> ${ex.activo?'Cerrar examen':'Reabrir examen'}</button>
       </div>`;
     }
     $('resultados-examen-contenido').innerHTML = html;
   } catch(e){
     $('resultados-examen-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
+}
+async function alternarActivoExamenAsignado(examenId, nuevoEstado){
+  try {
+    await sb.from('academy_examenes_asignados').update({ activo: nuevoEstado }).eq('id', examenId);
+    toast(nuevoEstado ? 'Examen reabierto.' : 'Examen cerrado — ya no aparecerá para quien no lo haya hecho.');
+    abrirResultadosExamenAsignado();
+  } catch(e){ toast('No se pudo actualizar: ' + (e.message||e)); }
 }
 // Se revisa al entrar a la materia — si hay un examen activo que el
 // estudiante todavía no completó, aparece como tarjeta destacada.
