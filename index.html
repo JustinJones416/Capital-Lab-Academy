@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CapitalLab Academy</title>
@@ -249,6 +250,11 @@ h1,h2,h3{font-family:var(--font-head);}
 
 /* ───── MODO PROFESOR ───── */
 .prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){
+  #prof-mas-acciones-btn{display:inline-flex!important;}
+  #prof-acciones-secundarias{display:none!important;}
+  #prof-acciones-secundarias.mostrar{display:flex!important;}
+}
 @media(max-width:760px){.prof-grid{grid-template-columns:1fr;}}
 .form-field{margin-bottom:14px;}
 .form-field label{display:block;font-size:12px;color:var(--t2);font-weight:600;margin-bottom:6px;}
@@ -3382,8 +3388,12 @@ function renderTeacherView(){
       <p>Importa nuevos casos para cualquier materia del plan de estudio. Los casos guardados se muestran en el banco a continuación del formulario.</p>
     </div>
     <div id="prof-stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+      <button class="btn" onclick="abrirModoPresentacion()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;color:#1a1404;font-weight:800;"><i class="ti ti-presentation"></i> Modo presentación (QR)</button>
       <button class="btn" onclick="abrirPreguntaRelampago()" style="background:linear-gradient(135deg,var(--rose),var(--gold));border:none;color:#1a1404;font-weight:800;"><i class="ti ti-bolt"></i> Lanzar pregunta en vivo</button>
+      <button class="btn btn-ghost" id="prof-mas-acciones-btn" onclick="alternarAccionesSecundarias()" style="display:none;"><i class="ti ti-dots"></i> Más acciones</button>
+    </div>
+    <div id="prof-acciones-secundarias" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
       <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
       <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
       <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
@@ -3473,6 +3483,50 @@ async function cargarEstudiantesRealesModoProfesor(){
 // proyectado, durante la clase — no para revisar después.
 // ═══════════════════════════════════════════════════════
 let pollingPreguntaVivo = null;
+
+// ═══════════════════════════════════════════════════════
+// MODO PRESENTACIÓN — pantalla completa con el código de la clase en
+// grande y su QR, pensada para proyectar al inicio de la sesión. El
+// contador de estudiantes inscritos se actualiza solo cada pocos
+// segundos, así el docente ve en vivo a la clase llenándose sin tener
+// que hacer nada más.
+// ═══════════════════════════════════════════════════════
+let intervaloPresentacion = null;
+function abrirModoPresentacion(){
+  if(!currentUser?.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
+  const overlay = document.createElement('div');
+  overlay.id = 'presentacion-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;';
+  overlay.innerHTML = `
+    <button onclick="cerrarModoPresentacion()" style="position:absolute;top:20px;right:20px;background:var(--c2);border:1px solid var(--c3);color:var(--t1);width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer;"><i class="ti ti-x"></i></button>
+    <div style="font-size:14px;color:${s?.color||'var(--gold)'};font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${s?.title||''}</div>
+    <h1 style="font-family:var(--font-head);font-size:clamp(22px,4vw,34px);margin-bottom:24px;">${currentUser.grupo_nombre}</h1>
+    <div id="presentacion-qr" style="background:#fff;padding:20px;border-radius:20px;margin-bottom:24px;"></div>
+    <div style="font-family:var(--font-mono);font-size:clamp(36px,8vw,64px);font-weight:800;letter-spacing:.15em;color:var(--gold);margin-bottom:8px;">${currentUser.grupo_codigo}</div>
+    <div style="font-size:14px;color:var(--t3);margin-bottom:24px;">Entra a CapitalLab Academy y únete con este código</div>
+    <div id="presentacion-contador" style="font-size:15px;color:var(--t2);"><i class="ti ti-users"></i> Cargando…</div>
+  `;
+  document.body.appendChild(overlay);
+  const qr = qrcode(0, 'M');
+  qr.addData(currentUser.grupo_codigo);
+  qr.make();
+  $('presentacion-qr').innerHTML = qr.createSvgTag({cellSize:6, margin:2});
+  const actualizarContador = async () => {
+    const { count } = await sb.from('academy_membresias').select('id', {count:'exact', head:true}).eq('grupo_id', currentUser.grupo_id);
+    if($('presentacion-contador')) $('presentacion-contador').innerHTML = `<i class="ti ti-users"></i> ${count||0} persona${count===1?'':'s'} en la sesión`;
+  };
+  actualizarContador();
+  clearInterval(intervaloPresentacion);
+  intervaloPresentacion = setInterval(actualizarContador, 4000);
+}
+function cerrarModoPresentacion(){
+  clearInterval(intervaloPresentacion);
+  $('presentacion-overlay')?.remove();
+}
+function alternarAccionesSecundarias(){
+  $('prof-acciones-secundarias').classList.toggle('mostrar');
+}
 
 function abrirPreguntaRelampago(){
   if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
