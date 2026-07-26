@@ -146,6 +146,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .case-head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px;}
 .casetype{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;border-radius:20px;margin-bottom:10px;background:color-mix(in srgb, var(--ac) 15%, transparent);color:var(--ac);}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:var(--r);background:var(--ac);color:var(--ac-text);font-weight:700;font-size:13px;border:none;cursor:pointer;transition:all .15s;}
+@media(max-width:640px){.btn,.btn-ghost{min-height:44px;}}
 .btn:hover{filter:brightness(1.08);}
 .btn-ghost{background:var(--c2);color:var(--t1);border:1px solid var(--c3);}
 .btn-ghost:hover{background:var(--c3);}
@@ -178,6 +179,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .q-text{font-size:13.5px;font-weight:600;margin-bottom:12px;display:flex;align-items:flex-start;}
 .q-options{display:flex;flex-direction:column;gap:8px;margin-left:30px;}
 .q-opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);background:var(--bg2);border:1px solid var(--c3);cursor:pointer;font-size:13px;color:var(--t2);transition:all .15s;}
+@media(max-width:640px){.q-opt{min-height:44px;box-sizing:border-box;}}
 .q-opt:hover{border-color:var(--c5);}
 .q-opt.correct{border-color:var(--green);background:rgba(0,208,132,.1);color:var(--t1);}
 .q-opt.incorrect{border-color:var(--red);background:rgba(255,71,87,.1);color:var(--t1);}
@@ -212,6 +214,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .fc-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;}
 .fc-controls button{width:36px;height:36px;border-radius:50%;background:var(--c2);border:1px solid var(--c3);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .fc-controls button:hover{background:var(--c3);}
+@media(max-width:640px){.fc-controls button{width:44px;height:44px;}}
 .fc-counter{font-family:var(--font-mono);font-size:12px;color:var(--t3);}
 
 .glossary-list{display:flex;flex-direction:column;gap:2px;}
