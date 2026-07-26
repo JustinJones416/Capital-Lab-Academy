@@ -3710,7 +3710,7 @@ async function publicarAnuncio(){
 let __verificandoAnuncios = false;
 
 async function verificarAnunciosDeClase(){
-  if(!sb || !currentUser?.grupo_id) return;
+  if(!sb || !currentUser?.grupo_id || currentUser?.rol !== 'estudiante') return;
   if($('anuncios-ver-overlay') || __verificandoAnuncios) return; // ya se está mostrando, o ya hay una verificación en curso
   __verificandoAnuncios = true;
   try {
