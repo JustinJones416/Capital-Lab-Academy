@@ -3526,13 +3526,28 @@ function mostrarResultadosVivoDocente(preguntaId, p){
     <p style="font-weight:700;font-size:14px;">${p.q}</p>
     <div id="resultados-vivo-barras"></div>
     <div id="resultados-vivo-total" class="auth-hint" style="text-align:center;margin-top:8px;"></div>
-    <button class="auth-submit" style="background:var(--red);margin-top:14px;" onclick="terminarPreguntaRelampago('${preguntaId}')"><i class="ti ti-player-stop"></i> Terminar pregunta</button>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);" onclick="minimizarResultadosVivo()"><i class="ti ti-minus"></i> Minimizar</button>
+      <button class="auth-submit" style="background:var(--red);" onclick="terminarPreguntaRelampago('${preguntaId}')"><i class="ti ti-player-stop"></i> Terminar pregunta</button>
+    </div>
   </div>`;
   document.body.appendChild(overlay);
+  // Ícono flotante — sigue contando respuestas en vivo aunque el panel
+  // esté minimizado, para no obligar a elegir entre "tapando la
+  // pantalla" o "terminar la pregunta antes de tiempo".
+  const flotante = document.createElement('div');
+  flotante.id = 'resultados-vivo-flotante';
+  flotante.className = 'hidden';
+  flotante.onclick = () => { $('resultados-vivo-overlay').classList.remove('hidden'); flotante.classList.add('hidden'); };
+  flotante.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:500;background:var(--rose);color:#fff;border-radius:30px;padding:12px 18px;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);font-weight:800;font-size:13px;';
+  flotante.innerHTML = `<i class="ti ti-broadcast"></i> <span id="resultados-vivo-flotante-num">0</span> respuesta<span id="resultados-vivo-flotante-s">s</span>`;
+  document.body.appendChild(flotante);
   const actualizar = async () => {
     const { data: respuestas } = await sb.from('academy_respuestas_vivo').select('opcion_elegida').eq('pregunta_id', preguntaId);
     const conteos = p.opts.map((_,i) => (respuestas||[]).filter(r=>r.opcion_elegida===i).length);
     const total = conteos.reduce((a,b)=>a+b,0);
+    if($('resultados-vivo-flotante-num')){ $('resultados-vivo-flotante-num').textContent = total; $('resultados-vivo-flotante-s').textContent = total===1?'':'s'; }
+    if(!$('resultados-vivo-barras')) return; // el panel se cerró del todo (se terminó la pregunta)
     $('resultados-vivo-barras').innerHTML = p.opts.map((op,i) => `
       <div style="margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${op}${i===p.correct?' ✓':''}</span><span>${conteos[i]}</span></div>
@@ -3544,10 +3559,15 @@ function mostrarResultadosVivoDocente(preguntaId, p){
   pollingPreguntaVivo = setInterval(actualizar, 2500);
 }
 
+function minimizarResultadosVivo(){
+  $('resultados-vivo-overlay').classList.add('hidden');
+  $('resultados-vivo-flotante').classList.remove('hidden');
+}
 async function terminarPreguntaRelampago(preguntaId){
   clearInterval(pollingPreguntaVivo);
   await sb.from('academy_preguntas_vivo').update({ activa:false }).eq('id', preguntaId);
   $('resultados-vivo-overlay')?.remove();
+  $('resultados-vivo-flotante')?.remove();
   toast('Pregunta en vivo terminada.');
 }
 
