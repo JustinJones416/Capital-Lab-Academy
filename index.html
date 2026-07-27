@@ -2343,7 +2343,7 @@ async function navCalificaciones(){
 async function renderCalificacionesEstudiante(){
   const cont = $('calif-contenido');
   try {
-    const { data: examenes } = await sb.from('academy_examenes_resultados').select('correctas,total,completado_en,academy_examenes_asignados!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).order('completado_en',{ascending:false});
+    const { data: examenes } = await sb.from('academy_examenes_resultados').select('correctas,total,completado_en,detalle,academy_examenes_asignados!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).order('completado_en',{ascending:false});
     const casosCalificados = [];
     SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
       const data = SUBJECT_DATA[s.id];
@@ -2360,11 +2360,12 @@ async function renderCalificacionesEstudiante(){
     let html = '';
     if(examenes?.length){
       html += `<div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-writing"></i> Exámenes asignados</div>`;
-      html += examenes.map(e => {
+      window.__examenesCalifCache = examenes;
+      html += examenes.map((e,i) => {
         const pct = Math.round(e.correctas/e.total*100);
         const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
         const s = SUBJECTS.find(x=>x.id===e.academy_examenes_asignados.materia_id);
-        return `<div class="export-opt" style="cursor:default;"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${e.academy_examenes_asignados.titulo}</b><span>${s?.title||''} · ${e.correctas}/${e.total} correctas</span></div></div>`;
+        return `<div class="export-opt" style="${e.detalle?'cursor:pointer;':'cursor:default;'}" ${e.detalle?`onclick="revisarRespuestasExamen(window.__examenesCalifCache[${i}].detalle)"`:''}><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${e.academy_examenes_asignados.titulo}</b><span>${s?.title||''} · ${e.correctas}/${e.total} correctas${e.detalle?' · toca para revisar':''}</span></div></div>`;
       }).join('');
     }
     if(casosCalificados.length){
@@ -5402,7 +5403,7 @@ function dibujarPreguntaExamen(){
     st.conceptosDebiles = debiles.map(([titulo])=>titulo);
     if(st.examenAsignadoId && !st.resultadoYaGuardado){
       st.resultadoYaGuardado = true;
-      sb.from('academy_examenes_resultados').insert({ examen_id: st.examenAsignadoId, usuario_id: currentUser.usuario_id, correctas, total: st.preguntas.length }).then(()=>{}).catch(()=>{});
+      sb.from('academy_examenes_resultados').insert({ examen_id: st.examenAsignadoId, usuario_id: currentUser.usuario_id, correctas, total: st.preguntas.length, detalle: st.respuestas }).then(()=>{}).catch(()=>{});
     }
     // Repetición espaciada: si hubo conceptos débiles, se programa solo
     // un recordatorio para repasarlos en 3 días — ni tan pronto que no
@@ -5474,14 +5475,14 @@ function responderExamenPracticaNum(){
 // detalle de lo que se respondió: cada pregunta, la respuesta dada, la
 // correcta, y por qué, todo junto para poder estudiar de los propios
 // errores, no solo saber la nota final.
-function revisarRespuestasExamen(){
-  const st = examenPracticaState;
+function revisarRespuestasExamen(respuestasGuardadas){
+  const respuestas = respuestasGuardadas || examenPracticaState.respuestas;
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'revisar-respuestas-overlay';
   overlay.innerHTML = `<div class="export-modal">
     <h2><i class="ti ti-list-details" style="color:var(--gold)"></i> Mis respuestas</h2>
-    ${st.respuestas.map((r,i) => `
+    ${respuestas.map((r,i) => `
       <div class="card" style="margin-bottom:10px;border-color:${r.correcta?'var(--green)':'var(--red)'};">
         <div style="font-size:10px;color:var(--t3);margin-bottom:4px;">${r.stageTitle}</div>
         <div style="font-weight:700;font-size:13px;margin-bottom:8px;">${i+1}. ${r.pregunta}</div>
