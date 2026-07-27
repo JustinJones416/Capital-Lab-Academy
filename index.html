@@ -2551,22 +2551,54 @@ function abrirEntregarTarea(tareaId, titulo){
   overlay.id = 'entregar-tarea-overlay';
   overlay.innerHTML = `<div class="export-modal">
     <h2><i class="ti ti-send" style="color:var(--gold)"></i> ${titulo}</h2>
-    <textarea id="entrega-texto" rows="8" placeholder="Escribe tu entrega aquí…" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;resize:vertical;"></textarea>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost btn-sm active" id="entrega-tab-escribir" onclick="mostrarPestanaEntrega('escribir')">Escribir aquí</button>
+      <button class="btn btn-ghost btn-sm" id="entrega-tab-subir" onclick="mostrarPestanaEntrega('subir')">Subir un archivo</button>
+    </div>
+    <div id="entrega-panel-escribir">
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('bold')" style="font-weight:800;width:34px;padding:0;">B</button>
+        <button type="button" class="btn btn-ghost btn-sm" onmousedown="event.preventDefault();document.execCommand('insertUnorderedList')" style="width:34px;padding:0;"><i class="ti ti-list"></i></button>
+      </div>
+      <div id="entrega-texto" contenteditable="true" style="min-height:200px;padding:14px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13.5px;line-height:1.7;overflow-y:auto;"></div>
+    </div>
+    <div id="entrega-panel-subir" class="hidden">
+      <input type="file" id="entrega-archivo-input" accept=".doc,.docx,.pdf,.txt,.xls,.xlsx,.ppt,.pptx" style="width:100%;padding:11px;background:var(--c2);border:1px dashed var(--c4);border-radius:var(--r);color:var(--t2);font-size:12.5px;">
+      <div class="auth-hint">Word, PDF, Excel, PowerPoint o texto — lo que ya tengas hecho.</div>
+      <div id="entrega-archivo-actual"></div>
+    </div>
     <div class="auth-msg" id="entrega-msg"></div>
     <button class="auth-submit" onclick="guardarEntregaTarea('${tareaId}')">Entregar</button>
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('entregar-tarea-overlay').remove()">Cancelar</button>
   </div>`;
   document.body.appendChild(overlay);
-  sb.from('academy_entregas_tareas').select('contenido').eq('tarea_id', tareaId).eq('usuario_id', currentUser.usuario_id).maybeSingle().then(({data}) => {
-    if(data) $('entrega-texto').value = data.contenido;
+  sb.from('academy_entregas_tareas').select('contenido,archivo_url,archivo_nombre').eq('tarea_id', tareaId).eq('usuario_id', currentUser.usuario_id).maybeSingle().then(({data}) => {
+    if(data?.contenido) $('entrega-texto').innerHTML = data.contenido;
+    if(data?.archivo_nombre) $('entrega-archivo-actual').innerHTML = `<div style="margin-top:8px;font-size:12px;color:var(--teal);"><i class="ti ti-paperclip"></i> Ya tienes un archivo entregado: ${data.archivo_nombre} (subir uno nuevo lo reemplaza)</div>`;
   });
 }
+function mostrarPestanaEntrega(cual){
+  $('entrega-panel-escribir').classList.toggle('hidden', cual!=='escribir');
+  $('entrega-panel-subir').classList.toggle('hidden', cual!=='subir');
+  $('entrega-tab-escribir').classList.toggle('active', cual==='escribir');
+  $('entrega-tab-subir').classList.toggle('active', cual==='subir');
+}
 async function guardarEntregaTarea(tareaId){
-  const contenido = $('entrega-texto').value.trim();
+  const archivo = $('entrega-archivo-input')?.files[0];
+  const contenido = $('entrega-texto').innerHTML.trim();
   const msg = $('entrega-msg');
-  if(!contenido){ msg.className='auth-msg show error'; msg.textContent='Escribe tu entrega antes de enviarla.'; return; }
+  if(!archivo && (!contenido || contenido==='<br>')){ msg.className='auth-msg show error'; msg.textContent='Escribe tu entrega o sube un archivo antes de enviarla.'; return; }
   try {
-    const { error } = await sb.from('academy_entregas_tareas').upsert({ tarea_id: tareaId, usuario_id: currentUser.usuario_id, contenido }, { onConflict:'tarea_id,usuario_id' });
+    let archivo_url = null, archivo_nombre = null;
+    if(archivo){
+      const ruta = `${currentUser.usuario_id}/${tareaId}_${Date.now()}_${archivo.name}`;
+      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
+      if(errSubida) throw errSubida;
+      archivo_url = ruta; archivo_nombre = archivo.name;
+    }
+    const payload = { tarea_id: tareaId, usuario_id: currentUser.usuario_id, contenido: archivo ? null : contenido };
+    if(archivo){ payload.archivo_url = archivo_url; payload.archivo_nombre = archivo_nombre; }
+    const { error } = await sb.from('academy_entregas_tareas').upsert(payload, { onConflict:'tarea_id,usuario_id' });
     if(error) throw error;
     $('entregar-tarea-overlay').remove();
     toast('Entrega guardada.');
@@ -2584,7 +2616,7 @@ async function verEntregasTarea(tareaId, titulo){
   </div>`;
   document.body.appendChild(overlay);
   try {
-    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,entregado_en,calificacion,comentario_docente,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
+    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
     $('ver-entregas-contenido').innerHTML = entregas?.length ? entregas.map(e => `
       <div class="card" style="margin-bottom:10px;">
@@ -2592,7 +2624,9 @@ async function verEntregasTarea(tareaId, titulo){
           <b>${e.academy_usuarios.nombre}</b>
           <span style="font-size:10px;color:var(--t3);">${new Date(e.entregado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</span>
         </div>
-        <div style="font-size:12.5px;color:var(--t2);margin-top:6px;white-space:pre-wrap;">${e.contenido}</div>
+        ${e.archivo_nombre
+          ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="descargarEntregaArchivo('${e.archivo_url}','${(e.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-download"></i> ${e.archivo_nombre}</button></div>`
+          : `<div style="font-size:12.5px;color:var(--t2);margin-top:6px;">${e.contenido||''}</div>`}
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c3);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <input type="number" min="0" max="100" id="calif-${e.id}" value="${e.calificacion??''}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
           <input type="text" id="coment-${e.id}" value="${(e.comentario_docente||'').replace(/"/g,'&quot;')}" placeholder="Comentario para el estudiante (opcional)" style="flex:1;min-width:150px;padding:7px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
@@ -2603,6 +2637,15 @@ async function verEntregasTarea(tareaId, titulo){
   } catch(e){
     $('ver-entregas-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
+}
+async function descargarEntregaArchivo(ruta, nombre){
+  try {
+    const { data, error } = await sb.storage.from('academy-entregas').createSignedUrl(ruta, 60);
+    if(error) throw error;
+    const a = document.createElement('a');
+    a.href = data.signedUrl; a.download = nombre; a.target = '_blank';
+    a.click();
+  } catch(e){ toast('No se pudo descargar: ' + (e.message||e)); }
 }
 async function guardarRetroalimentacionTarea(entregaId){
   const calificacion = $('calif-'+entregaId).value;
@@ -3018,6 +3061,15 @@ async function navDocumentos(){
         const sa = SUBJECTS.find(x=>x.id===a.materia_id);
         return `<div class="export-opt" style="cursor:pointer;" onclick="navApuntes();setTimeout(()=>abrirApunteEstructurado('${a.id}'),300);"><i class="ti ti-notebook" style="color:${sa?.color||'var(--gold)'};"></i><div><b>${a.titulo||'(sin título)'}</b><span>${sa?.title||a.materia_id}</span></div></div>`;
       }).join('') : '<div class="auth-hint">Todavía no tienes ningún apunte.</div>';
+
+      const { data: entregas } = await sb.from('academy_entregas_tareas').select('archivo_url,archivo_nombre,contenido,tarea_id,academy_tareas!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).order('entregado_en',{ascending:false});
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-send"></i> Mis tareas entregadas</div>`;
+      html += entregas?.length ? entregas.map(e => {
+        const st = SUBJECTS.find(x=>x.id===e.academy_tareas.materia_id);
+        return e.archivo_nombre
+          ? `<div class="export-opt" style="cursor:pointer;" onclick="descargarEntregaArchivo('${e.archivo_url}','${(e.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-file-download" style="color:${st?.color||'var(--gold)'};"></i><div><b>${e.academy_tareas.titulo}</b><span>${st?.title||''} · ${e.archivo_nombre}</span></div></div>`
+          : `<div class="export-opt" style="cursor:pointer;" onclick="navTareas();setTimeout(()=>abrirEntregarTarea('${e.tarea_id}','${(e.academy_tareas.titulo||'').replace(/'/g,"\\'")}'),300);"><i class="ti ti-file-text" style="color:${st?.color||'var(--gold)'};"></i><div><b>${e.academy_tareas.titulo}</b><span>${st?.title||''} · escrita en Academy</span></div></div>`;
+      }).join('') : '<div class="auth-hint">Todavía no has entregado ninguna tarea.</div>';
     }
     $('documentos-contenido').innerHTML = html;
   } catch(e){
