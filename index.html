@@ -3990,7 +3990,8 @@ async function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
     await new Promise((resolve, reject) => {
       doc.html(contenedor, {
         callback: (doc) => {
-          const nombreArchivo = tituloDoc.replace(/[^\w\sÁÉÍÓÚÑáéíóúñ-]/g,'').replace(/\s+/g,'_').slice(0,80) + '.pdf';
+          const sinAcentos = tituloDoc.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          const nombreArchivo = sinAcentos.replace(/[^\w\s-]/g,'').replace(/\s+/g,'_').slice(0,80) + '.pdf';
           doc.save(nombreArchivo);
           resolve();
         },
