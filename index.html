@@ -532,6 +532,8 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="nav-item" id="nav-calificaciones" onclick="navCalificaciones()"><i class="ti ti-report"></i> Calificaciones</button>
       <button class="nav-item" id="nav-tareas" onclick="navTareas()"><i class="ti ti-calendar-event"></i> Tareas y calendario</button>
       <button class="nav-item" id="nav-apuntes" onclick="navApuntes()"><i class="ti ti-notebook"></i> Mis apuntes</button>
+      <button class="nav-item hidden" id="nav-metricas" onclick="navMetricas()"><i class="ti ti-chart-histogram"></i> Métricas del salón</button>
+      <button class="nav-item" id="nav-documentos" onclick="navDocumentos()"><i class="ti ti-folder"></i> Documentos</button>
     </div>
 
     <div class="nav-group">
@@ -575,6 +577,8 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-calificaciones" class="hidden"></section>
     <section id="view-tareas" class="hidden"></section>
     <section id="view-apuntes" class="hidden"></section>
+    <section id="view-metricas" class="hidden"></section>
+    <section id="view-documentos" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
     <section id="view-subject" class="hidden"></section>
@@ -2236,7 +2240,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -2689,6 +2693,105 @@ async function eliminarApunteEstructurado(id){
   await sb.from('academy_apuntes').delete().eq('id', id);
   toast('Apunte eliminado.');
   navApuntes();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MÉTRICAS DEL SALÓN — solo para el docente: cómo va el salón en
+// conjunto, no estudiante por estudiante (eso ya está en Calificaciones).
+// Combina exámenes, tareas y casos en un solo panorama real.
+// ═══════════════════════════════════════════════════════
+async function navMetricas(){
+  if(currentUser.rol!=='docente'){ toast('Esta sección es solo para docentes.'); return; }
+  showView('view-metricas');
+  setActiveNav('nav-metricas'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-metricas');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-chart-histogram"></i> Métricas del salón</div><h1>${currentUser.grupo_nombre||'Tu clase'}</h1></div><div id="metricas-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  if(!currentUser.grupo_id){ $('metricas-contenido').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
+  try {
+    const [{ data: membresias }, { data: examenes }, { data: tareas }] = await Promise.all([
+      sb.from('academy_membresias').select('progreso, academy_usuarios!inner(rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante'),
+      sb.from('academy_examenes_asignados').select('id').eq('grupo_id', currentUser.grupo_id),
+      sb.from('academy_tareas').select('id').eq('grupo_id', currentUser.grupo_id),
+    ]);
+    const totalEstudiantes = membresias?.length || 0;
+    if(!totalEstudiantes){ $('metricas-contenido').innerHTML = '<div class="auth-hint">Todavía no hay estudiantes inscritos en esta sesión.</div>'; return; }
+    const activos = (membresias||[]).filter(m => Object.keys(m.progreso||{}).length > 0).length;
+
+    let promedioExamenes = null, distribucion = {alto:0, medio:0, bajo:0};
+    if(examenes?.length){
+      const { data: resultados } = await sb.from('academy_examenes_resultados').select('correctas,total').in('examen_id', examenes.map(e=>e.id));
+      if(resultados?.length){
+        promedioExamenes = (resultados.reduce((s,r)=>s+r.correctas/r.total,0)/resultados.length*100).toFixed(0);
+        resultados.forEach(r => { const pct=r.correctas/r.total*100; if(pct>=80) distribucion.alto++; else if(pct>=60) distribucion.medio++; else distribucion.bajo++; });
+      }
+    }
+    let entregasTareas = 0;
+    if(tareas?.length){
+      const { count } = await sb.from('academy_entregas_tareas').select('id',{count:'exact',head:true}).in('tarea_id', tareas.map(t=>t.id));
+      entregasTareas = count||0;
+    }
+    const totalPosibleEntregas = (tareas?.length||0) * totalEstudiantes;
+    const totalDist = distribucion.alto+distribucion.medio+distribucion.bajo;
+
+    $('metricas-contenido').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-users" style="font-size:22px;color:var(--accent2);"></i><div style="font-size:24px;font-weight:800;margin-top:4px;">${activos}/${totalEstudiantes}</div><div style="font-size:10.5px;color:var(--t3);">estudiantes con actividad</div></div>
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-writing" style="font-size:22px;color:var(--gold);"></i><div style="font-size:24px;font-weight:800;margin-top:4px;">${promedioExamenes!==null?promedioExamenes+'%':'—'}</div><div style="font-size:10.5px;color:var(--t3);">promedio en exámenes</div></div>
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-calendar-event" style="font-size:22px;color:var(--teal);"></i><div style="font-size:24px;font-weight:800;margin-top:4px;">${totalPosibleEntregas?Math.round(entregasTareas/totalPosibleEntregas*100)+'%':'—'}</div><div style="font-size:10.5px;color:var(--t3);">tareas entregadas</div></div>
+      </div>
+      ${totalDist ? `<div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar"></i> Distribución de calificaciones en exámenes</div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span style="color:var(--green);">80% o más</span><span>${distribucion.alto}</span></div>
+          <div style="background:var(--c3);border-radius:6px;height:10px;overflow:hidden;margin-bottom:10px;"><div style="background:var(--green);height:100%;width:${Math.round(distribucion.alto/totalDist*100)}%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span style="color:var(--amber);">Entre 60% y 79%</span><span>${distribucion.medio}</span></div>
+          <div style="background:var(--c3);border-radius:6px;height:10px;overflow:hidden;margin-bottom:10px;"><div style="background:var(--amber);height:100%;width:${Math.round(distribucion.medio/totalDist*100)}%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span style="color:var(--red);">Menos de 60%</span><span>${distribucion.bajo}</span></div>
+          <div style="background:var(--c3);border-radius:6px;height:10px;overflow:hidden;"><div style="background:var(--red);height:100%;width:${Math.round(distribucion.bajo/totalDist*100)}%;"></div></div>
+        </div>
+      </div>` : '<div class="auth-hint">Todavía no hay resultados de exámenes para mostrar una distribución.</div>'}
+      <button class="btn btn-ghost" style="margin-top:16px;" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Ver diagnóstico por concepto</button>
+    `;
+  } catch(e){
+    $('metricas-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DOCUMENTOS — todo lo que se puede consultar de la clase en un solo
+// lugar: los casos disponibles (oficiales y los del docente) y, del
+// lado del estudiante, sus propios apuntes — sin tener que entrar a
+// cada materia por separado a buscarlos.
+// ═══════════════════════════════════════════════════════
+async function navDocumentos(){
+  showView('view-documentos');
+  setActiveNav('nav-documentos'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-documentos');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-folder"></i> Documentos</div><h1>Casos y apuntes de tu clase</h1></div><div id="documentos-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  if(!currentUser.grupo_id){ $('documentos-contenido').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
+  try {
+    await cargarCasosPersonalizados(currentUser.materia_id);
+    const data = SUBJECT_DATA[currentUser.materia_id];
+    const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
+    let html = `<div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-briefcase"></i> Casos de ${s?.title||''}</div>`;
+    html += data.cases.map(c => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);">
+      <i class="ti ti-file-text" style="color:${s?.color||'var(--gold)'};"></i>
+      <div><b>${c.title}</b><span>Expediente ${c.expediente} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}${c.personalizado?' · creado por tu profesor':''}</span></div>
+    </div>`).join('');
+    if(currentUser.rol==='estudiante'){
+      const { data: apuntes } = await sb.from('academy_apuntes').select('id,titulo,materia_id').eq('usuario_id', currentUser.usuario_id).order('actualizado_en',{ascending:false});
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-notebook"></i> Mis apuntes</div>`;
+      html += apuntes?.length ? apuntes.map(a => {
+        const sa = SUBJECTS.find(x=>x.id===a.materia_id);
+        return `<div class="export-opt" style="cursor:pointer;" onclick="navApuntes();setTimeout(()=>abrirApunteEstructurado('${a.id}'),300);"><i class="ti ti-notebook" style="color:${sa?.color||'var(--gold)'};"></i><div><b>${a.titulo||'(sin título)'}</b><span>${sa?.title||a.materia_id}</span></div></div>`;
+      }).join('') : '<div class="auth-hint">Todavía no tienes ningún apunte.</div>';
+    }
+    $('documentos-contenido').innerHTML = html;
+  } catch(e){
+    $('documentos-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
 }
 
 // ───── Sidebar: listado de materias y roles ─────
@@ -4722,6 +4825,7 @@ async function entrarConSesion(membresia){
   // lo toque.
   document.querySelector('.mode-toggle').style.display = currentUser.rol==='docente' ? '' : 'none';
   $('menu-btn-companeros').style.display = currentUser.rol==='docente' ? 'none' : '';
+  $('nav-metricas').classList.toggle('hidden', currentUser.rol!=='docente');
   $('brand-sub').textContent = currentUser.grupo_nombre || 'Portal de materias';
 
   // La pieza central de todo esto: un estudiante entra directo a la
