@@ -4279,6 +4279,7 @@ async function entrarConSesion(membresia){
   cargarNotificaciones();
   actualizarRachaDeEstudio();
   verificarAnunciosDeClase();
+  revisarRepasosProgramadosVencidos();
   if(currentUser.rol==='estudiante'){
     revisarPreguntaVivoActiva();
     clearInterval(window.__pollingEstudianteVivo);
@@ -4601,8 +4602,21 @@ function dibujarPreguntaExamen(){
       st.resultadoYaGuardado = true;
       sb.from('academy_examenes_resultados').insert({ examen_id: st.examenAsignadoId, usuario_id: currentUser.usuario_id, correctas, total: st.preguntas.length }).then(()=>{}).catch(()=>{});
     }
+    // Repetición espaciada: si hubo conceptos débiles, se programa solo
+    // un recordatorio para repasarlos en 3 días — ni tan pronto que no
+    // sirva de nada, ni tan tarde que ya se hayan olvidado. Un examen
+    // por materia a la vez: si ya había uno programado, se reemplaza en
+    // vez de acumular avisos repetidos.
+    if(st.conceptosDebiles.length && !st.repasoYaProgramado){
+      st.repasoYaProgramado = true;
+      const fecha = new Date(Date.now()+3*86400000).toISOString().slice(0,10);
+      sb.from('academy_repasos_programados').delete().eq('usuario_id', currentUser.usuario_id).eq('materia_id', st.subjectId).eq('completado', false)
+        .then(() => sb.from('academy_repasos_programados').insert({ usuario_id: currentUser.usuario_id, materia_id: st.subjectId, conceptos: st.conceptosDebiles, fecha_programada: fecha }))
+        .catch(()=>{});
+    }
     cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
       ${st.examenAsignadoId ? '<div class="eyebrow" style="color:var(--gold);"><i class="ti ti-writing"></i> Examen asignado por tu profesor — resultado guardado</div>' : ''}
+      ${st.conceptosDebiles.length ? '<div class="eyebrow" style="color:var(--teal);"><i class="ti ti-calendar-time"></i> Te recordaremos repasar esto en 3 días</div>' : ''}
       <div class="score" style="font-size:48px;font-weight:800;color:var(--gold);">${correctas}/${st.preguntas.length}</div>
       <p>Preguntas correctas en tu examen de práctica</p>
     </div>
@@ -4829,6 +4843,55 @@ function responderExamenPractica(oi){
   fb.classList.remove('hidden');
   fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la opción correcta.'}</b> ${q.explain||''}</div>
     <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
+}
+
+// Se revisa una sola vez al entrar a la sesión — si hay algún repaso
+// programado cuya fecha ya llegó (o pasó), aparece un aviso amigable,
+// no una alarma. Un solo aviso a la vez, aunque haya varios vencidos,
+// para no saturar a la persona apenas entra.
+let __revisandoRepasos = false;
+async function revisarRepasosProgramadosVencidos(){
+  if(!sb || !currentUser?.usuario_id || currentUser?.rol!=='estudiante' || $('repaso-vencido-overlay') || __revisandoRepasos) return;
+  __revisandoRepasos = true;
+  try {
+    const hoy = new Date().toISOString().slice(0,10);
+    const { data: repasos, error } = await sb.from('academy_repasos_programados').select('id,materia_id,conceptos').eq('usuario_id', currentUser.usuario_id).eq('completado', false).lte('fecha_programada', hoy).limit(1);
+    if(error) throw error;
+    if(!repasos || !repasos.length) return;
+    const r = repasos[0];
+    const s = SUBJECTS.find(x=>x.id===r.materia_id);
+    const overlay = document.createElement('div');
+    overlay.className = 'export-modal-overlay';
+    overlay.id = 'repaso-vencido-overlay';
+    overlay.innerHTML = `<div class="export-modal" style="text-align:center;">
+      <i class="ti ti-calendar-time" style="font-size:32px;color:var(--teal);"></i>
+      <h2 style="margin-top:8px;">Es buen momento para repasar</h2>
+      <p>Hace unos días te costaron algunos conceptos de <b>${s?.title||r.materia_id}</b> — repasarlos ahora, justo cuando empiezan a olvidarse, es cuando más ayuda.</p>
+      <div style="text-align:left;background:var(--c2);border-radius:var(--r);padding:12px;margin:14px 0;">
+        ${r.conceptos.map(c=>`<div style="font-size:12.5px;padding:4px 0;"><i class="ti ti-point" style="color:var(--teal);"></i> ${c}</div>`).join('')}
+      </div>
+      <button class="auth-submit" onclick="iniciarRepasoProgramado('${r.id}','${r.materia_id}',${JSON.stringify(r.conceptos).replace(/"/g,'&quot;')})">Repasar ahora</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('repaso-vencido-overlay').remove()">Más tarde</button>
+    </div>`;
+    document.body.appendChild(overlay);
+  } catch(e){ /* silencioso */
+  } finally { __revisandoRepasos = false; }
+}
+async function iniciarRepasoProgramado(repasoId, subjectId, conceptos){
+  $('repaso-vencido-overlay')?.remove();
+  await cargarCasosPersonalizados(subjectId);
+  const data = SUBJECT_DATA[subjectId];
+  const preguntas = [];
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  if(!preguntas.length){ toast('Esas preguntas ya no están disponibles.'); return; }
+  for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
+  await sb.from('academy_repasos_programados').update({ completado:true }).eq('id', repasoId);
+  navSubject(subjectId);
+  setTimeout(() => {
+    examenPracticaState = { subjectId, preguntas, index:0, respuestas:[] };
+    showView('view-examen-practica');
+    dibujarPreguntaExamen();
+  }, 300);
 }
 
 function abrirMisPuntosDebiles(){
