@@ -4656,6 +4656,12 @@ async function iniciarExamenPractica(subjectId){
   showView('view-examen-practica');
   dibujarPreguntaExamen();
 }
+function salirDelExamenPractica(subjectId){
+  if(confirm('¿Salir del examen? Tu progreso en este intento se perderá.')){
+    examenPracticaState = null;
+    navSubject(subjectId);
+  }
+}
 function dibujarPreguntaExamen(){
   const st = examenPracticaState;
   const cont = $('view-examen-practica');
@@ -4708,6 +4714,7 @@ function dibujarPreguntaExamen(){
   const item = st.preguntas[st.index];
   const q = item.q;
   cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <button class="btn btn-ghost btn-sm" onclick="salirDelExamenPractica('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir del examen</button>
     <div class="eyebrow"><i class="ti ti-clipboard-check"></i> Examen de práctica — pregunta ${st.index+1} de ${st.preguntas.length}</div>
     <div style="background:var(--c3);border-radius:6px;height:6px;margin:10px 0 18px;overflow:hidden;"><div style="background:var(--accent2);height:100%;width:${Math.round(st.index/st.preguntas.length*100)}%;"></div></div>
   </div>
