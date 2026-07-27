@@ -2,6 +2,8 @@
 <html lang="es"><head><meta charset="UTF-8">
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CapitalLab Academy</title>
@@ -3586,6 +3588,10 @@ function abrirPreguntaRelampago(){
   overlay.innerHTML = `<div class="export-modal">
     <h2><i class="ti ti-bolt" style="color:var(--gold)"></i> Lanzar pregunta en vivo</h2>
     <p>Se envía de inmediato a todos los estudiantes conectados de <b>${currentUser.grupo_nombre}</b>.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost btn-sm" id="relampago-tab-existentes" onclick="mostrarPestanaRelampago('existentes')">Reutilizar una pregunta</button>
+      <button class="btn btn-ghost btn-sm" id="relampago-tab-nueva" onclick="mostrarPestanaRelampago('nueva')">Escribir una nueva</button>
+    </div>
     <div id="relampago-lista">
       ${preguntasDisponibles.length ? preguntasDisponibles.map((p,i) => `
         <div class="export-opt" style="cursor:pointer;" onclick="lanzarPreguntaRelampago(${i})">
@@ -3593,10 +3599,52 @@ function abrirPreguntaRelampago(){
           <div><b>${p.q.q}</b><span>${p.caso} · ${p.etapa}</span></div>
         </div>`).join('') : '<div class="auth-hint">Todavía no tienes ningún caso con preguntas de opción múltiple para reutilizar.</div>'}
     </div>
+    <div id="relampago-nueva" class="hidden">
+      <div class="form-field"><label>Pregunta</label><input type="text" id="rel-nueva-pregunta" placeholder="Ej: ¿Qué mide el IAC de un banco?"></div>
+      <div id="rel-nueva-opciones"></div>
+      <div class="auth-msg" id="rel-nueva-msg"></div>
+      <button class="auth-submit" onclick="lanzarPreguntaRelampagoPersonalizada()"><i class="ti ti-send"></i> Lanzar esta pregunta</button>
+    </div>
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('relampago-overlay').remove()">Cancelar</button>
   </div>`;
   document.body.appendChild(overlay);
   window.__preguntasRelampagoDisponibles = preguntasDisponibles;
+  window.__relNuevaOpciones = ['','','',''];
+  window.__relNuevaCorrecta = 0;
+}
+function mostrarPestanaRelampago(cual){
+  $('relampago-lista').classList.toggle('hidden', cual!=='existentes');
+  $('relampago-nueva').classList.toggle('hidden', cual!=='nueva');
+  $('relampago-tab-existentes').classList.toggle('active', cual==='existentes');
+  $('relampago-tab-nueva').classList.toggle('active', cual==='nueva');
+  if(cual==='nueva') dibujarOpcionesRelampagoNueva();
+}
+function dibujarOpcionesRelampagoNueva(){
+  $('rel-nueva-opciones').innerHTML = window.__relNuevaOpciones.map((op,i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <input type="radio" name="rel-nueva-correcta" ${window.__relNuevaCorrecta===i?'checked':''} onchange="window.__relNuevaCorrecta=${i}" title="Marcar como correcta">
+      <input type="text" value="${op.replace(/"/g,'&quot;')}" placeholder="Opción ${i+1}" oninput="window.__relNuevaOpciones[${i}]=this.value" style="flex:1;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+    </div>`).join('');
+}
+async function lanzarPreguntaRelampagoPersonalizada(){
+  const pregunta = $('rel-nueva-pregunta').value.trim();
+  const opciones = window.__relNuevaOpciones.map(o=>o.trim()).filter(Boolean);
+  const msg = $('rel-nueva-msg');
+  if(!pregunta){ msg.className='auth-msg show error'; msg.textContent='Escribe la pregunta.'; return; }
+  if(opciones.length<2){ msg.className='auth-msg show error'; msg.textContent='Completa al menos dos opciones.'; return; }
+  try {
+    const { data, error } = await sb.from('academy_preguntas_vivo').insert({
+      grupo_id: currentUser.grupo_id, pregunta, opciones, correcta: window.__relNuevaCorrecta,
+    }).select().single();
+    if(error) throw error;
+    $('relampago-overlay')?.remove();
+    const { data: membresias } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    const notifs = (membresias||[]).map(m => ({ usuario_id: m.academy_usuarios.id, tipo:'contenido_editado', mensaje:'¡Tu profesor lanzó una pregunta en vivo! Entra a responderla.', referencia_materia: currentUser.materia_id }));
+    if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
+    mostrarResultadosVivoDocente(data.id, { q:pregunta, opts:opciones, correct:window.__relNuevaCorrecta });
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo lanzar: ' + (e.message||e);
+  }
 }
 
 async function lanzarPreguntaRelampago(indice){
@@ -3918,20 +3966,42 @@ function closeExportModal(){ $('export-modal-overlay').classList.add('hidden'); 
 // en vez de depender del CSS de impresión de la página en vivo, así
 // funciona igual de bien para cualquier exportación (materia actual o
 // mis casos completados).
-function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${tituloDoc}</title>
-  <style>
-    body{font-family:Georgia,serif;color:#111;max-width:760px;margin:0 auto;padding:32px 24px;line-height:1.55;}
+async function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
+  // Antes esto abría una ventana nueva y llamaba a window.print() —
+  // dejaba la decisión de "guardar como PDF" a cómo cada navegador
+  // maneja su diálogo de impresión. Ahora genera un PDF real en el
+  // propio navegador y lo entrega con el mecanismo nativo de descarga,
+  // para que la persona elija dónde guardarlo como cualquier archivo.
+  toast('Generando PDF…');
+  const contenedor = document.createElement('div');
+  contenedor.style.cssText = 'position:fixed;left:-9999px;top:0;width:720px;background:#fff;';
+  contenedor.innerHTML = `<style>
+    body,div{font-family:Georgia,serif;color:#111;}
     h1{font-size:22px;margin-bottom:2px;} .sub{color:#555;font-size:12.5px;margin-bottom:22px;}
     h2{font-size:16px;margin-top:26px;border-bottom:1px solid #ccc;padding-bottom:4px;}
     .gloss-t{font-weight:700;margin-top:10px;} .gloss-d{color:#333;margin-bottom:2px;}
     .caso{margin-top:22px;padding-top:14px;border-top:1px solid #ddd;}
     .preg{margin:10px 0;font-size:13.5px;} .resp{color:#333;margin-left:12px;}
-    @media print{ body{padding:0;} }
-  </style></head><body>${cuerpoHtml}</body></html>`);
-  w.document.close();
-  setTimeout(()=>w.print(), 350);
+  </style><div style="padding:28px 24px;">${cuerpoHtml}</div>`;
+  document.body.appendChild(contenedor);
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'pt', format:'letter' });
+    await new Promise((resolve, reject) => {
+      doc.html(contenedor, {
+        callback: (doc) => {
+          const nombreArchivo = tituloDoc.replace(/[^\w\sÁÉÍÓÚÑáéíóúñ-]/g,'').replace(/\s+/g,'_').slice(0,80) + '.pdf';
+          doc.save(nombreArchivo);
+          resolve();
+        },
+        x:20, y:20, width:555, windowWidth:720,
+      });
+    });
+  } catch(e){
+    toast('No se pudo generar el PDF: ' + (e.message||e));
+  } finally {
+    contenedor.remove();
+  }
 }
 
 function exportPDFCurrentSubject(){
