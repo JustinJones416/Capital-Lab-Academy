@@ -579,6 +579,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-apuntes" class="hidden"></section>
     <section id="view-metricas" class="hidden"></section>
     <section id="view-documentos" class="hidden"></section>
+    <section id="view-libro" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
     <section id="view-subject" class="hidden"></section>
@@ -2240,7 +2241,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -2764,6 +2765,173 @@ async function navMetricas(){
 // lado del estudiante, sus propios apuntes — sin tener que entrar a
 // cada materia por separado a buscarlos.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// PERSONALIZACIÓN — una encuesta breve, una sola vez, sobre cuánto y
+// cómo estudia la persona. No decide contenido nuevo por sí sola —
+// ajusta qué herramienta de Academy le recomendamos primero, para que se
+// sienta hecho a su manera de aprender desde el primer día. (Esto es
+// dentro de Academy — el simulador es un producto y un archivo aparte,
+// fuera de lo que se puede tocar desde aquí.)
+// ═══════════════════════════════════════════════════════
+function mostrarEncuestaPersonalizacion(){
+  if($('personalizacion-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'personalizacion-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-sparkles" style="color:var(--gold)"></i> Antes de empezar</h2>
+    <p>Dos preguntas rápidas para adaptar Academy a tu forma de estudiar.</p>
+    <div class="form-field"><label>¿Cuántas horas a la semana le dedicas a estudiar, aproximadamente?</label>
+      <select id="pers-horas" style="width:100%;padding:10px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;">
+        <option value="2">Menos de 3 horas</option>
+        <option value="5">Entre 3 y 7 horas</option>
+        <option value="10">Entre 8 y 14 horas</option>
+        <option value="20">Más de 14 horas</option>
+      </select>
+    </div>
+    <div class="form-field"><label>¿Cómo prefieres estudiar?</label>
+      <select id="pers-metodo" style="width:100%;padding:10px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;">
+        <option value="tarjetas">Repasando tarjetas y conceptos cortos</option>
+        <option value="casos">Resolviendo casos prácticos directamente</option>
+        <option value="resumenes">Leyendo resúmenes completos primero</option>
+        <option value="quiz">Practicando con preguntas y exámenes</option>
+      </select>
+    </div>
+    <button class="auth-submit" onclick="guardarPersonalizacion()">Empezar</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="omitirPersonalizacion()">Prefiero no decir</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function guardarPersonalizacion(){
+  const horas = parseInt($('pers-horas').value);
+  const metodo = $('pers-metodo').value;
+  try {
+    await sb.from('academy_usuarios').update({ horas_estudio_semana: horas, metodo_estudio: metodo, personalizacion_completada: true }).eq('id', currentUser.usuario_id);
+    currentUser.metodoEstudio = metodo; currentUser.personalizacionCompletada = true;
+    $('personalizacion-overlay').remove();
+    toast('Listo — Academy se ajustó a tu forma de estudiar.');
+  } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
+}
+async function omitirPersonalizacion(){
+  await sb.from('academy_usuarios').update({ personalizacion_completada: true }).eq('id', currentUser.usuario_id).catch(()=>{});
+  currentUser.personalizacionCompletada = true;
+  $('personalizacion-overlay').remove();
+}
+// Traduce el método preferido en una recomendación concreta y una
+// acción directa — no solo un dato guardado sin usarse.
+function recomendacionSegunMetodo(subjectId){
+  const mapa = {
+    tarjetas: { texto:'Como prefieres repasar con tarjetas, empieza por ahí antes de entrar a los casos.', accion:`navSubject('${subjectId}');setTimeout(()=>showSubjTool('flash'),300);`, boton:'Ir a tarjetas didácticas' },
+    casos: { texto:'Como prefieres ir directo a la práctica, este es el mejor punto de entrada.', accion:`navSubject('${subjectId}')`, boton:'Ver los casos' },
+    resumenes: { texto:'Como prefieres leer primero, empieza por el resumen de la materia.', accion:`navSubject('${subjectId}')`, boton:'Leer el resumen' },
+    quiz: { texto:'Como prefieres practicar con preguntas, el examen de práctica es tu mejor punto de entrada.', accion:`iniciarExamenPractica('${subjectId}')`, boton:'Ir al examen de práctica' },
+  };
+  return mapa[currentUser.metodoEstudio] || null;
+}
+let __tipPersonalizadoYaMostrado = false;
+function mostrarTipPersonalizadoSiCorresponde(subjectId){
+  if(currentUser?.rol!=='estudiante' || !currentUser?.metodoEstudio || currentUser?.materia_id!==subjectId || __tipPersonalizadoYaMostrado) return '';
+  const r = recomendacionSegunMetodo(subjectId);
+  if(!r) return '';
+  __tipPersonalizadoYaMostrado = true;
+  return `<div class="card" style="border-color:var(--teal);margin-bottom:16px;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;"><i class="ti ti-sparkles" style="color:var(--teal);font-size:20px;"></i><span style="font-size:12.5px;">${r.texto}</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="${r.accion}">${r.boton} <i class="ti ti-arrow-right"></i></button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MODO LIBRO — el glosario de la materia, organizado en capítulos de
+// dos conceptos cada uno, para leer en orden. Al terminar cada
+// capítulo, un examen corto que junta TODO lo visto hasta ese punto —
+// no solo lo último leído —, para que la persona no avance sin haber
+// afianzado lo anterior. El último capítulo termina evaluando la
+// materia completa.
+// ═══════════════════════════════════════════════════════
+let libroState = null;
+function iniciarModoLibro(subjectId){
+  const glosario = obtenerGlosarioEfectivo(subjectId) || [];
+  if(glosario.length < 2){ toast('Esta materia todavía no tiene suficiente glosario para el modo libro.'); return; }
+  const capitulos = [];
+  for(let i=0;i<glosario.length;i+=2) capitulos.push(glosario.slice(i,i+2));
+  const quiz = SUBJECT_DATA[subjectId].studyMaterial?.quiz || [];
+  libroState = { subjectId, capitulos, capituloActual:0, quiz, fase:'lectura' };
+  showView('view-libro');
+  dibujarCapituloLibro();
+}
+function dibujarCapituloLibro(){
+  const st = libroState;
+  const cont = $('view-libro');
+  const s = SUBJECTS.find(x=>x.id===st.subjectId);
+  const cap = st.capitulos[st.capituloActual];
+  const esUltimo = st.capituloActual === st.capitulos.length-1;
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <button class="btn btn-ghost btn-sm" onclick="salirDelModoLibro('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir del modo libro</button>
+    <div class="eyebrow" style="color:${s?.color||'var(--gold)'};"><i class="ti ti-book"></i> ${s?.title||''} · Capítulo ${st.capituloActual+1} de ${st.capitulos.length}</div>
+    <div style="background:var(--c3);border-radius:6px;height:6px;margin:10px 0 18px;overflow:hidden;"><div style="background:${s?.color||'var(--gold)'};height:100%;width:${Math.round((st.capituloActual)/st.capitulos.length*100)}%;"></div></div>
+  </div>
+  <div class="card" style="font-family:Georgia,serif;">
+    ${cap.map(t => `<div style="margin-bottom:24px;"><h2 style="font-size:19px;margin-bottom:8px;">${t.t}</h2><div style="font-size:14.5px;line-height:1.8;color:var(--t2);">${t.d}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--c3);margin:20px 0;">')}
+  </div>
+  <button class="btn" style="width:100%;justify-content:center;margin-top:16px;" onclick="iniciarAutoevaluacionCapitulo()"><i class="ti ti-clipboard-check"></i> ${esUltimo?'Autoevaluación final de la materia':'Autoevaluación de este capítulo'} <i class="ti ti-arrow-right"></i></button>`;
+}
+function iniciarAutoevaluacionCapitulo(){
+  const st = libroState;
+  if(!st.quiz.length){ avanzarDespuesDeCapitulo(); return; }
+  const hasta = Math.ceil((st.capituloActual+1) / st.capitulos.length * st.quiz.length);
+  st.preguntasCapitulo = st.quiz.slice(0, hasta);
+  st.indexPregunta = 0; st.correctasCapitulo = 0;
+  st.fase = 'examen';
+  dibujarPreguntaLibro();
+}
+function dibujarPreguntaLibro(){
+  const st = libroState;
+  const cont = $('view-libro');
+  if(st.indexPregunta >= st.preguntasCapitulo.length){
+    cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
+      <div class="score" style="font-size:44px;font-weight:800;color:var(--gold);">${st.correctasCapitulo}/${st.preguntasCapitulo.length}</div>
+      <p>Autoevaluación acumulada hasta este capítulo</p>
+    </div>
+    <button class="btn" style="width:100%;justify-content:center;" onclick="avanzarDespuesDeCapitulo()">${st.capituloActual < st.capitulos.length-1 ? 'Siguiente capítulo' : 'Terminar el libro'} <i class="ti ti-arrow-right"></i></button>`;
+    return;
+  }
+  const q = st.preguntasCapitulo[st.indexPregunta];
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-clipboard-check"></i> Pregunta ${st.indexPregunta+1} de ${st.preguntasCapitulo.length}</div></div>
+  <div class="card"><div class="q-text" style="margin-bottom:14px;">${q.q}</div><div id="libro-opts"></div><div id="libro-feedback" class="hidden" style="margin-top:12px;"></div></div>`;
+  $('libro-opts').innerHTML = q.opts.map((o,oi)=>`<div class="q-opt" onclick="responderPreguntaLibro(${oi})"><span class="dot"></span>${o}</div>`).join('');
+}
+function responderPreguntaLibro(oi){
+  const st = libroState;
+  const q = st.preguntasCapitulo[st.indexPregunta];
+  const acerto = oi===q.correct;
+  if(acerto) st.correctasCapitulo++;
+  document.querySelectorAll('#libro-opts .q-opt').forEach((el,i)=>{ if(i===q.correct) el.classList.add('correct'); else if(i===oi) el.classList.add('incorrect'); el.style.pointerEvents='none'; });
+  const fb = $('libro-feedback');
+  fb.classList.remove('hidden');
+  fb.innerHTML = `<div class="q-feedback show ${acerto?'ok':'bad'}"><b>${acerto?'Correcto.':'No es la opción correcta.'}</b> ${q.explain||''}</div>
+    <button class="btn" style="margin-top:10px;width:100%;" onclick="libroState.indexPregunta++;dibujarPreguntaLibro();">Continuar <i class="ti ti-arrow-right"></i></button>`;
+}
+function avanzarDespuesDeCapitulo(){
+  const st = libroState;
+  if(st.capituloActual < st.capitulos.length-1){
+    st.capituloActual++; st.fase='lectura';
+    dibujarCapituloLibro();
+  } else {
+    $('view-libro').innerHTML = `<div class="hero" style="padding-top:40px;text-align:center;">
+      <i class="ti ti-confetti" style="font-size:40px;color:var(--gold);"></i>
+      <h1 style="margin-top:10px;">Terminaste el libro completo</h1>
+      <p>Leíste los ${st.capitulos.length} capítulos de esta materia y te autoevaluaste en cada uno.</p>
+      <button class="btn" style="margin-top:16px;" onclick="navSubject('${st.subjectId}')">Volver a la materia</button>
+    </div>`;
+  }
+}
+function salirDelModoLibro(subjectId){
+  if(confirm('¿Salir del modo libro? Tu progreso en esta lectura se perderá.')){
+    libroState = null;
+    navSubject(subjectId);
+  }
+}
+
 async function navDocumentos(){
   showView('view-documentos');
   setActiveNav('nav-documentos'); setActiveSubjectPill(null);
@@ -2947,6 +3115,7 @@ function renderSubjectView(subjectId){
       <h1>${s.title}</h1>
       <p>${s.sub}</p>
     </div>
+    ${mostrarTipPersonalizadoSiCorresponde(subjectId)}
     <div class="mentor-bar">
       <div class="mentor-avatar">${MENTOR.initials}</div>
       <div class="mentor-text">
@@ -2963,6 +3132,7 @@ function renderSubjectView(subjectId){
       </div>
       <div id="examen-asignado-banner"></div>
       <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
+      <button class="btn btn-ghost" onclick="iniciarModoLibro('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-book"></i> Modo libro — leer por capítulos con autoevaluación</button>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
@@ -4755,6 +4925,7 @@ async function authLoadProfileAndEnter(){
 
   currentUser = {
     usuario_id: perfil.id, auth_id: user.id, nombre: perfil.nombre, correo: perfil.correo, rol: perfil.rol,
+    personalizacionCompletada: perfil.personalizacion_completada, metodoEstudio: perfil.metodo_estudio,
   };
   studentName = currentUser.nombre;
   localStorage.setItem('academy_student_name', currentUser.nombre);
@@ -4842,6 +5013,7 @@ async function entrarConSesion(membresia){
   actualizarRachaDeEstudio();
   verificarAnunciosDeClase();
   revisarRepasosProgramadosVencidos();
+  if(currentUser.rol==='estudiante' && !currentUser.personalizacionCompletada) mostrarEncuestaPersonalizacion();
   if(currentUser.rol==='estudiante'){
     revisarPreguntaVivoActiva();
     clearInterval(window.__pollingEstudianteVivo);
