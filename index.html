@@ -4781,42 +4781,85 @@ function abrirConstructorExamenPropio(subjectId){
 // tarea formal para toda la clase, y el docente puede ver quién lo hizo
 // y con qué resultado.
 // ═══════════════════════════════════════════════════════
-function abrirAsignarExamen(){
+function abrirAsignarExamen(examenExistente){
   if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
   const data = SUBJECT_DATA[currentUser.materia_id];
   const conceptos = [];
   data.cases.forEach(c => c.stages.forEach(st => { if(st.questions?.length && !conceptos.some(x=>x.titulo===st.title)) conceptos.push({ titulo: st.title, caso: c.title }); }));
+  const elegidosPrevios = examenExistente?.conceptos || [];
+  window.__axPreguntasPropias = examenExistente?.preguntas_propias ? JSON.parse(JSON.stringify(examenExistente.preguntas_propias)) : [];
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
   overlay.id = 'asignar-examen-overlay';
   overlay.innerHTML = `<div class="export-modal">
-    <h2><i class="ti ti-writing" style="color:var(--gold)"></i> Asignar examen a la clase</h2>
+    <h2><i class="ti ti-writing" style="color:var(--gold)"></i> ${examenExistente?'Editar examen asignado':'Asignar examen a la clase'}</h2>
     <p>Tus estudiantes lo verán como una tarea pendiente al entrar a "${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title}".</p>
-    <div class="form-field"><label>Título del examen</label><input type="text" id="ax-titulo" placeholder="Ej: Examen parcial — Unidad 2" value="Examen asignado"></div>
-    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin:10px 0 6px;">Conceptos a incluir</label>
-    <div>
+    <div class="form-field"><label>Título del examen</label><input type="text" id="ax-titulo" placeholder="Ej: Examen parcial — Unidad 2" value="${(examenExistente?.titulo||'Examen asignado').replace(/"/g,'&quot;')}"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost btn-sm active" id="ax-tab-conceptos" onclick="mostrarPestanaAsignarExamen('conceptos')">Conceptos existentes</button>
+      <button class="btn btn-ghost btn-sm" id="ax-tab-propias" onclick="mostrarPestanaAsignarExamen('propias')">Preguntas propias</button>
+    </div>
+    <div id="ax-panel-conceptos">
       ${conceptos.map(c => `<label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--c3);cursor:pointer;">
-        <input type="checkbox" class="ax-concepto-check" value="${c.titulo.replace(/"/g,'&quot;')}" checked>
+        <input type="checkbox" class="ax-concepto-check" value="${c.titulo.replace(/"/g,'&quot;')}" ${examenExistente ? (elegidosPrevios.includes(c.titulo)?'checked':'') : 'checked'}>
         <div><b style="font-size:12.5px;">${c.titulo}</b><div style="font-size:10.5px;color:var(--t3);">${c.caso}</div></div>
       </label>`).join('')}
     </div>
+    <div id="ax-panel-propias" class="hidden">
+      <div id="ax-propias-lista"></div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="axAgregarPreguntaPropia()" style="margin-top:6px;">+ Añadir pregunta</button>
+    </div>
     <div class="auth-msg" id="ax-msg"></div>
-    <button class="auth-submit" style="margin-top:14px;" onclick="publicarExamenAsignado()">Asignar a la clase</button>
+    <button class="auth-submit" style="margin-top:14px;" onclick="publicarExamenAsignado('${examenExistente?.id||''}')">${examenExistente?'Guardar cambios':'Asignar a la clase'}</button>
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('asignar-examen-overlay').remove()">Cancelar</button>
   </div>`;
   document.body.appendChild(overlay);
+  axRenderPreguntasPropias();
 }
-async function publicarExamenAsignado(){
+function mostrarPestanaAsignarExamen(cual){
+  $('ax-panel-conceptos').classList.toggle('hidden', cual!=='conceptos');
+  $('ax-panel-propias').classList.toggle('hidden', cual!=='propias');
+  $('ax-tab-conceptos').classList.toggle('active', cual==='conceptos');
+  $('ax-tab-propias').classList.toggle('active', cual==='propias');
+}
+function axAgregarPreguntaPropia(){
+  window.__axPreguntasPropias.push({ q:'', opts:['','','',''], correct:0, explain:'' });
+  axRenderPreguntasPropias();
+}
+function axQuitarPreguntaPropia(i){ window.__axPreguntasPropias.splice(i,1); axRenderPreguntasPropias(); }
+function axRenderPreguntasPropias(){
+  const cont = $('ax-propias-lista');
+  if(!window.__axPreguntasPropias.length){ cont.innerHTML = '<div class="auth-hint">Todavía no has añadido ninguna pregunta propia.</div>'; return; }
+  cont.innerHTML = window.__axPreguntasPropias.map((p,i) => `
+    <div style="background:var(--c2);border-radius:var(--r);padding:12px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <b style="font-size:12px;">Pregunta ${i+1}</b>
+        <i class="ti ti-trash" style="cursor:pointer;color:var(--red);" onclick="axQuitarPreguntaPropia(${i})"></i>
+      </div>
+      <input type="text" value="${(p.q||'').replace(/"/g,'&quot;')}" placeholder="Escribe la pregunta" oninput="window.__axPreguntasPropias[${i}].q=this.value" style="width:100%;padding:7px 10px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;margin-bottom:6px;">
+      ${p.opts.map((op,oi) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <input type="radio" name="ax-correcta-${i}" ${p.correct===oi?'checked':''} onchange="window.__axPreguntasPropias[${i}].correct=${oi}">
+        <input type="text" value="${(op||'').replace(/"/g,'&quot;')}" placeholder="Opción ${oi+1}" oninput="window.__axPreguntasPropias[${i}].opts[${oi}]=this.value" style="flex:1;padding:6px 8px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+      </div>`).join('')}
+      <input type="text" value="${(p.explain||'').replace(/"/g,'&quot;')}" placeholder="Explicación (opcional)" oninput="window.__axPreguntasPropias[${i}].explain=this.value" style="width:100%;padding:6px 8px;background:var(--c1);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;margin-top:4px;">
+    </div>`).join('');
+}
+async function publicarExamenAsignado(examenIdExistente){
   const titulo = $('ax-titulo').value.trim() || 'Examen asignado';
   const elegidos = [...document.querySelectorAll('.ax-concepto-check:checked')].map(el=>el.value);
+  const preguntasValidas = window.__axPreguntasPropias.filter(p => p.q.trim() && p.opts.every(o=>o.trim()));
   const msg = $('ax-msg');
-  if(!elegidos.length){ msg.className='auth-msg show error'; msg.textContent='Elige al menos un concepto.'; return; }
+  if(!elegidos.length && !preguntasValidas.length){ msg.className='auth-msg show error'; msg.textContent='Elige al menos un concepto o añade al menos una pregunta propia completa.'; return; }
   try {
-    const { error } = await sb.from('academy_examenes_asignados').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos });
+    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos, preguntas_propias: preguntasValidas.length?preguntasValidas:null };
+    const { error } = examenIdExistente
+      ? await sb.from('academy_examenes_asignados').update(payload).eq('id', examenIdExistente)
+      : await sb.from('academy_examenes_asignados').insert(payload);
     if(error) throw error;
     $('asignar-examen-overlay').remove();
-    toast('Examen asignado — ya lo pueden ver tus estudiantes.');
-    notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Tu profesor asignó un examen: "${titulo}".`);
+    toast(examenIdExistente ? 'Examen actualizado.' : 'Examen asignado — ya lo pueden ver tus estudiantes.');
+    if(!examenIdExistente) notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Tu profesor asignó un examen: "${titulo}".`);
+    if($('resultados-examen-overlay')) abrirResultadosExamenAsignado();
   } catch(e){
     msg.className='auth-msg show error'; msg.textContent = 'No se pudo asignar: ' + (e.message||e);
   }
@@ -4836,12 +4879,14 @@ async function abrirResultadosExamenAsignado(){
   </div>`;
   document.body.appendChild(overlay);
   try {
-    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,conceptos,preguntas_propias,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
     if(error) throw error;
     if(!examenes || !examenes.length){ $('resultados-examen-contenido').innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen.</div>'; return; }
+    window.__examenesAsignadosCache = examenes;
     const { count: totalEstudiantes } = await sb.from('academy_membresias').select('id', {count:'exact', head:true}).eq('grupo_id', currentUser.grupo_id);
     let html = '';
-    for(const ex of examenes){
+    for(let i=0;i<examenes.length;i++){
+      const ex = examenes[i];
       const { data: resultados } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', ex.id);
       const n = (resultados||[]).length;
       const promedio = n ? (resultados.reduce((s,r)=>s+r.correctas/r.total,0)/n*100).toFixed(0) : 0;
@@ -4851,7 +4896,12 @@ async function abrirResultadosExamenAsignado(){
           <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:${ex.activo?'rgba(0,208,132,.15)':'rgba(122,138,176,.15)'};color:${ex.activo?'var(--green)':'var(--t3)'};flex-shrink:0;">${ex.activo?'ACTIVO':'CERRADO'}</span>
         </div>
         <div style="margin-top:8px;font-size:12.5px;color:var(--t2);">${n} de ${totalEstudiantes??'?'} estudiantes lo han completado · promedio: ${promedio}%</div>
-        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="alternarActivoExamenAsignado('${ex.id}',${!ex.activo})"><i class="ti ti-${ex.activo?'lock':'lock-open'}"></i> ${ex.activo?'Cerrar examen':'Reabrir examen'}</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="verCalificacionesIndividuales('${ex.id}','${(ex.titulo||'').replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver calificaciones</button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirAsignarExamen(window.__examenesAsignadosCache[${i}])"><i class="ti ti-edit"></i> Editar</button>
+          <button class="btn btn-ghost btn-sm" onclick="alternarActivoExamenAsignado('${ex.id}',${!ex.activo})"><i class="ti ti-${ex.activo?'lock':'lock-open'}"></i> ${ex.activo?'Cerrar':'Reabrir'}</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="eliminarExamenAsignado('${ex.id}')"><i class="ti ti-trash"></i> Eliminar</button>
+        </div>
       </div>`;
     }
     $('resultados-examen-contenido').innerHTML = html;
@@ -4866,24 +4916,63 @@ async function alternarActivoExamenAsignado(examenId, nuevoEstado){
     abrirResultadosExamenAsignado();
   } catch(e){ toast('No se pudo actualizar: ' + (e.message||e)); }
 }
+async function eliminarExamenAsignado(examenId){
+  if(!confirm('¿Eliminar este examen? También se borrarán las calificaciones ya registradas de tus estudiantes.')) return;
+  try {
+    await sb.from('academy_examenes_asignados').delete().eq('id', examenId);
+    toast('Examen eliminado.');
+    abrirResultadosExamenAsignado();
+  } catch(e){ toast('No se pudo eliminar: ' + (e.message||e)); }
+}
+// Calificación de cada estudiante por su nombre, no solo el promedio
+// de la clase — para saber quién concretamente necesita apoyo.
+async function verCalificacionesIndividuales(examenId, titulo){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'calificaciones-individuales-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-users" style="color:var(--gold)"></i> ${titulo}</h2>
+    <div id="calificaciones-individuales-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('calificaciones-individuales-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data: resultados, error } = await sb.from('academy_examenes_resultados').select('correctas,total,completado_en,academy_usuarios!inner(nombre)').eq('examen_id', examenId).order('completado_en',{ascending:false});
+    if(error) throw error;
+    $('calificaciones-individuales-contenido').innerHTML = (resultados||[]).length ? resultados.map(r => {
+      const pct = Math.round(r.correctas/r.total*100);
+      const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+      return `<div class="export-opt" style="cursor:default;">
+        <div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div>
+        <div style="flex:1;"><b>${r.academy_usuarios.nombre}</b><span>${r.correctas}/${r.total} correctas · ${new Date(r.completado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</span></div>
+      </div>`;
+    }).join('') : '<div class="auth-hint">Todavía ningún estudiante lo ha completado.</div>';
+  } catch(e){
+    $('calificaciones-individuales-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
 // Se revisa al entrar a la materia — si hay un examen activo que el
 // estudiante todavía no completó, aparece como tarjeta destacada.
 async function verificarExamenAsignado(subjectId){
   const cont = $('examen-asignado-banner');
   if(!cont || !sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
   try {
-    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
+    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos,preguntas_propias').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
     if(!examen) return;
     const { data: yaHecho } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', examen.id).eq('usuario_id', currentUser.usuario_id).maybeSingle();
+    window.__examenAsignadoActivo = { ...examen, subjectId };
     cont.innerHTML = yaHecho
       ? `<div class="card" style="border-color:var(--green);margin-bottom:16px;"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-circle-check" style="font-size:24px;color:var(--green);"></i><div><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Ya lo completaste — ${yaHecho.correctas}/${yaHecho.total} correctas</div></div></div></div>`
-      : `<div class="card" style="border-color:var(--gold);margin-bottom:16px;cursor:pointer;" onclick="iniciarExamenAsignado('${examen.id}','${subjectId}',${JSON.stringify(examen.conceptos).replace(/"/g,'&quot;')})"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-writing" style="font-size:24px;color:var(--gold);"></i><div style="flex:1;"><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Tu profesor asignó este examen — toca para empezarlo</div></div><i class="ti ti-chevron-right"></i></div></div>`;
+      : `<div class="card" style="border-color:var(--gold);margin-bottom:16px;cursor:pointer;" onclick="iniciarExamenAsignado()"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-writing" style="font-size:24px;color:var(--gold);"></i><div style="flex:1;"><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Tu profesor asignó este examen — toca para empezarlo</div></div><i class="ti ti-chevron-right"></i></div></div>`;
   } catch(e){ /* silencioso */ }
 }
-function iniciarExamenAsignado(examenId, subjectId, conceptos){
+function iniciarExamenAsignado(){
+  const examen = window.__examenAsignadoActivo;
+  const { subjectId, conceptos, preguntas_propias, id: examenId } = examen;
   const data = SUBJECT_DATA[subjectId];
   const preguntas = [];
-  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos?.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  (preguntas_propias||[]).forEach(q => preguntas.push({ q: { type:'mc', ...q }, stageTitle: 'Pregunta del profesor', caseTitle: examen.titulo }));
   if(!preguntas.length){ toast('Este examen no tiene preguntas disponibles.'); return; }
   for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
   examenPracticaState = { subjectId, preguntas, index:0, respuestas:[], examenAsignadoId: examenId };
