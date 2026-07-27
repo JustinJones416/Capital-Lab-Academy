@@ -3436,9 +3436,14 @@ function renderTeacherView(){
       <button class="btn btn-ghost" onclick="generarGuiaDeClase()"><i class="ti ti-notebook"></i> Generar guía de clase (PDF)</button>
       <button class="btn" onclick="abrirDiagnosticoClase()"><i class="ti ti-brain"></i> Diagnóstico de aprendizaje de la clase</button>
       <button class="btn btn-ghost" onclick="abrirPublicarAnuncio()"><i class="ti ti-speakerphone"></i> Anuncio para la clase</button>
-      <button class="btn btn-ghost" onclick="abrirAsignarExamen()"><i class="ti ti-writing"></i> Asignar examen a la clase</button>
-      <button class="btn btn-ghost" onclick="abrirResultadosExamenAsignado()"><i class="ti ti-list-check"></i> Ver resultados de exámenes</button>
     </div>
+    <div class="card" style="margin-bottom:20px;border-color:var(--gold);">
+      <div class="card-title"><i class="ti ti-writing" style="color:var(--gold);"></i> Exámenes de esta materia</div>
+      <div class="card-sub">Asigna un examen con los conceptos que elijas — tus estudiantes lo ven como tarea pendiente apenas entran a la materia.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" onclick="abrirAsignarExamen()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;color:#1a1404;"><i class="ti ti-writing"></i> Asignar examen a la clase</button>
+        <button class="btn btn-ghost" onclick="abrirResultadosExamenAsignado()"><i class="ti ti-list-check"></i> Ver resultados de exámenes</button>
+      </div>
     </div>
     <div class="prof-grid">
       <div>
