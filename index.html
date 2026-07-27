@@ -529,6 +529,7 @@ h1,h2,h3{font-family:var(--font-head);}
       <div class="nav-group-label">Navegación</div>
       <button class="nav-item active" id="nav-portal" onclick="navPortal()"><i class="ti ti-layout-grid"></i> Portal de materias</button>
       <button class="nav-item" id="nav-progress" onclick="navProgress()"><i class="ti ti-chart-donut-3"></i> Mi progreso <span class="nav-badge" id="progress-badge">0/10</span></button>
+      <button class="nav-item" id="nav-calificaciones" onclick="navCalificaciones()"><i class="ti ti-report"></i> Calificaciones</button>
     </div>
 
     <div class="nav-group">
@@ -569,6 +570,7 @@ h1,h2,h3{font-family:var(--font-head);}
 
     <!-- ░░░ PROGRESO GENERAL ░░░ -->
     <section id="view-progress" class="hidden"></section>
+    <section id="view-calificaciones" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
     <section id="view-subject" class="hidden"></section>
@@ -2230,7 +2232,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -2307,6 +2309,89 @@ function navProgress(){
   showView('view-progress');
   setActiveNav('nav-progress'); setActiveSubjectPill(null);
   afterNav();
+}
+
+// ═══════════════════════════════════════════════════════
+// CALIFICACIONES — pestaña propia, separada de "Mi progreso" (que mide
+// avance) y del diagnóstico (que mide conceptos). Esto es la nota en
+// sí: para el estudiante, todo lo que ha calificado en un solo lugar;
+// para el docente, una tabla real de toda su clase, no un resumen.
+// ═══════════════════════════════════════════════════════
+async function navCalificaciones(){
+  showView('view-calificaciones');
+  setActiveNav('nav-calificaciones'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-calificaciones');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-report"></i> Calificaciones</div><h1>${currentUser.rol==='docente'?'Calificaciones de tu clase':'Mis calificaciones'}</h1></div><div id="calif-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  if(currentUser.rol==='docente') renderCalificacionesDocente();
+  else renderCalificacionesEstudiante();
+}
+async function renderCalificacionesEstudiante(){
+  const cont = $('calif-contenido');
+  try {
+    const { data: examenes } = await sb.from('academy_examenes_resultados').select('correctas,total,completado_en,academy_examenes_asignados!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).order('completado_en',{ascending:false});
+    const casosCalificados = [];
+    SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+      const data = SUBJECT_DATA[s.id];
+      if(!data) return;
+      data.cases.forEach(c => {
+        const ans = studentAnswers[c.id];
+        if(ans?.score!==undefined) casosCalificados.push({ materia:s, caso:c, score:ans.score, total:ans.total });
+      });
+    });
+    if(!(examenes?.length) && !casosCalificados.length){
+      cont.innerHTML = '<div class="auth-hint">Todavía no tienes ninguna calificación registrada.</div>';
+      return;
+    }
+    let html = '';
+    if(examenes?.length){
+      html += `<div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-writing"></i> Exámenes asignados</div>`;
+      html += examenes.map(e => {
+        const pct = Math.round(e.correctas/e.total*100);
+        const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+        const s = SUBJECTS.find(x=>x.id===e.academy_examenes_asignados.materia_id);
+        return `<div class="export-opt" style="cursor:default;"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${e.academy_examenes_asignados.titulo}</b><span>${s?.title||''} · ${e.correctas}/${e.total} correctas</span></div></div>`;
+      }).join('');
+    }
+    if(casosCalificados.length){
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-briefcase"></i> Casos completados</div>`;
+      html += casosCalificados.map(c => {
+        const pct = Math.round(c.score/c.total*100);
+        const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+        return `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${c.materia.id}')"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${c.caso.title}</b><span>${c.materia.title} · ${c.score}/${c.total} correctas</span></div></div>`;
+      }).join('');
+    }
+    cont.innerHTML = html;
+  } catch(e){
+    cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function renderCalificacionesDocente(){
+  const cont = $('calif-contenido');
+  if(!currentUser.grupo_id){ cont.innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
+  try {
+    const { data: examenes } = await sb.from('academy_examenes_asignados').select('id,titulo').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:true});
+    const { data: membresias } = await sb.from('academy_membresias').select('usuario_id, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    if(!membresias?.length){ cont.innerHTML = '<div class="auth-hint">Todavía no hay estudiantes inscritos en esta sesión.</div>'; return; }
+    if(!examenes?.length){ cont.innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen — las calificaciones aparecerán aquí en cuanto haya alguno.</div>'; return; }
+    const { data: resultados } = await sb.from('academy_examenes_resultados').select('examen_id,usuario_id,correctas,total').in('examen_id', examenes.map(e=>e.id));
+    const tabla = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid var(--c3);">Estudiante</th>${examenes.map(e=>`<th style="padding:8px;border-bottom:2px solid var(--c3);white-space:nowrap;">${e.titulo}</th>`).join('')}</tr></thead>
+      <tbody>${membresias.map(m => `<tr>
+        <td style="padding:8px;border-bottom:1px solid var(--c3);font-weight:700;white-space:nowrap;">${m.academy_usuarios.nombre}</td>
+        ${examenes.map(e => {
+          const r = resultados?.find(x=>x.examen_id===e.id && x.usuario_id===m.usuario_id);
+          if(!r) return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;color:var(--t3);">—</td>`;
+          const pct = Math.round(r.correctas/r.total*100);
+          const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+          return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;font-weight:700;color:${color};">${pct}%</td>`;
+        }).join('')}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+    cont.innerHTML = tabla;
+  } catch(e){
+    cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
 }
 
 // ───── Sidebar: listado de materias y roles ─────
