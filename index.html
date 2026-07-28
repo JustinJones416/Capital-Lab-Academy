@@ -2648,8 +2648,16 @@ function dibujarCalendarioTareas(){
     const fechaStr = `${año}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const eventos = eventosPorDia[fechaStr];
     const esHoy = fechaStr === new Date().toISOString().slice(0,10);
-    celdas += `<div style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:11.5px;${esHoy?'background:var(--gold);color:#1a1404;font-weight:800;':'background:var(--c2);'}${eventos?'cursor:pointer;':''}" ${eventos?`onclick="mostrarEventosDelDia('${fechaStr}')" title="${eventos.map(e=>e.titulo).join(', ')}"`:''}>
-      ${d}${eventos?`<span style="width:5px;height:5px;border-radius:50%;background:${esHoy?'#1a1404':'var(--rose)'};margin-top:2px;"></span>`:''}
+    // Antes esto solo marcaba el día con un punto de 5px, casi
+    // imperceptible en una cuadrícula con tantas celdas — ahora el
+    // día entero cambia de color de fondo, mucho más difícil de
+    // pasar por alto, y sigue distinguiendo "hoy" con su propio color.
+    let fondo = 'background:var(--c2);', texto = '';
+    if(esHoy && eventos) fondo = 'background:var(--gold);color:#1a1404;font-weight:800;box-shadow:0 0 0 2px var(--rose) inset;';
+    else if(esHoy) fondo = 'background:var(--gold);color:#1a1404;font-weight:800;';
+    else if(eventos) { fondo = 'background:var(--rose);color:#fff;font-weight:800;'; }
+    celdas += `<div style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:12.5px;${fondo}${eventos?'cursor:pointer;':''}" ${eventos?`onclick="mostrarEventosDelDia('${fechaStr}')" title="${eventos.map(e=>e.titulo).join(', ')}"`:''}>
+      ${d}${eventos?`<i class="ti ti-point-filled" style="font-size:9px;margin-top:-2px;"></i>`:''}
     </div>`;
   }
   cont.innerHTML = `<div class="card">
@@ -2669,8 +2677,19 @@ function cambiarMesCalendario(delta){
   dibujarCalendarioTareas();
 }
 function mostrarEventosDelDia(fechaStr){
-  const eventos = [...(window.__tareasCache||[]).filter(t=>t.fecha_limite===fechaStr).map(t=>t.titulo+' (tarea)'), ...(window.__examenesConFechaCache||[]).filter(e=>e.fecha_limite===fechaStr).map(e=>e.titulo+' (examen)')];
-  toast(eventos.join(' · '));
+  const tareasDelDia = (window.__tareasCache||[]).filter(t=>t.fecha_limite===fechaStr);
+  const examenesDelDia = (window.__examenesConFechaCache||[]).filter(e=>e.fecha_limite===fechaStr);
+  const fechaLegible = new Date(fechaStr+'T12:00').toLocaleDateString('es-PA',{day:'2-digit',month:'long',year:'numeric'});
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'eventos-dia-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-calendar-event" style="color:var(--gold)"></i> ${fechaLegible}</h2>
+    ${tareasDelDia.map(t => `<div class="export-opt" style="cursor:default;"><i class="ti ti-clipboard-text" style="color:var(--rose);"></i><div><b>${t.titulo}</b><span>Tarea</span></div></div>`).join('')}
+    ${examenesDelDia.map(e => `<div class="export-opt" style="cursor:default;"><i class="ti ti-writing" style="color:var(--gold);"></i><div><b>${e.titulo}</b><span>Examen</span></div></div>`).join('')}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('eventos-dia-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
 }
 function abrirCrearTarea(){
   if(!currentUser?.grupo_id || !currentUser?.materia_id){ toast('Entra a una sesión de clase primero.'); return; }
