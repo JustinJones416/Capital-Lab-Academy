@@ -2639,8 +2639,11 @@ function dibujarCalendarioTareas(){
   const primerDia = new Date(año, mes, 1).getDay();
   const diasEnMes = new Date(año, mes+1, 0).getDate();
   const eventosPorDia = {};
-  (window.__tareasCache||[]).forEach(t => { const d=t.fecha_limite; (eventosPorDia[d]=eventosPorDia[d]||[]).push({tipo:'tarea', titulo:t.titulo}); });
-  (window.__examenesConFechaCache||[]).forEach(e => { const d=e.fecha_limite; (eventosPorDia[d]=eventosPorDia[d]||[]).push({tipo:'examen', titulo:e.titulo}); });
+  // Se recorta a los primeros 10 caracteres (YYYY-MM-DD) por si la
+  // fecha viene con hora u otra variación desde la base de datos real
+  // — así la comparación no depende de que el formato sea exacto.
+  (window.__tareasCache||[]).forEach(t => { const d=(t.fecha_limite||'').slice(0,10); if(!d) return; (eventosPorDia[d]=eventosPorDia[d]||[]).push({tipo:'tarea', titulo:t.titulo}); });
+  (window.__examenesConFechaCache||[]).forEach(e => { const d=(e.fecha_limite||'').slice(0,10); if(!d) return; (eventosPorDia[d]=eventosPorDia[d]||[]).push({tipo:'examen', titulo:e.titulo}); });
   const nombreMes = calendarioMesActual.toLocaleDateString('es-PA',{month:'long',year:'numeric'});
   let celdas = '';
   for(let i=0;i<primerDia;i++) celdas += `<div></div>`;
