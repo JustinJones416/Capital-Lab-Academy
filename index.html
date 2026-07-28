@@ -2922,7 +2922,9 @@ async function navMetricas(){
   setActiveNav('nav-metricas'); setActiveSubjectPill(null);
   afterNav();
   const cont = $('view-metricas');
-  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-chart-histogram"></i> Métricas del salón</div><h1>${currentUser.grupo_nombre||'Tu clase'}</h1></div><div id="metricas-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-chart-histogram"></i> Métricas del salón</div><h1>${currentUser.grupo_nombre||'Tu clase'}</h1></div>
+    <button class="btn" onclick="abrirResumenSemanal()" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-calendar-stats"></i> Ver resumen semanal</button>
+    <div id="metricas-contenido"><div class="auth-hint">Cargando…</div></div>`;
   if(!currentUser.grupo_id){ $('metricas-contenido').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
   try {
     const [{ data: membresias }, { data: examenes }, { data: tareas }] = await Promise.all([
@@ -2997,6 +2999,55 @@ async function navMetricas(){
     $('metricas-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
 }
+// Resumen semanal — junta en un solo lugar lo que el docente tendría
+// que ir a buscar en tres secciones distintas: quién necesita
+// atención, qué vence esta semana, y cómo va el salón en general.
+async function abrirResumenSemanal(){
+  if(!currentUser.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'resumen-semanal-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-calendar-stats" style="color:var(--gold)"></i> Resumen semanal</h2>
+    <div id="resumen-semanal-contenido"><div class="auth-hint">Cargando…</div></div>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const hoy = new Date(); const en7dias = new Date(Date.now()+7*86400000);
+    const hoyStr = hoy.toISOString().slice(0,10), en7Str = en7dias.toISOString().slice(0,10);
+    const [{ data: membresias }, { data: tareas }, { data: examenes }] = await Promise.all([
+      sb.from('academy_membresias').select('usuario_id,progreso, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante'),
+      sb.from('academy_tareas').select('titulo,fecha_limite').eq('grupo_id', currentUser.grupo_id).gte('fecha_limite', hoyStr).lte('fecha_limite', en7Str),
+      sb.from('academy_examenes_asignados').select('id,titulo,fecha_limite').eq('grupo_id', currentUser.grupo_id),
+    ]);
+    const examenesConFecha = (examenes||[]).filter(e => e.fecha_limite && e.fecha_limite>=hoyStr && e.fecha_limite<=en7Str);
+    const { data: resultados } = examenes?.length ? await sb.from('academy_examenes_resultados').select('usuario_id,correctas,total').in('examen_id', examenes.map(e=>e.id)) : {data:[]};
+    const resultadosPorEstudiante = {};
+    (resultados||[]).forEach(r => (resultadosPorEstudiante[r.usuario_id]=resultadosPorEstudiante[r.usuario_id]||[]).push(r.correctas/r.total*100));
+    const enRiesgo = (membresias||[]).filter(m => {
+      const sinActividad = Object.keys(m.progreso||{}).length === 0;
+      const notas = resultadosPorEstudiante[m.usuario_id];
+      const bajo = notas?.length ? (notas.reduce((a,b)=>a+b,0)/notas.length) < 60 : false;
+      return sinActividad || bajo;
+    }).map(m=>m.academy_usuarios.nombre);
+    const promedioGeneral = resultados?.length ? Math.round(resultados.reduce((s,r)=>s+r.correctas/r.total,0)/resultados.length*100) : null;
+    const vencimientos = [...(tareas||[]).map(t=>({titulo:t.titulo, fecha:t.fecha_limite, tipo:'Tarea'})), ...examenesConFecha.map(e=>({titulo:e.titulo, fecha:e.fecha_limite, tipo:'Examen'}))].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+
+    window.__resumenSemanalHtml = `<div class="sub" style="margin-bottom:16px;">${currentUser.grupo_nombre} · semana del ${hoy.toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}</div>
+      <h2>Estudiantes que podrían necesitar atención</h2>
+      ${enRiesgo.length ? `<ul>${enRiesgo.map(n=>`<li>${n}</li>`).join('')}</ul>` : '<p>Nadie muestra señales de riesgo esta semana.</p>'}
+      <h2>Vence en los próximos 7 días</h2>
+      ${vencimientos.length ? vencimientos.map(v=>`<div class="preg">${v.tipo}: <b>${v.titulo}</b> — ${new Date(v.fecha+'T12:00').toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}</div>`).join('') : '<p>Nada vence esta semana.</p>'}
+      <h2>Cómo va el salón</h2>
+      <p>${totalEstudiantesLabel(membresias?.length||0)} · promedio general en exámenes: ${promedioGeneral!==null?promedioGeneral+'%':'sin datos todavía'}.</p>`;
+    $('resumen-semanal-contenido').innerHTML = window.__resumenSemanalHtml + `
+      <button class="auth-submit" onclick="abrirVentanaImpresion('Resumen semanal — '+currentUser.grupo_nombre, window.__resumenSemanalHtml)"><i class="ti ti-download"></i> Descargar en PDF</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('resumen-semanal-overlay').remove()">Cerrar</button>`;
+  } catch(e){
+    $('resumen-semanal-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+function totalEstudiantesLabel(n){ return n===1 ? '1 estudiante inscrito' : n+' estudiantes inscritos'; }
 
 // ═══════════════════════════════════════════════════════════════════
 // DOCUMENTOS — todo lo que se puede consultar de la clase en un solo
