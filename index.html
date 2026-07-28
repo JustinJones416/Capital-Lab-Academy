@@ -3379,6 +3379,7 @@ async function navSubject(subjectId){
   setActiveNav(null); setActiveSubjectPill(subjectId);
   afterNav();
   if(currentUser?.grupo_id && currentUser?.materia_id===subjectId) verificarExamenAsignado(subjectId);
+  if(currentUser?.rol==='estudiante') cargarMetaEstudio(subjectId);
 }
 
 function renderSubjectView(subjectId){
@@ -3427,6 +3428,7 @@ function renderSubjectView(subjectId){
       <p>${s.sub}</p>
     </div>
     ${mostrarTipPersonalizadoSiCorresponde(subjectId)}
+    <div id="meta-estudio-banner"></div>
     <div class="mentor-bar">
       <div class="mentor-avatar">${MENTOR.initials}</div>
       <div class="mentor-text">
@@ -5956,6 +5958,66 @@ async function verCalificacionesIndividuales(examenId, titulo){
 }
 // Se revisa al entrar a la materia — si hay un examen activo que el
 // estudiante todavía no completó, aparece como tarjeta destacada.
+// ═══════════════════════════════════════════════════════════════════════
+// META PERSONAL DE ESTUDIO — el estudiante se compromete con una fecha
+// para terminar los casos de la materia, y ve su avance real contra
+// esa meta cada vez que entra — no es solo un dato guardado, es un
+// recordatorio activo de cuánto le falta y cuánto tiempo tiene.
+// ═══════════════════════════════════════════════════════
+async function cargarMetaEstudio(subjectId){
+  const cont = $('meta-estudio-banner');
+  if(!cont) return;
+  try {
+    const { data: meta } = await sb.from('academy_metas_estudio').select('fecha_objetivo').eq('usuario_id', currentUser.usuario_id).eq('materia_id', subjectId).maybeSingle();
+    const data = SUBJECT_DATA[subjectId];
+    const totalCasos = data.cases.length;
+    const completos = data.cases.filter(c=>caseStatus(c.id)==='completo').length;
+    if(!meta){
+      cont.innerHTML = `<button class="btn btn-ghost" style="width:100%;justify-content:center;margin-bottom:16px;" onclick="abrirPonerMetaEstudio('${subjectId}')"><i class="ti ti-target-arrow"></i> Ponerme una meta para esta materia</button>`;
+      return;
+    }
+    const pct = totalCasos ? Math.round(completos/totalCasos*100) : 0;
+    const hoy = new Date().toISOString().slice(0,10);
+    const diasRestantes = Math.ceil((new Date(meta.fecha_objetivo+'T12:00') - new Date(hoy+'T12:00')) / 86400000);
+    const cumplida = completos === totalCasos;
+    const vencida = diasRestantes < 0 && !cumplida;
+    const color = cumplida ? 'var(--green)' : vencida ? 'var(--red)' : 'var(--teal)';
+    cont.innerHTML = `<div class="card" style="border-color:${color};margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;"><i class="ti ti-target-arrow" style="color:${color};"></i><b>Mi meta en esta materia</b></div>
+        <i class="ti ti-pencil" style="cursor:pointer;color:var(--t3);" onclick="abrirPonerMetaEstudio('${subjectId}')" title="Cambiar mi meta"></i>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:8px;">${cumplida ? '¡Meta cumplida! Completaste todos los casos.' : vencida ? `La fecha que te pusiste ya pasó — llevas ${completos} de ${totalCasos} casos.` : `${completos} de ${totalCasos} casos · te quedan ${diasRestantes} día${diasRestantes===1?'':'s'} para el ${new Date(meta.fecha_objetivo+'T12:00').toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}`}</div>
+      <div style="background:var(--c3);border-radius:6px;height:8px;overflow:hidden;"><div style="background:${color};height:100%;width:${pct}%;"></div></div>
+    </div>`;
+  } catch(e){ /* silencioso */ }
+}
+function abrirPonerMetaEstudio(subjectId){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'meta-estudio-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-target-arrow" style="color:var(--teal)"></i> Ponerme una meta</h2>
+    <p>¿Para cuándo quieres terminar todos los casos de esta materia?</p>
+    <div class="form-field"><label>Fecha</label><input type="date" id="meta-fecha-input"></div>
+    <div class="auth-msg" id="meta-msg"></div>
+    <button class="auth-submit" onclick="guardarMetaEstudio('${subjectId}')">Guardar mi meta</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('meta-estudio-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function guardarMetaEstudio(subjectId){
+  const fecha = $('meta-fecha-input').value;
+  const msg = $('meta-msg');
+  if(!fecha){ msg.className='auth-msg show error'; msg.textContent='Elige una fecha.'; return; }
+  try {
+    const { error } = await sb.from('academy_metas_estudio').upsert({ usuario_id: currentUser.usuario_id, materia_id: subjectId, fecha_objetivo: fecha }, { onConflict:'usuario_id,materia_id' });
+    if(error) throw error;
+    $('meta-estudio-overlay').remove();
+    toast('Meta guardada.');
+    cargarMetaEstudio(subjectId);
+  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e); }
+}
 async function verificarExamenAsignado(subjectId){
   const cont = $('examen-asignado-banner');
   if(!cont || !sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
