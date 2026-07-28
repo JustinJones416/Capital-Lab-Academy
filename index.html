@@ -2376,6 +2376,13 @@ async function renderCalificacionesEstudiante(){
         return `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${c.materia.id}')"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${c.caso.title}</b><span>${c.materia.title} · ${c.score}/${c.total} correctas</span></div></div>`;
       }).join('');
     }
+    if(currentUser.grupo_id){
+      const { data: califsPersonalizadas } = await sb.from('academy_calificaciones_personalizadas').select('calificacion,comentario,academy_metricas_calificacion!inner(nombre)').eq('usuario_id', currentUser.usuario_id);
+      if(califsPersonalizadas?.length){
+        html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-adjustments-star"></i> Calificaciones de tu profesor</div>`;
+        html += califsPersonalizadas.map(c => `<div class="export-opt" style="cursor:default;"><i class="ti ti-star" style="color:var(--gold);"></i><div><b>${c.academy_metricas_calificacion.nombre}</b><span>${c.calificacion}${c.comentario?' · '+c.comentario:''}</span></div></div>`).join('');
+      }
+    }
     cont.innerHTML = html;
   } catch(e){
     cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
@@ -2387,26 +2394,154 @@ async function renderCalificacionesDocente(){
   try {
     const { data: examenes } = await sb.from('academy_examenes_asignados').select('id,titulo').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:true});
     const { data: membresias } = await sb.from('academy_membresias').select('usuario_id, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    const { data: metricas } = await sb.from('academy_metricas_calificacion').select('id,nombre').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:true});
     if(!membresias?.length){ cont.innerHTML = '<div class="auth-hint">Todavía no hay estudiantes inscritos en esta sesión.</div>'; return; }
-    if(!examenes?.length){ cont.innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen — las calificaciones aparecerán aquí en cuanto haya alguno.</div>'; return; }
-    const { data: resultados } = await sb.from('academy_examenes_resultados').select('examen_id,usuario_id,correctas,total').in('examen_id', examenes.map(e=>e.id));
-    const tabla = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">
-      <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid var(--c3);">Estudiante</th>${examenes.map(e=>`<th style="padding:8px;border-bottom:2px solid var(--c3);white-space:nowrap;">${e.titulo}</th>`).join('')}</tr></thead>
-      <tbody>${membresias.map(m => `<tr>
-        <td style="padding:8px;border-bottom:1px solid var(--c3);font-weight:700;white-space:nowrap;">${m.academy_usuarios.nombre}</td>
-        ${examenes.map(e => {
-          const r = resultados?.find(x=>x.examen_id===e.id && x.usuario_id===m.usuario_id);
-          if(!r) return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;color:var(--t3);">—</td>`;
-          const pct = Math.round(r.correctas/r.total*100);
-          const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
-          return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;font-weight:700;color:${color};">${pct}%</td>`;
-        }).join('')}
-      </tr>`).join('')}</tbody>
-    </table></div>`;
-    cont.innerHTML = tabla;
+    let html = '';
+    // Cada examen es ahora su propio menú — la tabla resumen sigue
+    // aquí para ver todo de un vistazo, pero cada columna lleva al
+    // detalle real de ese examen, con notas individuales editables.
+    if(examenes?.length){
+      const { data: resultados } = await sb.from('academy_examenes_resultados').select('examen_id,usuario_id,correctas,total').in('examen_id', examenes.map(e=>e.id));
+      html += `<div class="card-title" style="margin-bottom:10px;"><i class="ti ti-writing"></i> Exámenes</div>
+      <div style="overflow-x:auto;margin-bottom:24px;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid var(--c3);">Estudiante</th>${examenes.map(e=>`<th style="padding:8px;border-bottom:2px solid var(--c3);white-space:nowrap;cursor:pointer;color:var(--gold);" onclick="verDetalleCalificacionesExamen('${e.id}','${(e.titulo||'').replace(/'/g,"\\'")}')">${e.titulo} <i class="ti ti-arrow-up-right" style="font-size:10px;"></i></th>`).join('')}</tr></thead>
+        <tbody>${membresias.map(m => `<tr>
+          <td style="padding:8px;border-bottom:1px solid var(--c3);font-weight:700;white-space:nowrap;">${m.academy_usuarios.nombre}</td>
+          ${examenes.map(e => {
+            const r = resultados?.find(x=>x.examen_id===e.id && x.usuario_id===m.usuario_id);
+            if(!r) return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;color:var(--t3);">—</td>`;
+            const pct = Math.round(r.correctas/r.total*100);
+            const color = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+            return `<td style="padding:8px;border-bottom:1px solid var(--c3);text-align:center;font-weight:700;color:${color};">${pct}%</td>`;
+          }).join('')}
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    } else {
+      html += '<div class="auth-hint" style="margin-bottom:20px;">Todavía no has asignado ningún examen.</div>';
+    }
+    // Calificaciones personalizadas — para lo que no es un examen
+    // automático: participación, análisis en clase, cualquier métrica
+    // propia del docente.
+    html += `<div class="card-title" style="margin-bottom:10px;"><i class="ti ti-adjustments-star"></i> Calificaciones personalizadas</div>`;
+    html += (metricas||[]).map(m => `<div class="export-opt" style="cursor:pointer;" onclick="verDetalleMetrica('${m.id}','${(m.nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-star" style="color:var(--gold);"></i><div><b>${m.nombre}</b><span>Toca para calificar a tus estudiantes</span></div></div>`).join('');
+    html += `<button class="btn btn-ghost" style="margin-top:10px;" onclick="abrirNuevaMetrica()"><i class="ti ti-plus"></i> Nueva métrica de calificación</button>`;
+    cont.innerHTML = html;
   } catch(e){
     cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
+}
+// Detalle de un examen — nota individual editable, con
+// retroalimentación, incluso si ya se calificó solo automáticamente.
+async function verDetalleCalificacionesExamen(examenId, titulo){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'detalle-examen-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-writing" style="color:var(--gold)"></i> ${titulo}</h2>
+    <div id="detalle-examen-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('detalle-examen-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const { data: resultados, error } = await sb.from('academy_examenes_resultados').select('id,correctas,total,comentario_docente,academy_usuarios!inner(nombre)').eq('examen_id', examenId).order('completado_en',{ascending:false});
+    if(error) throw error;
+    $('detalle-examen-contenido').innerHTML = resultados?.length ? resultados.map(r => {
+      const pct = Math.round(r.correctas/r.total*100);
+      return `<div class="card" style="margin-bottom:10px;">
+        <b>${r.academy_usuarios.nombre}</b>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+          <input type="number" min="0" max="100" id="nota-${r.id}" value="${pct}" style="width:65px;padding:6px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;"> <span style="font-size:11px;color:var(--t3);">% (originalmente ${r.correctas}/${r.total})</span>
+        </div>
+        <input type="text" id="coment-examen-${r.id}" value="${(r.comentario_docente||'').replace(/"/g,'&quot;')}" placeholder="Retroalimentación (opcional)" style="width:100%;margin-top:8px;padding:7px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="editarCalificacionExamen('${r.id}')"><i class="ti ti-check"></i> Guardar</button>
+      </div>`;
+    }).join('') : '<div class="auth-hint">Todavía ningún estudiante lo ha completado.</div>';
+  } catch(e){
+    $('detalle-examen-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function editarCalificacionExamen(resultadoId){
+  const pct = parseInt($('nota-'+resultadoId).value);
+  const comentario = $('coment-examen-'+resultadoId).value.trim();
+  if(isNaN(pct) || pct<0 || pct>100){ toast('La nota debe ser un número entre 0 y 100.'); return; }
+  try {
+    // Se guarda como X/100 para no perder la relación original de
+    // aciertos — editar la nota no borra cuántas preguntas tenía el
+    // examen, solo ajusta el resultado final.
+    await sb.from('academy_examenes_resultados').update({ correctas: pct, total: 100, comentario_docente: comentario||null }).eq('id', resultadoId);
+    toast('Calificación actualizada.');
+  } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
+}
+function abrirNuevaMetrica(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'nueva-metrica-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-star" style="color:var(--gold)"></i> Nueva métrica de calificación</h2>
+    <div class="form-field"><label>Nombre</label><input type="text" id="metrica-nombre" placeholder="Ej: Participación en clase"></div>
+    <div class="form-field"><label>Descripción (opcional)</label><input type="text" id="metrica-descripcion" placeholder="Para qué la usas"></div>
+    <div class="auth-msg" id="metrica-msg"></div>
+    <button class="auth-submit" onclick="crearMetrica()">Crear</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('nueva-metrica-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function crearMetrica(){
+  const nombre = $('metrica-nombre').value.trim();
+  const descripcion = $('metrica-descripcion').value.trim();
+  const msg = $('metrica-msg');
+  if(!nombre){ msg.className='auth-msg show error'; msg.textContent='Ponle un nombre a la métrica.'; return; }
+  try {
+    const { error } = await sb.from('academy_metricas_calificacion').insert({ grupo_id: currentUser.grupo_id, nombre, descripcion: descripcion||null });
+    if(error) throw error;
+    $('nueva-metrica-overlay').remove();
+    toast('Métrica creada.');
+    renderCalificacionesDocente();
+  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo crear: ' + (e.message||e); }
+}
+async function verDetalleMetrica(metricaId, nombre){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'detalle-metrica-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-star" style="color:var(--gold)"></i> ${nombre}</h2>
+    <div id="detalle-metrica-contenido"><div class="auth-hint">Cargando…</div></div>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('detalle-metrica-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  try {
+    const [{ data: membresias }, { data: calificaciones }] = await Promise.all([
+      sb.from('academy_membresias').select('usuario_id, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante'),
+      sb.from('academy_calificaciones_personalizadas').select('usuario_id,calificacion,comentario').eq('metrica_id', metricaId),
+    ]);
+    $('detalle-metrica-contenido').innerHTML = (membresias||[]).map(m => {
+      const c = calificaciones?.find(x=>x.usuario_id===m.usuario_id);
+      return `<div class="card" style="margin-bottom:10px;">
+        <b>${m.academy_usuarios.nombre}</b>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+          <input type="number" min="0" max="100" id="metrica-nota-${m.usuario_id}" value="${c?.calificacion??''}" placeholder="0-100" style="width:70px;padding:6px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+        </div>
+        <input type="text" id="metrica-coment-${m.usuario_id}" value="${(c?.comentario||'').replace(/"/g,'&quot;')}" placeholder="Comentario (opcional)" style="width:100%;margin-top:8px;padding:7px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarCalificacionMetrica('${metricaId}','${m.usuario_id}')"><i class="ti ti-check"></i> Guardar</button>
+      </div>`;
+    }).join('');
+  } catch(e){
+    $('detalle-metrica-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function guardarCalificacionMetrica(metricaId, usuarioId){
+  const calificacion = parseFloat($('metrica-nota-'+usuarioId).value);
+  const comentario = $('metrica-coment-'+usuarioId).value.trim();
+  if(isNaN(calificacion)){ toast('Escribe una calificación válida.'); return; }
+  try {
+    const { data: existente } = await sb.from('academy_calificaciones_personalizadas').select('id').eq('metrica_id', metricaId).eq('usuario_id', usuarioId).maybeSingle();
+    if(existente){
+      await sb.from('academy_calificaciones_personalizadas').update({ calificacion, comentario: comentario||null }).eq('id', existente.id);
+    } else {
+      await sb.from('academy_calificaciones_personalizadas').insert({ metrica_id: metricaId, usuario_id: usuarioId, calificacion, comentario: comentario||null });
+    }
+    toast('Calificación guardada.');
+  } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2653,6 +2788,16 @@ async function guardarRetroalimentacionTarea(entregaId){
   try {
     await sb.from('academy_entregas_tareas').update({ calificacion: calificacion?parseInt(calificacion):null, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString() }).eq('id', entregaId);
     toast('Retroalimentación guardada.');
+    // Antes esto quedaba guardado sin avisarle a nadie — el estudiante
+    // solo se enteraba si volvía a entrar a revisar por su cuenta.
+    const { data: entrega } = await sb.from('academy_entregas_tareas').select('usuario_id, academy_tareas!inner(titulo,materia_id)').eq('id', entregaId).maybeSingle();
+    if(entrega){
+      await sb.from('academy_notificaciones').insert({
+        usuario_id: entrega.usuario_id, tipo:'contenido_editado',
+        mensaje: `Tu profesor calificó tu tarea "${entrega.academy_tareas.titulo}"${calificacion?` — ${calificacion}/100`:''}.`,
+        referencia_materia: entrega.academy_tareas.materia_id,
+      });
+    }
   } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
 
@@ -5599,6 +5744,7 @@ function abrirAsignarExamen(examenExistente){
     <h2><i class="ti ti-writing" style="color:var(--gold)"></i> ${examenExistente?'Editar examen asignado':'Asignar examen a la clase'}</h2>
     <p>Tus estudiantes lo verán como una tarea pendiente al entrar a "${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title}".</p>
     <div class="form-field"><label>Título del examen</label><input type="text" id="ax-titulo" placeholder="Ej: Examen parcial — Unidad 2" value="${(examenExistente?.titulo||'Examen asignado').replace(/"/g,'&quot;')}"></div>
+    <div class="form-field"><label>Fecha límite (opcional)</label><input type="date" id="ax-fecha-limite" value="${examenExistente?.fecha_limite||''}"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost btn-sm active" id="ax-tab-conceptos" onclick="mostrarPestanaAsignarExamen('conceptos')">Conceptos existentes</button>
       <button class="btn btn-ghost btn-sm" id="ax-tab-propias" onclick="mostrarPestanaAsignarExamen('propias')">Preguntas propias</button>
@@ -5655,7 +5801,8 @@ async function publicarExamenAsignado(examenIdExistente){
   const msg = $('ax-msg');
   if(!elegidos.length && !preguntasValidas.length){ msg.className='auth-msg show error'; msg.textContent='Elige al menos un concepto o añade al menos una pregunta propia completa.'; return; }
   try {
-    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos, preguntas_propias: preguntasValidas.length?preguntasValidas:null };
+    const fechaLimite = $('ax-fecha-limite').value || null;
+    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos, preguntas_propias: preguntasValidas.length?preguntasValidas:null, fecha_limite: fechaLimite };
     const { error } = examenIdExistente
       ? await sb.from('academy_examenes_asignados').update(payload).eq('id', examenIdExistente)
       : await sb.from('academy_examenes_asignados').insert(payload);
@@ -5683,7 +5830,7 @@ async function abrirResultadosExamenAsignado(){
   </div>`;
   document.body.appendChild(overlay);
   try {
-    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,conceptos,preguntas_propias,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,conceptos,preguntas_propias,fecha_limite,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
     if(error) throw error;
     if(!examenes || !examenes.length){ $('resultados-examen-contenido').innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen.</div>'; return; }
     window.__examenesAsignadosCache = examenes;
@@ -5762,13 +5909,14 @@ async function verificarExamenAsignado(subjectId){
   const cont = $('examen-asignado-banner');
   if(!cont || !sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
   try {
-    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos,preguntas_propias').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
+    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos,preguntas_propias,fecha_limite').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
     if(!examen) return;
     const { data: yaHecho } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', examen.id).eq('usuario_id', currentUser.usuario_id).maybeSingle();
     window.__examenAsignadoActivo = { ...examen, subjectId };
+    const fechaTexto = examen.fecha_limite ? ` — vence ${new Date(examen.fecha_limite+'T12:00').toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}` : '';
     cont.innerHTML = yaHecho
       ? `<div class="card" style="border-color:var(--green);margin-bottom:16px;"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-circle-check" style="font-size:24px;color:var(--green);"></i><div><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Ya lo completaste — ${yaHecho.correctas}/${yaHecho.total} correctas</div></div></div></div>`
-      : `<div class="card" style="border-color:var(--gold);margin-bottom:16px;cursor:pointer;" onclick="iniciarExamenAsignado()"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-writing" style="font-size:24px;color:var(--gold);"></i><div style="flex:1;"><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Tu profesor asignó este examen — toca para empezarlo</div></div><i class="ti ti-chevron-right"></i></div></div>`;
+      : `<div class="card" style="border-color:var(--gold);margin-bottom:16px;cursor:pointer;" onclick="iniciarExamenAsignado()"><div style="display:flex;align-items:center;gap:12px;"><i class="ti ti-writing" style="font-size:24px;color:var(--gold);"></i><div style="flex:1;"><b>${examen.titulo}</b><div style="font-size:12px;color:var(--t3);">Tu profesor asignó este examen${fechaTexto} — toca para empezarlo</div></div><i class="ti ti-chevron-right"></i></div></div>`;
   } catch(e){ /* silencioso */ }
 }
 function iniciarExamenAsignado(){
