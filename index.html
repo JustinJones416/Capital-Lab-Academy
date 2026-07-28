@@ -5831,12 +5831,13 @@ function responderExamenPracticaNum(){
   const item = st.preguntas[st.index];
   const q = item.q;
   const correcta = esRespuestaCorrecta(q, valor);
-  st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: valor, correctaTexto: String(q.correct), explain: q.explain });
+  const explicacionAMostrar = (item.yaFalloAntes && q.explicacionAlterna) ? q.explicacionAlterna : q.explain;
+  st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: valor, correctaTexto: String(q.correct), explain: explicacionAMostrar });
   $('examen-num-input').disabled = true;
   document.querySelector('#examen-opts button').style.display='none';
   const fb = $('examen-feedback');
   fb.classList.remove('hidden');
-  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la respuesta correcta ('+q.correct+').'}</b> ${q.explain||''}</div>
+  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la respuesta correcta ('+q.correct+').'}</b> ${!correcta && item.yaFalloAntes && q.explicacionAlterna ? '<span style="color:var(--teal);font-weight:700;">Otra forma de verlo: </span>' : ''}${explicacionAMostrar||''}</div>
     <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
 }
 // Reintento enfocado — usa las MISMAS preguntas ya cargadas (todas las
