@@ -907,8 +907,8 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
         databox:{title:'Indicadores de solvencia', rows:[['Activos totales','US$ 1,840,000,000'],['Patrimonio (fondos de capital)','US$ 243,000,000'],['Activos ponderados por riesgo','US$ 1,840,000,000 × factor promedio 0.66'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8.0%']]},
         chart:{type:'bar', title:'IAC del banco vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP','Promedio sistema'], data:[13.2,8.0,14.5], color:'var(--accent)'},
         questions:[
-          {type:'mc', q:'¿Qué indica un Índice de Adecuación de Capital (IAC) de 13.2% frente a un mínimo regulatorio de 8%?', opts:['El banco está en incumplimiento técnico','El banco mantiene un colchón de capital superior al mínimo exigido','El banco tiene exceso de liquidez, no de capital','El dato es irrelevante sin más contexto'], correct:1, explain:'Un IAC de 13.2% frente al mínimo de 8% indica que el banco tiene un colchón de capital de 5.2 puntos porcentuales por encima de lo exigido, lo cual es una posición de solvencia razonablemente sólida.'},
-          {type:'mc', q:'Comparado con el promedio del sistema bancario panameño (14.5%), ¿cómo se posiciona este banco?', opts:['Por encima del sistema','Ligeramente por debajo del promedio del sistema, aunque sobre el mínimo','Igual al sistema','No es comparable'], correct:1, explain:'13.2% está por debajo del promedio del sistema (14.5%), aunque sigue siendo holgadamente superior al mínimo regulatorio. Esto no es una alerta por sí sola, pero merece seguimiento.'},
+          {type:'mc', q:'¿Qué indica un Índice de Adecuación de Capital (IAC) de 13.2% frente a un mínimo regulatorio de 8%?', opts:['El banco está en incumplimiento técnico','El banco mantiene un colchón de capital superior al mínimo exigido','El banco tiene exceso de liquidez, no de capital','El dato es irrelevante sin más contexto'], correct:1, explain:'Un IAC de 13.2% frente al mínimo de 8% indica que el banco tiene un colchón de capital de 5.2 puntos porcentuales por encima de lo exigido, lo cual es una posición de solvencia razonablemente sólida.', explicacionAlterna:'Resta los dos números: 13.2% menos 8% son 5.2 puntos de margen. Ese margen es capital propio "de sobra" — dinero que el banco tiene guardado por encima de lo que la ley le obliga, listo para absorber pérdidas antes de que le toque a los depositantes.'},
+          {type:'mc', q:'Comparado con el promedio del sistema bancario panameño (14.5%), ¿cómo se posiciona este banco?', opts:['Por encima del sistema','Ligeramente por debajo del promedio del sistema, aunque sobre el mínimo','Igual al sistema','No es comparable'], correct:1, explain:'13.2% está por debajo del promedio del sistema (14.5%), aunque sigue siendo holgadamente superior al mínimo regulatorio. Esto no es una alerta por sí sola, pero merece seguimiento.', explicacionAlterna:'Hay dos comparaciones distintas aquí, y es fácil mezclarlas: contra el mínimo legal (8%) el banco va muy bien. Pero contra sus competidores (14.5% de promedio) va un poco por debajo. Ninguna de las dos comparaciones invalida a la otra — cumplir la ley y ser competitivo frente al resto del sistema son dos preguntas distintas.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Calidad de cartera', icon:'ti-file-search',
@@ -960,10 +960,18 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
       {t:'Superintendencia de Bancos de Panamá (SBP)', d:'Entidad reguladora y supervisora del sistema bancario panameño.'},
     ],
     quiz:[
-      {q:'¿Cuál es el mínimo regulatorio de IAC exigido por la SBP en Panamá?', opts:['6%','8%','10%','12%'], correct:1},
-      {q:'¿Qué entidad supervisa el sistema bancario panameño?', opts:['Bolsa de Valores de Panamá','Banco Nacional de Panamá','Superintendencia de Bancos de Panamá','Ministerio de Economía y Finanzas'], correct:2},
-      {q:'Si la cartera vencida sube y las provisiones no aumentan al mismo ritmo, ¿qué pasa con la cobertura de provisiones?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1},
-      {q:'¿Qué mide una prueba de estrés de liquidez?', opts:['La rentabilidad futura del banco','Cómo resistiría el banco un escenario adverso específico, como una salida de depósitos','El valor de mercado de las acciones del banco','El cumplimiento fiscal del banco'], correct:1},
+      {q:'¿Cuál es el mínimo regulatorio de IAC exigido por la SBP en Panamá?', opts:['6%','8%','10%','12%'], correct:1,
+        explain:'La Superintendencia de Bancos de Panamá exige un IAC mínimo de 8% — capital regulatorio dividido entre activos ponderados por riesgo.',
+        explicacionAlterna:'Piénsalo como un colchón: por cada US$100 en activos ajustados por riesgo, el banco debe tener al menos US$8 de capital propio guardado para absorber pérdidas antes de que le toque a los depositantes. Ese "8 de cada 100" es el mínimo — no una meta, solo el piso.'},
+      {q:'¿Qué entidad supervisa el sistema bancario panameño?', opts:['Bolsa de Valores de Panamá','Banco Nacional de Panamá','Superintendencia de Bancos de Panamá','Ministerio de Economía y Finanzas'], correct:2,
+        explain:'La Superintendencia de Bancos de Panamá (SBP) es el ente regulador y supervisor del sistema bancario del país.',
+        explicacionAlterna:'Descarta las otras tres por lo que sí son: el Banco Nacional es un banco más (estatal, pero un banco), la Bolsa de Valores regula el mercado de acciones y bonos, y el Ministerio maneja la política fiscal del gobierno. Ninguna de esas supervisa bancos — esa función específica es de la SBP.'},
+      {q:'Si la cartera vencida sube y las provisiones no aumentan al mismo ritmo, ¿qué pasa con la cobertura de provisiones?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1,
+        explain:'La cobertura es provisiones dividido entre cartera vencida. Si el denominador (cartera vencida) crece más rápido que el numerador (provisiones), el resultado de esa división baja.',
+        explicacionAlterna:'Imagina una alcancía que debe cubrir una deuda: si la deuda crece pero no le metes más dinero a la alcancía al mismo ritmo, la alcancía cubre una porción cada vez menor de esa deuda. Eso es exactamente lo que le pasa a la cobertura cuando la cartera vencida sube más rápido que las provisiones.'},
+      {q:'¿Qué mide una prueba de estrés de liquidez?', opts:['La rentabilidad futura del banco','Cómo resistiría el banco un escenario adverso específico, como una salida de depósitos','El valor de mercado de las acciones del banco','El cumplimiento fiscal del banco'], correct:1,
+        explain:'La prueba de estrés simula un escenario adverso deliberado (por ejemplo, que el 15% de los depósitos salgan en una semana) para ver si el banco podría cubrirlo sin vender activos a pérdida.',
+        explicacionAlterna:'No es una foto de cómo está el banco hoy — es una simulación de "¿qué pasaría si...?". Los otros indicadores te dicen si el banco está bien en un día normal; la prueba de estrés te dice qué tan mal le iría en un mal día, antes de que ese mal día ocurra de verdad.'},
     ],
   },
   {
@@ -5746,7 +5754,9 @@ function revisarRespuestasExamen(respuestasGuardadas){
 }
 function reintentarExamenEnfocado(){
   const st = examenPracticaState;
-  const preguntasEnfocadas = st.preguntas.filter(p => st.conceptosDebiles.includes(p.stageTitle));
+  const preguntasFalladasTextos = new Set(st.respuestas.filter(r=>!r.correcta).map(r=>r.pregunta));
+  const preguntasEnfocadas = st.preguntas.filter(p => st.conceptosDebiles.includes(p.stageTitle))
+    .map(p => ({ ...p, yaFalloAntes: preguntasFalladasTextos.has(p.q.q) }));
   for(let i=preguntasEnfocadas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntasEnfocadas[i],preguntasEnfocadas[j]]=[preguntasEnfocadas[j],preguntasEnfocadas[i]]; }
   examenPracticaState = { subjectId: st.subjectId, preguntas: preguntasEnfocadas, index:0, respuestas:[] };
   dibujarPreguntaExamen();
@@ -6065,14 +6075,18 @@ function responderExamenPractica(oi){
   const item = st.preguntas[st.index];
   const q = item.q;
   const correcta = esRespuestaCorrecta(q, oi);
-  st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: q.opts[oi], correctaTexto: q.opts[q.correct], explain: q.explain });
+  // Si esta pregunta ya se falló en un intento anterior y hay una
+  // explicación con otro ángulo, se usa esa — repetir la misma
+  // explicación que ya no ayudó no le sirve a nadie.
+  const explicacionAMostrar = (item.yaFalloAntes && q.explicacionAlterna) ? q.explicacionAlterna : q.explain;
+  st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: q.opts[oi], correctaTexto: q.opts[q.correct], explain: explicacionAMostrar });
   document.querySelectorAll('#examen-opts .q-opt').forEach((el,i)=>{
     if(i===q.correct) el.classList.add('correct'); else if(i===oi) el.classList.add('incorrect');
     el.style.pointerEvents='none';
   });
   const fb = $('examen-feedback');
   fb.classList.remove('hidden');
-  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la opción correcta.'}</b> ${q.explain||''}</div>
+  fb.innerHTML = `<div class="q-feedback show ${correcta?'ok':'bad'}"><b>${correcta?'Correcto.':'No es la opción correcta.'}</b> ${!correcta && item.yaFalloAntes && q.explicacionAlterna ? '<span style="color:var(--teal);font-weight:700;">Otra forma de verlo: </span>' : ''}${explicacionAMostrar||''}</div>
     <button class="btn" style="margin-top:10px;width:100%;" onclick="examenPracticaState.index++;dibujarPreguntaExamen();">${st.index<st.preguntas.length-1?'Siguiente pregunta':'Ver resultado'} <i class="ti ti-arrow-right"></i></button>`;
 }
 
