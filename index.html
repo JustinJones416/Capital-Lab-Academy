@@ -2733,7 +2733,8 @@ async function crearTarea(){
 }
 async function eliminarTarea(tareaId){
   if(!confirm('¿Eliminar esta tarea? También se borrarán las entregas ya hechas.')) return;
-  await sb.from('academy_tareas').delete().eq('id', tareaId);
+  const { error } = await sb.from('academy_tareas').delete().eq('id', tareaId);
+  if(error){ toast('No se pudo eliminar: ' + error.message); return; }
   toast('Tarea eliminada.');
   cargarTareasYCalendario();
 }
@@ -2977,7 +2978,8 @@ async function abrirApunteEstructurado(id){
 }
 async function eliminarApunteEstructurado(id){
   if(!confirm('¿Eliminar este apunte? No se puede deshacer.')) return;
-  await sb.from('academy_apuntes').delete().eq('id', id);
+  const { error } = await sb.from('academy_apuntes').delete().eq('id', id);
+  if(error){ toast('No se pudo eliminar: ' + error.message); return; }
   toast('Apunte eliminado.');
   navApuntes();
 }
@@ -4028,7 +4030,8 @@ async function notificarSeguidoresDeApunteNuevo(subjectId, tituloApunte){
 async function borrarApunte(id, subjectId){
   if(!confirm('¿Eliminar este apunte? No se puede deshacer.')) return;
   try {
-    await sb.from('academy_apuntes').delete().eq('id', id);
+    const { error } = await sb.from('academy_apuntes').delete().eq('id', id);
+    if(error) throw error;
     apuntesCache[subjectId] = (apuntesCache[subjectId]||[]).filter(x=>x.id!==id);
     dibujarListaApuntes(subjectId);
   } catch(e){
@@ -4487,7 +4490,8 @@ async function previsualizarCaso(fila){
 async function eliminarCasoPersonalizado(id){
   if(!confirm('¿Eliminar este caso? Tus estudiantes ya no podrán verlo, y perderán el progreso que tuvieran ahí.')) return;
   try {
-    await sb.from('academy_casos_personalizados').delete().eq('id', id);
+    const { error } = await sb.from('academy_casos_personalizados').delete().eq('id', id);
+    if(error) throw error;
     toast('Caso eliminado.');
     if(currentUser?.materia_id) await cargarCasosPersonalizados(currentUser.materia_id);
     renderTeacherCaseBank();
@@ -6047,7 +6051,8 @@ async function alternarActivoExamenAsignado(examenId, nuevoEstado){
 async function eliminarExamenAsignado(examenId){
   if(!confirm('¿Eliminar este examen? También se borrarán las calificaciones ya registradas de tus estudiantes.')) return;
   try {
-    await sb.from('academy_examenes_asignados').delete().eq('id', examenId);
+    const { error } = await sb.from('academy_examenes_asignados').delete().eq('id', examenId);
+    if(error) throw error;
     toast('Examen eliminado.');
     abrirResultadosExamenAsignado();
   } catch(e){ toast('No se pudo eliminar: ' + (e.message||e)); }
