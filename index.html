@@ -2361,7 +2361,15 @@ async function renderCalificacionesEstudiante(){
         if(ans?.score!==undefined) casosCalificados.push({ materia:s, caso:c, score:ans.score, total:ans.total });
       });
     });
-    if(!(examenes?.length) && !casosCalificados.length){
+    let tareasCalificadas = [], califsPersonalizadas = [];
+    if(currentUser.grupo_id){
+      const [{ data: tc }, { data: cp }] = await Promise.all([
+        sb.from('academy_entregas_tareas').select('calificacion,comentario_docente,academy_tareas!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
+        sb.from('academy_calificaciones_personalizadas').select('calificacion,comentario,academy_metricas_calificacion!inner(nombre)').eq('usuario_id', currentUser.usuario_id),
+      ]);
+      tareasCalificadas = tc||[]; califsPersonalizadas = cp||[];
+    }
+    if(!(examenes?.length) && !casosCalificados.length && !tareasCalificadas.length && !califsPersonalizadas.length){
       cont.innerHTML = '<div class="auth-hint">Todavía no tienes ninguna calificación registrada.</div>';
       return;
     }
@@ -2384,12 +2392,17 @@ async function renderCalificacionesEstudiante(){
         return `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${c.materia.id}')"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${pct}%</div><div><b>${c.caso.title}</b><span>${c.materia.title} · ${c.score}/${c.total} correctas</span></div></div>`;
       }).join('');
     }
-    if(currentUser.grupo_id){
-      const { data: califsPersonalizadas } = await sb.from('academy_calificaciones_personalizadas').select('calificacion,comentario,academy_metricas_calificacion!inner(nombre)').eq('usuario_id', currentUser.usuario_id);
-      if(califsPersonalizadas?.length){
-        html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-adjustments-star"></i> Calificaciones de tu profesor</div>`;
-        html += califsPersonalizadas.map(c => `<div class="export-opt" style="cursor:default;"><i class="ti ti-star" style="color:var(--gold);"></i><div><b>${c.academy_metricas_calificacion.nombre}</b><span>${c.calificacion}${c.comentario?' · '+c.comentario:''}</span></div></div>`).join('');
-      }
+    if(tareasCalificadas.length){
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-send"></i> Tareas calificadas</div>`;
+      html += tareasCalificadas.map(t => {
+        const s = SUBJECTS.find(x=>x.id===t.academy_tareas.materia_id);
+        const color = t.calificacion>=80?'var(--green)':t.calificacion>=60?'var(--amber)':'var(--red)';
+        return `<div class="export-opt" style="cursor:default;"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${t.calificacion}</div><div><b>${t.academy_tareas.titulo}</b><span>${s?.title||''}${t.comentario_docente?' · '+t.comentario_docente:''}</span></div></div>`;
+      }).join('');
+    }
+    if(califsPersonalizadas.length){
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-adjustments-star"></i> Calificaciones de tu profesor</div>`;
+      html += califsPersonalizadas.map(c => `<div class="export-opt" style="cursor:default;"><i class="ti ti-star" style="color:var(--gold);"></i><div><b>${c.academy_metricas_calificacion.nombre}</b><span>${c.calificacion}${c.comentario?' · '+c.comentario:''}</span></div></div>`).join('');
     }
     cont.innerHTML = html;
   } catch(e){
@@ -2426,6 +2439,13 @@ async function renderCalificacionesDocente(){
       </table></div>`;
     } else {
       html += '<div class="auth-hint" style="margin-bottom:20px;">Todavía no has asignado ningún examen.</div>';
+    }
+    // Tareas con entregas calificadas — el mismo tipo de resumen que
+    // los exámenes, con enlace directo al panel de cada una.
+    const { data: tareas } = await sb.from('academy_tareas').select('id,titulo').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:true});
+    if(tareas?.length){
+      html += `<div class="card-title" style="margin-bottom:10px;"><i class="ti ti-send"></i> Tareas</div>`;
+      html += tareas.map(t => `<div class="export-opt" style="cursor:pointer;" onclick="verEntregasTarea('${t.id}','${(t.titulo||'').replace(/'/g,"\\'")}')"><i class="ti ti-inbox" style="color:var(--gold);"></i><div><b>${t.titulo}</b><span>Toca para ver y calificar las entregas</span></div></div>`).join('');
     }
     // Calificaciones personalizadas — para lo que no es un examen
     // automático: participación, análisis en clase, cualquier métrica
@@ -2758,6 +2778,13 @@ async function verEntregasTarea(tareaId, titulo){
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:14px;" onclick="$('ver-entregas-overlay').remove()">Cerrar</button>
   </div>`;
   document.body.appendChild(overlay);
+  cargarContenidoEntregas(tareaId);
+}
+// Separado de verEntregasTarea para poder refrescar solo el contenido
+// después de calificar, sin crear un segundo panel encima del que ya
+// está abierto — antes, guardar una calificación se quedaba tal cual
+// se veía hasta cerrar y volver a abrir el panel.
+async function cargarContenidoEntregas(tareaId){
   try {
     const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
@@ -2770,10 +2797,13 @@ async function verEntregasTarea(tareaId, titulo){
         ${e.archivo_nombre
           ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="descargarEntregaArchivo('${e.archivo_url}','${(e.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-download"></i> ${e.archivo_nombre}</button></div>`
           : `<div style="font-size:12.5px;color:var(--t2);margin-top:6px;">${e.contenido||''}</div>`}
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c3);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input type="number" min="0" max="100" id="calif-${e.id}" value="${e.calificacion??''}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
-          <input type="text" id="coment-${e.id}" value="${(e.comentario_docente||'').replace(/"/g,'&quot;')}" placeholder="Comentario para el estudiante (opcional)" style="flex:1;min-width:150px;padding:7px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
-          <button class="btn btn-ghost btn-sm" onclick="guardarRetroalimentacionTarea('${e.id}')"><i class="ti ti-check"></i> Guardar</button>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c3);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <label style="font-size:11px;color:var(--t3);">Nota:</label>
+            <input type="number" min="0" max="100" id="calif-${e.id}" value="${e.calificacion??''}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+          </div>
+          <textarea id="coment-${e.id}" placeholder="Comentario para el estudiante (opcional)" rows="3" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${e.comentario_docente||''}</textarea>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('${e.id}')"><i class="ti ti-check"></i> Guardar</button>
         </div>
         ${e.calificacion!==null ? `<div style="font-size:11px;color:var(--green);margin-top:6px;"><i class="ti ti-circle-check"></i> Ya calificada — ${e.calificacion}/100</div>` : ''}
       </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>';
@@ -2798,13 +2828,17 @@ async function guardarRetroalimentacionTarea(entregaId){
     toast('Retroalimentación guardada.');
     // Antes esto quedaba guardado sin avisarle a nadie — el estudiante
     // solo se enteraba si volvía a entrar a revisar por su cuenta.
-    const { data: entrega } = await sb.from('academy_entregas_tareas').select('usuario_id, academy_tareas!inner(titulo,materia_id)').eq('id', entregaId).maybeSingle();
+    const { data: entrega } = await sb.from('academy_entregas_tareas').select('usuario_id, tarea_id, academy_tareas!inner(titulo,materia_id)').eq('id', entregaId).maybeSingle();
     if(entrega){
       await sb.from('academy_notificaciones').insert({
         usuario_id: entrega.usuario_id, tipo:'contenido_editado',
         mensaje: `Tu profesor calificó tu tarea "${entrega.academy_tareas.titulo}"${calificacion?` — ${calificacion}/100`:''}.`,
         referencia_materia: entrega.academy_tareas.materia_id,
       });
+      // Antes esto se quedaba tal cual estaba en pantalla hasta cerrar
+      // y volver a abrir — ahora se refresca al instante para que se
+      // vea guardado de verdad, no solo el aviso pasajero.
+      if($('ver-entregas-overlay')) cargarContenidoEntregas(entrega.tarea_id);
     }
   } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
