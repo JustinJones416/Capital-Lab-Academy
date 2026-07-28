@@ -2597,7 +2597,7 @@ async function navTareas(){
 async function cargarTareasYCalendario(){
   if(!currentUser.grupo_id){ $('tareas-lista').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
   try {
-    const { data: tareas } = await sb.from('academy_tareas').select('id,titulo,descripcion,fecha_limite,materia_id').eq('grupo_id', currentUser.grupo_id).order('fecha_limite',{ascending:true});
+    const { data: tareas } = await sb.from('academy_tareas').select('id,titulo,descripcion,fecha_limite,materia_id,archivo_url,archivo_nombre').eq('grupo_id', currentUser.grupo_id).order('fecha_limite',{ascending:true});
     const { data: examenesConFecha } = await sb.from('academy_examenes_asignados').select('id,titulo,fecha_limite,materia_id').eq('grupo_id', currentUser.grupo_id).not('fecha_limite','is',null);
     let entregasPropias = [];
     let retroalimentacionPropia = {};
@@ -2621,6 +2621,7 @@ async function cargarTareasYCalendario(){
             ${currentUser.rol==='estudiante' && entregada ? '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(0,208,132,.15);color:var(--green);flex-shrink:0;">ENTREGADA</span>' : ''}
           </div>
           ${t.descripcion ? `<div style="font-size:12.5px;color:var(--t2);margin-top:8px;">${t.descripcion}</div>` : ''}
+          ${t.archivo_nombre ? `<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="descargarEntregaArchivo('${t.archivo_url}','${(t.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-paperclip"></i> ${t.archivo_nombre}</button>` : ''}
           ${retro?.calificacion!==undefined && retro?.calificacion!==null ? `<div class="databox" style="margin-top:10px;padding:10px 12px;"><div style="display:flex;align-items:center;gap:8px;"><i class="ti ti-message-report" style="color:var(--gold);"></i><b style="color:var(--gold);">${retro.calificacion}/100</b></div>${retro.comentario?`<div style="font-size:12px;color:var(--t2);margin-top:6px;">${retro.comentario}</div>`:''}</div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
             ${currentUser.rol==='estudiante' ? `<button class="btn btn-ghost btn-sm" onclick="abrirEntregarTarea('${t.id}','${t.titulo.replace(/'/g,"\\'")}')"><i class="ti ti-${entregada?'edit':'send'}"></i> ${entregada?'Ver / editar entrega':'Entregar'}</button>` : `<button class="btn btn-ghost btn-sm" onclick="verEntregasTarea('${t.id}','${t.titulo.replace(/'/g,"\\'")}')"><i class="ti ti-users"></i> Ver entregas</button><button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="eliminarTarea('${t.id}')"><i class="ti ti-trash"></i> Eliminar</button>`}
@@ -2681,6 +2682,7 @@ function abrirCrearTarea(){
     <div class="form-field"><label>Título</label><input type="text" id="tarea-titulo" placeholder="Ej: Investigación sobre riesgo de tasa de interés"></div>
     <div class="form-field"><label>Descripción (opcional)</label><textarea id="tarea-descripcion" placeholder="Instrucciones para tus estudiantes"></textarea></div>
     <div class="form-field"><label>Fecha límite</label><input type="date" id="tarea-fecha"></div>
+    <div class="form-field"><label>Adjuntar un archivo (opcional)</label><input type="file" id="tarea-archivo-input" style="width:100%;padding:11px;background:var(--c2);border:1px dashed var(--c4);border-radius:var(--r);color:var(--t2);font-size:12.5px;"></div>
     <div class="auth-msg" id="tarea-msg"></div>
     <button class="auth-submit" onclick="crearTarea()">Publicar tarea</button>
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('crear-tarea-overlay').remove()">Cancelar</button>
@@ -2691,10 +2693,18 @@ async function crearTarea(){
   const titulo = $('tarea-titulo').value.trim();
   const descripcion = $('tarea-descripcion').value.trim();
   const fecha = $('tarea-fecha').value;
+  const archivo = $('tarea-archivo-input')?.files[0];
   const msg = $('tarea-msg');
   if(!titulo || !fecha){ msg.className='auth-msg show error'; msg.textContent='El título y la fecha límite son obligatorios.'; return; }
   try {
-    const { error } = await sb.from('academy_tareas').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, descripcion, fecha_limite: fecha });
+    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, descripcion, fecha_limite: fecha };
+    if(archivo){
+      const ruta = `docente-${currentUser.usuario_id}/tarea_${Date.now()}_${archivo.name}`;
+      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
+      if(errSubida) throw errSubida;
+      payload.archivo_url = ruta; payload.archivo_nombre = archivo.name;
+    }
+    const { error } = await sb.from('academy_tareas').insert(payload);
     if(error) throw error;
     $('crear-tarea-overlay').remove();
     toast('Tarea publicada.');
@@ -3281,17 +3291,27 @@ async function navDocumentos(){
   setActiveNav('nav-documentos'); setActiveSubjectPill(null);
   afterNav();
   const cont = $('view-documentos');
-  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-folder"></i> Documentos</div><h1>Casos y apuntes de tu clase</h1></div><div id="documentos-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-folder"></i> Documentos</div><h1>Casos, apuntes y tareas de tu clase</h1></div><div id="documentos-contenido"><div class="auth-hint">Cargando…</div></div>`;
   if(!currentUser.grupo_id){ $('documentos-contenido').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
   try {
     await cargarCasosPersonalizados(currentUser.materia_id);
     const data = SUBJECT_DATA[currentUser.materia_id];
     const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
     let html = `<div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-briefcase"></i> Casos de ${s?.title||''}</div>`;
-    html += data.cases.map(c => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);">
-      <i class="ti ti-file-text" style="color:${s?.color||'var(--gold)'};"></i>
-      <div><b>${c.title}</b><span>Expediente ${c.expediente} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}${c.personalizado?' · creado por tu profesor':''}</span></div>
+    html += data.cases.map(c => `<div class="export-opt" style="align-items:center;">
+      <i class="ti ti-file-text" style="color:${s?.color||'var(--gold)'};cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);"></i>
+      <div style="flex:1;cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);"><b>${c.title}</b><span>Expediente ${c.expediente} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}${c.personalizado?' · creado por tu profesor':''}</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();descargarCasoEnPDF('${c.id}')" title="Descargar en PDF"><i class="ti ti-download"></i></button>
     </div>`).join('');
+
+    // Materiales que el docente haya adjuntado al crear tareas —
+    // instrucciones, lecturas, lo que haga falta para resolverlas.
+    const { data: tareasConArchivo } = await sb.from('academy_tareas').select('id,titulo,archivo_url,archivo_nombre').eq('grupo_id', currentUser.grupo_id).not('archivo_url','is',null);
+    if(tareasConArchivo?.length){
+      html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-folder-open"></i> Material de tu profesor</div>`;
+      html += tareasConArchivo.map(t => `<div class="export-opt" style="cursor:pointer;" onclick="descargarEntregaArchivo('${t.archivo_url}','${(t.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-file-download" style="color:var(--gold);"></i><div><b>${t.archivo_nombre}</b><span>Adjunto de la tarea "${t.titulo}"</span></div></div>`).join('');
+    }
+
     if(currentUser.rol==='estudiante'){
       const { data: apuntes } = await sb.from('academy_apuntes').select('id,titulo,materia_id').eq('usuario_id', currentUser.usuario_id).order('actualizado_en',{ascending:false});
       html += `<div class="card-title" style="margin:20px 0 10px;"><i class="ti ti-notebook"></i> Mis apuntes</div>`;
@@ -4020,6 +4040,34 @@ function siguientePreguntaQuiz(){
 }
 
 // ───── Exportación del análisis ─────
+// Descarga el material del caso en sí — el expediente, el contexto, las
+// etapas y sus preguntas — sin importar si el estudiante ya lo
+// respondió o no. Distinto de exportCase, que exporta MI análisis ya
+// resuelto (y que por eso sale vacío si todavía no se ha empezado).
+function descargarCasoEnPDF(caseId){
+  const found = findCase(caseId);
+  if(!found){ toast('No se encontró ese caso.'); return; }
+  const c = found.case;
+  const s = SUBJECTS.find(x=>x.id===found.subjId);
+  let cuerpo = `<h1>${c.title}</h1><div class="sub">Expediente ${c.expediente} · ${s?.title||''} · ${new Date().toLocaleDateString('es-PA')}</div>
+    <div class="preg"><b>Tu rol:</b> ${c.role}</div>
+    <div class="preg">${c.brief}</div>`;
+  if(c.character){
+    cuerpo += `<div class="preg"><b>${c.character.name}</b> — ${c.character.role}<div class="resp">${c.character.quote||''}</div></div>`;
+  }
+  if(c.facts?.length){
+    cuerpo += `<h2>Datos clave</h2>` + c.facts.map(f=>`<div class="preg">${f[0]}: <b>${f[1]}</b></div>`).join('');
+  }
+  c.stages.forEach(st => {
+    cuerpo += `<h2>${st.title}</h2><div class="preg">${st.intro||''}</div>`;
+    (st.questions||[]).forEach((q,i) => {
+      cuerpo += `<div class="preg"><b>P${i+1}. ${q.q}</b>`;
+      if(q.type==='mc') cuerpo += `<div class="resp">${q.opts.map((o,oi)=>(oi===q.correct?'✓ ':'· ')+o).join('<br>')}</div>`;
+      cuerpo += `</div>`;
+    });
+  });
+  abrirVentanaImpresion(c.title+' — Material del caso', cuerpo);
+}
 function exportCase(caseId){
   const found=findCase(caseId);
   const c=found.case;
