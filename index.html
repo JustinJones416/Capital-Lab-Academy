@@ -5030,9 +5030,20 @@ async function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
   // maneja su diálogo de impresión. Ahora genera un PDF real en el
   // propio navegador y lo entrega con el mecanismo nativo de descarga,
   // para que la persona elija dónde guardarlo como cualquier archivo.
-  toast('Generando PDF…');
+  //
+  // El contenedor tiene que estar de verdad visible en pantalla para
+  // que la librería de captura lo procese bien — posicionarlo fuera de
+  // la pantalla (como se hacía antes) o con opacidad cero produce un
+  // PDF con el texto técnicamente presente pero visualmente en
+  // blanco. Por eso va encima de todo, cubierto con una pantalla de
+  // "Generando PDF" para que no se vea el destello del contenido
+  // crudo mientras se captura.
+  const pantallaCarga = document.createElement('div');
+  pantallaCarga.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;';
+  pantallaCarga.innerHTML = `<i class="ti ti-loader-2" style="font-size:32px;color:var(--gold);animation:girar 1s linear infinite;"></i><div>Generando tu PDF…</div><style>@keyframes girar{to{transform:rotate(360deg)}}</style>`;
+  document.body.appendChild(pantallaCarga);
   const contenedor = document.createElement('div');
-  contenedor.style.cssText = 'position:fixed;left:-9999px;top:0;width:720px;background:#fff;';
+  contenedor.style.cssText = 'position:fixed;left:0;top:0;width:720px;background:#fff;z-index:99998;';
   contenedor.innerHTML = `<style>
     body,div{font-family:Georgia,serif;color:#111;}
     h1{font-size:22px;margin-bottom:2px;} .sub{color:#555;font-size:12.5px;margin-bottom:22px;}
@@ -5060,6 +5071,7 @@ async function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
     toast('No se pudo generar el PDF: ' + (e.message||e));
   } finally {
     contenedor.remove();
+    pantallaCarga.remove();
   }
 }
 
