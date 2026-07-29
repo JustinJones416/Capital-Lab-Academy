@@ -527,6 +527,7 @@ h1,h2,h3{font-family:var(--font-head);}
 
     <div class="nav-group">
       <div class="nav-group-label">Navegación</div>
+      <button class="nav-item hidden" id="nav-dashboard" onclick="navDashboardEstudiante()"><i class="ti ti-home-2"></i> Inicio</button>
       <button class="nav-item active" id="nav-portal" onclick="navPortal()"><i class="ti ti-layout-grid"></i> Portal de materias</button>
       <button class="nav-item" id="nav-progress" onclick="navProgress()"><i class="ti ti-chart-donut-3"></i> Mi progreso <span class="nav-badge" id="progress-badge">0/10</span></button>
       <button class="nav-item" id="nav-calificaciones" onclick="navCalificaciones()"><i class="ti ti-report"></i> Calificaciones</button>
@@ -581,6 +582,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-metricas" class="hidden"></section>
     <section id="view-documentos" class="hidden"></section>
     <section id="view-foro" class="hidden"></section>
+    <section id="view-dashboard" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
@@ -2256,7 +2258,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -5756,6 +5758,7 @@ async function entrarConSesion(membresia){
   document.querySelector('.mode-toggle').style.display = currentUser.rol==='docente' ? '' : 'none';
   $('menu-btn-companeros').style.display = currentUser.rol==='docente' ? 'none' : '';
   $('nav-metricas').classList.toggle('hidden', currentUser.rol!=='docente');
+  $('nav-dashboard').classList.toggle('hidden', currentUser.rol!=='estudiante');
   $('brand-sub').textContent = currentUser.grupo_nombre || 'Portal de materias';
 
   // La pieza central de todo esto: un estudiante entra directo a la
@@ -5764,7 +5767,7 @@ async function entrarConSesion(membresia){
   // ya que su grupo también está ligado a una sola materia.
   restringirNavegacionAMateria(currentUser.materia_id);
   if(currentUser.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
-    navSubject(currentUser.materia_id);
+    if(currentUser.rol==='estudiante') navDashboardEstudiante(); else navSubject(currentUser.materia_id);
   } else {
     navPortal();
   }
@@ -5772,6 +5775,7 @@ async function entrarConSesion(membresia){
   actualizarRachaDeEstudio();
   verificarAnunciosDeClase();
   revisarRepasosProgramadosVencidos();
+  if(currentUser.rol==='estudiante') iniciarRastreoDeMinutos();
   if(currentUser.rol==='estudiante' && !currentUser.personalizacionCompletada) mostrarEncuestaPersonalizacion();
   if(currentUser.rol==='estudiante'){
     revisarPreguntaVivoActiva();
@@ -5816,9 +5820,138 @@ function alternarMenuTopbarMas(evento){
 }
 function cerrarMenuTopbarMas(){ $('menu-topbar-mas').style.display = 'none'; }
 
+// Cuenta un minuto de estudio solo cuando la pestaña está realmente
+// activa y visible — no mientras está en segundo plano sin usarse,
+// para que "horas estudiadas" sea un dato real, no inflado.
+// ═══════════════════════════════════════════════════════════════════════
+// DASHBOARD ACADÉMICO — lo primero que ve el estudiante al entrar, en
+// vez de tener que ir a seis secciones distintas: promedio real,
+// progreso, casos completados, horas estudiadas (contadas de verdad,
+// no infladas), temas débiles, y en qué materias va mejor o peor si
+// ha tocado más de una a lo largo del tiempo.
+// ═══════════════════════════════════════════════════════
+async function navDashboardEstudiante(){
+  if(currentUser.rol!=='estudiante'){ irAInicioSegunSesion(); return; }
+  showView('view-dashboard');
+  setActiveNav('nav-dashboard'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-dashboard');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <div class="eyebrow"><i class="ti ti-home-2"></i> Inicio</div>
+    <h1>Hola, ${currentUser.nombre?.split(' ')[0]||''}</h1>
+  </div>
+  <div id="dashboard-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  cargarDashboardEstudiante();
+}
+async function cargarDashboardEstudiante(){
+  try {
+    const [{ data: perfil }, { data: examenes }, { data: tareasCalif }] = await Promise.all([
+      sb.from('academy_usuarios').select('minutos_estudiados').eq('id', currentUser.usuario_id).single(),
+      sb.from('academy_examenes_resultados').select('correctas,total,academy_examenes_asignados!inner(materia_id)').eq('usuario_id', currentUser.usuario_id),
+      sb.from('academy_entregas_tareas').select('calificacion').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
+    ]);
+    // Promedio general — exámenes y tareas calificadas juntos, cada
+    // uno expresado como porcentaje para poder promediarlos igual.
+    const notasExamenes = (examenes||[]).map(e=>e.correctas/e.total*100);
+    const notasTareas = (tareasCalif||[]).map(t=>t.calificacion);
+    const todasLasNotas = [...notasExamenes, ...notasTareas];
+    const promedio = todasLasNotas.length ? Math.round(todasLasNotas.reduce((a,b)=>a+b,0)/todasLasNotas.length) : null;
+
+    // Progreso y casos completados — cruzando todas las materias que
+    // haya tocado, no solo la de la sesión activa (mismo patrón que
+    // ya usa "Mi progreso general").
+    let casosCompletados = 0, casosTotales = 0;
+    const materiasConProgreso = [];
+    SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+      const data = SUBJECT_DATA[s.id];
+      if(!data) return;
+      const completosAqui = data.cases.filter(c=>caseStatus(c.id)==='completo').length;
+      casosCompletados += completosAqui; casosTotales += data.cases.length;
+      if(completosAqui < data.cases.length && Object.keys(studentAnswers).some(cid=>data.cases.some(c=>c.id===cid))){
+        materiasConProgreso.push({ materia:s, faltan: data.cases.length-completosAqui });
+      }
+    });
+
+    // Temas débiles — mismo cálculo que "Mis puntos débiles", resumido
+    // por etapa en vez de listar cada pregunta suelta.
+    const debilesPorTema = {};
+    SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+      const data = SUBJECT_DATA[s.id];
+      if(!data) return;
+      data.cases.forEach(c => {
+        const ans = studentAnswers[c.id];
+        if(!ans || !ans.stages) return;
+        c.stages.forEach(st => {
+          if(!st.questions) return;
+          const stAns = ans.stages[st.id] || {};
+          st.questions.forEach((q,i) => {
+            if(esRespuestaCorrecta(q, stAns[i]) === false){
+              const clave = st.title;
+              debilesPorTema[clave] = debilesPorTema[clave] || { materia:s, cuenta:0 };
+              debilesPorTema[clave].cuenta++;
+            }
+          });
+        });
+      });
+    });
+    const temasDebiles = Object.entries(debilesPorTema).sort((a,b)=>b[1].cuenta-a[1].cuenta).slice(0,5);
+
+    // Fortalezas y debilidades por materia — promedio de examen por
+    // cada materia que haya tocado, para ver dónde va mejor y peor.
+    const notasPorMateria = {};
+    (examenes||[]).forEach(e => {
+      const mid = e.academy_examenes_asignados.materia_id;
+      (notasPorMateria[mid] = notasPorMateria[mid]||[]).push(e.correctas/e.total*100);
+    });
+    const promediosPorMateria = Object.entries(notasPorMateria).map(([mid, notas]) => ({
+      materia: SUBJECTS.find(s=>s.id===mid), promedio: notas.reduce((a,b)=>a+b,0)/notas.length,
+    })).filter(x=>x.materia).sort((a,b)=>b.promedio-a.promedio);
+    const fortalezas = promediosPorMateria.filter(x=>x.promedio>=75).slice(0,3);
+    const debilidades = promediosPorMateria.filter(x=>x.promedio<60).slice(-3).reverse();
+
+    const horas = Math.floor((perfil?.minutos_estudiados||0)/60);
+    const minutosRestantes = (perfil?.minutos_estudiados||0)%60;
+
+    $('dashboard-contenido').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-chart-bar" style="font-size:22px;color:var(--gold);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${promedio!==null?promedio+'%':'—'}</div><div style="font-size:10.5px;color:var(--t3);">promedio general</div></div>
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-checklist" style="font-size:22px;color:var(--accent2);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${casosCompletados}/${casosTotales}</div><div style="font-size:10.5px;color:var(--t3);">casos completados</div></div>
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-clock" style="font-size:22px;color:var(--teal);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${horas}h ${minutosRestantes}m</div><div style="font-size:10.5px;color:var(--t3);">tiempo activo en Academy</div></div>
+        <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-books" style="font-size:22px;color:var(--rose);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${materiasConProgreso.length}</div><div style="font-size:10.5px;color:var(--t3);">materia${materiasConProgreso.length===1?'':'s'} pendiente${materiasConProgreso.length===1?'':'s'}</div></div>
+      </div>
+      ${(fortalezas.length || debilidades.length) ? `<div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><i class="ti ti-analyze"></i> Cómo vas por materia</div>
+        ${fortalezas.length ? `<div style="margin-top:10px;"><b style="font-size:11.5px;color:var(--green);">FUERTE EN</b>${fortalezas.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span>${f.materia.title}</span><span style="color:var(--green);font-weight:700;">${Math.round(f.promedio)}%</span></div>`).join('')}</div>` : ''}
+        ${debilidades.length ? `<div style="margin-top:${fortalezas.length?'12px':'10px'};"><b style="font-size:11.5px;color:var(--red);">NECESITA REFUERZO</b>${debilidades.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span>${f.materia.title}</span><span style="color:var(--red);font-weight:700;">${Math.round(f.promedio)}%</span></div>`).join('')}</div>` : ''}
+      </div>` : ''}
+      ${temasDebiles.length ? `<div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><i class="ti ti-target-arrow" style="color:var(--red)"></i> Temas para repasar</div>
+        ${temasDebiles.map(([tema,info]) => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${info.materia.id}')"><i class="ti ti-alert-triangle" style="color:var(--red);"></i><div><b>${tema}</b><span>${info.materia.title} · ${info.cuenta} error${info.cuenta===1?'':'es'}</span></div></div>`).join('')}
+      </div>` : ''}
+      ${materiasConProgreso.length ? `<div class="card">
+        <div class="card-title"><i class="ti ti-player-play"></i> Continuar donde quedaste</div>
+        ${materiasConProgreso.map(m => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${m.materia.id}')"><i class="ti ti-${m.materia.icon}" style="color:${m.materia.color};"></i><div><b>${m.materia.title}</b><span>Te faltan ${m.faltan} caso${m.faltan===1?'':'s'}</span></div></div>`).join('')}
+      </div>` : ''}
+      ${(!promedio && !casosCompletados && !temasDebiles.length) ? '<div class="auth-hint">Todavía no tienes actividad registrada — entra a tu materia y empieza con un caso.</div>' : ''}
+    `;
+  } catch(e){
+    $('dashboard-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+function iniciarRastreoDeMinutos(){
+  clearInterval(window.__intervaloMinutos);
+  window.__intervaloMinutos = setInterval(async () => {
+    if(document.visibilityState !== 'visible' || !currentUser?.usuario_id) return;
+    try {
+      const { data } = await sb.from('academy_usuarios').select('minutos_estudiados').eq('id', currentUser.usuario_id).single();
+      await sb.from('academy_usuarios').update({ minutos_estudiados: (data?.minutos_estudiados||0)+1 }).eq('id', currentUser.usuario_id);
+    } catch(e){ /* silencioso — no interrumpir por esto */ }
+  }, 60000);
+}
 function irAInicioSegunSesion(){
   if(currentUser?.materia_id && SUBJECTS.some(s=>s.id===currentUser.materia_id)){
-    navSubject(currentUser.materia_id);
+    if(currentUser.rol==='estudiante') navDashboardEstudiante();
+    else navSubject(currentUser.materia_id);
   } else {
     navPortal();
   }
