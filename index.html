@@ -2366,7 +2366,7 @@ async function renderCalificacionesEstudiante(){
     let tareasCalificadas = [], califsPersonalizadas = [];
     if(currentUser.grupo_id){
       const [{ data: tc }, { data: cp }] = await Promise.all([
-        sb.from('academy_entregas_tareas').select('calificacion,comentario_docente,academy_tareas!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
+        sb.from('academy_entregas_tareas').select('calificacion,comentario_docente,rubrica_puntajes,academy_tareas!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
         sb.from('academy_calificaciones_personalizadas').select('calificacion,comentario,academy_metricas_calificacion!inner(nombre)').eq('usuario_id', currentUser.usuario_id),
       ]);
       tareasCalificadas = tc||[]; califsPersonalizadas = cp||[];
@@ -2399,7 +2399,9 @@ async function renderCalificacionesEstudiante(){
       html += tareasCalificadas.map(t => {
         const s = SUBJECTS.find(x=>x.id===t.academy_tareas.materia_id);
         const color = t.calificacion>=80?'var(--green)':t.calificacion>=60?'var(--amber)':'var(--red)';
-        return `<div class="export-opt" style="cursor:default;"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${t.calificacion}</div><div><b>${t.academy_tareas.titulo}</b><span>${s?.title||''}${t.comentario_docente?' · '+t.comentario_docente:''}</span></div></div>`;
+        return `<div class="export-opt" style="cursor:default;align-items:flex-start;"><div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:${color};">${t.calificacion}</div><div style="flex:1;"><b>${t.academy_tareas.titulo}</b><span>${s?.title||''}${t.comentario_docente?' · '+t.comentario_docente:''}</span>
+          ${t.rubrica_puntajes ? `<div style="margin-top:6px;background:var(--c2);border-radius:var(--r);padding:8px 10px;">${t.rubrica_puntajes.map(r=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2);padding:2px 0;"><span>${r.nombre}</span><span>${r.puntaje}/${r.puntos_max}</span></div>`).join('')}</div>` : ''}
+        </div></div>`;
       }).join('');
     }
     if(califsPersonalizadas.length){
@@ -2803,6 +2805,106 @@ async function guardarEntregaTarea(tareaId){
     cargarTareasYCalendario();
   } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo entregar: ' + (e.message||e); }
 }
+// ═══════════════════════════════════════════════════════════════════
+// RÚBRICAS DE EVALUACIÓN — criterios específicos y reutilizables, en
+// vez de una nota suelta. Se crean una vez por clase y se aplican a
+// cualquier tarea al calificar, para que el estudiante vea exactamente
+// qué estuvo bien y qué no en cada parte, no solo el número final.
+// ═══════════════════════════════════════════════════════
+function abrirGestionRubricas(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'gestion-rubricas-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-list-check" style="color:var(--gold)"></i> Rúbricas de evaluación</h2>
+    <div id="rubricas-lista"><div class="auth-hint">Cargando…</div></div>
+    <button class="btn" style="width:100%;justify-content:center;margin-top:10px;" onclick="abrirNuevaRubrica()"><i class="ti ti-plus"></i> Nueva rúbrica</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('gestion-rubricas-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  cargarListaRubricas();
+}
+async function cargarListaRubricas(){
+  const { data: rubricas } = await sb.from('academy_rubricas').select('id,nombre,criterios').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+  window.__rubricasCache = rubricas||[];
+  $('rubricas-lista').innerHTML = rubricas?.length ? rubricas.map(r => `<div class="export-opt" style="cursor:default;">
+    <i class="ti ti-list-check" style="color:var(--gold);"></i>
+    <div style="flex:1;"><b>${r.nombre}</b><span>${r.criterios.length} criterio${r.criterios.length===1?'':'s'} · ${r.criterios.reduce((s,c)=>s+c.puntos_max,0)} puntos en total</span></div>
+    <i class="ti ti-trash" style="cursor:pointer;color:var(--red);" onclick="eliminarRubrica('${r.id}')"></i>
+  </div>`).join('') : '<div class="auth-hint">Todavía no tienes ninguna rúbrica.</div>';
+}
+function abrirNuevaRubrica(){
+  window.__nuevaRubricaCriterios = [{nombre:'', puntos_max:25}];
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'nueva-rubrica-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-list-check" style="color:var(--gold)"></i> Nueva rúbrica</h2>
+    <div class="form-field"><label>Nombre</label><input type="text" id="rb-nombre" placeholder="Ej: Rúbrica para investigaciones"></div>
+    <label style="display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin:10px 0 6px;">Criterios</label>
+    <div id="rb-criterios"></div>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="agregarCriterioRubrica()" style="margin-top:6px;">+ Añadir criterio</button>
+    <div class="auth-msg" id="rb-msg"></div>
+    <button class="auth-submit" style="margin-top:14px;" onclick="guardarRubrica()">Guardar rúbrica</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('nueva-rubrica-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  dibujarCriteriosRubrica();
+}
+function agregarCriterioRubrica(){ window.__nuevaRubricaCriterios.push({nombre:'', puntos_max:25}); dibujarCriteriosRubrica(); }
+function quitarCriterioRubrica(i){ window.__nuevaRubricaCriterios.splice(i,1); dibujarCriteriosRubrica(); }
+function dibujarCriteriosRubrica(){
+  $('rb-criterios').innerHTML = window.__nuevaRubricaCriterios.map((c,i) => `
+    <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+      <input type="text" value="${(c.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Claridad del argumento" oninput="window.__nuevaRubricaCriterios[${i}].nombre=this.value" style="flex:1;padding:7px 9px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+      <input type="number" min="1" value="${c.puntos_max}" oninput="window.__nuevaRubricaCriterios[${i}].puntos_max=parseInt(this.value)||0" style="width:60px;padding:7px 9px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+      <i class="ti ti-trash" style="cursor:pointer;color:var(--red);" onclick="quitarCriterioRubrica(${i})"></i>
+    </div>`).join('');
+}
+async function guardarRubrica(){
+  const nombre = $('rb-nombre').value.trim();
+  const criterios = window.__nuevaRubricaCriterios.filter(c=>c.nombre.trim() && c.puntos_max>0);
+  const msg = $('rb-msg');
+  if(!nombre || !criterios.length){ msg.className='auth-msg show error'; msg.textContent='Ponle un nombre y al menos un criterio con puntos.'; return; }
+  try {
+    const { error } = await sb.from('academy_rubricas').insert({ grupo_id: currentUser.grupo_id, nombre, criterios });
+    if(error) throw error;
+    $('nueva-rubrica-overlay').remove();
+    toast('Rúbrica creada.');
+    cargarListaRubricas();
+  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo guardar: ' + (e.message||e); }
+}
+async function eliminarRubrica(id){
+  if(!confirm('¿Eliminar esta rúbrica?')) return;
+  const { error } = await sb.from('academy_rubricas').delete().eq('id', id);
+  if(error){ toast('No se pudo eliminar: ' + error.message); return; }
+  toast('Rúbrica eliminada.');
+  cargarListaRubricas();
+}
+// Aplicar una rúbrica al calificar una entrega — reemplaza el campo de
+// nota suelta por un puntaje por cada criterio, que se suman solos.
+async function aplicarRubricaAEntrega(entregaId, selectElement){
+  const rubricaId = selectElement.value;
+  const contCalif = $('calif-bloque-'+entregaId);
+  if(!rubricaId){ contCalif.innerHTML = `<input type="number" min="0" max="100" id="calif-${entregaId}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">`; return; }
+  const rubrica = window.__rubricasCache.find(r=>r.id===rubricaId);
+  const totalMax = rubrica.criterios.reduce((s,c)=>s+c.puntos_max,0);
+  contCalif.innerHTML = rubrica.criterios.map((c,i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+      <span style="font-size:11.5px;color:var(--t2);">${c.nombre} (máx. ${c.puntos_max})</span>
+      <input type="number" min="0" max="${c.puntos_max}" id="rub-${entregaId}-${i}" oninput="actualizarSumaRubrica('${entregaId}','${rubricaId}')" style="width:55px;padding:5px 7px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12px;">
+    </div>`).join('') + `<div style="font-size:11.5px;font-weight:700;margin-top:4px;">Total: <span id="rub-total-${entregaId}">0</span>/${totalMax}</div>
+    <input type="hidden" id="calif-${entregaId}" value="0"><input type="hidden" id="rubrica-usada-${entregaId}" value="${rubricaId}">`;
+}
+function actualizarSumaRubrica(entregaId, rubricaId){
+  const rubrica = window.__rubricasCache.find(r=>r.id===rubricaId);
+  const totalMax = rubrica.criterios.reduce((s,c)=>s+c.puntos_max,0);
+  let suma = 0;
+  rubrica.criterios.forEach((c,i) => { suma += Math.min(parseInt($('rub-'+entregaId+'-'+i).value)||0, c.puntos_max); });
+  const pct = totalMax ? Math.round(suma/totalMax*100) : 0;
+  $('rub-total-'+entregaId).textContent = suma;
+  $('calif-'+entregaId).value = pct;
+}
 async function verEntregasTarea(tareaId, titulo){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
@@ -2821,9 +2923,13 @@ async function verEntregasTarea(tareaId, titulo){
 // se veía hasta cerrar y volver a abrir el panel.
 async function cargarContenidoEntregas(tareaId){
   try {
-    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
+    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,rubrica_id,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
-    $('ver-entregas-contenido').innerHTML = entregas?.length ? entregas.map(e => `
+    const { data: rubricas } = await sb.from('academy_rubricas').select('id,nombre,criterios').eq('grupo_id', currentUser.grupo_id);
+    window.__rubricasCache = rubricas||[];
+    $('ver-entregas-contenido').innerHTML = `
+      ${rubricas?.length ? `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-list-check"></i> Gestionar rúbricas</button>` : `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-plus"></i> Crear una rúbrica de evaluación</button>`}
+    ` + (entregas?.length ? entregas.map(e => `
       <div class="card" style="margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <b>${e.academy_usuarios.nombre}</b>
@@ -2833,15 +2939,18 @@ async function cargarContenidoEntregas(tareaId){
           ? `<div style="margin-top:8px;"><button class="btn btn-ghost btn-sm" onclick="descargarEntregaArchivo('${e.archivo_url}','${(e.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-download"></i> ${e.archivo_nombre}</button></div>`
           : `<div style="font-size:12.5px;color:var(--t2);margin-top:6px;">${e.contenido||''}</div>`}
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c3);">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <label style="font-size:11px;color:var(--t3);">Nota:</label>
+          ${rubricas?.length ? `<select onchange="aplicarRubricaAEntrega('${e.id}',this)" style="width:100%;padding:6px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t2);font-size:11.5px;margin-bottom:8px;">
+            <option value="">Nota simple (0-100)</option>
+            ${rubricas.map(r=>`<option value="${r.id}" ${e.rubrica_id===r.id?'selected':''}>${r.nombre}</option>`).join('')}
+          </select>` : ''}
+          <div id="calif-bloque-${e.id}">
             <input type="number" min="0" max="100" id="calif-${e.id}" value="${e.calificacion??''}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
           </div>
-          <textarea id="coment-${e.id}" placeholder="Comentario para el estudiante (opcional)" rows="3" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${e.comentario_docente||''}</textarea>
+          <textarea id="coment-${e.id}" placeholder="Comentario para el estudiante (opcional)" rows="3" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:8px;">${e.comentario_docente||''}</textarea>
           <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('${e.id}')"><i class="ti ti-check"></i> Guardar</button>
         </div>
         ${e.calificacion!==null ? `<div style="font-size:11px;color:var(--green);margin-top:6px;"><i class="ti ti-circle-check"></i> Ya calificada — ${e.calificacion}/100</div>` : ''}
-      </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>';
+      </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>');
   } catch(e){
     $('ver-entregas-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
@@ -2858,8 +2967,15 @@ async function descargarEntregaArchivo(ruta, nombre){
 async function guardarRetroalimentacionTarea(entregaId){
   const calificacion = $('calif-'+entregaId).value;
   const comentario = $('coment-'+entregaId).value.trim();
+  const rubricaId = $('rubrica-usada-'+entregaId)?.value || null;
+  let rubricaPuntajes = null;
+  if(rubricaId){
+    const rubrica = window.__rubricasCache.find(r=>r.id===rubricaId);
+    rubricaPuntajes = rubrica.criterios.map((c,i) => ({ nombre:c.nombre, puntaje: parseInt($('rub-'+entregaId+'-'+i).value)||0, puntos_max:c.puntos_max }));
+  }
   try {
-    await sb.from('academy_entregas_tareas').update({ calificacion: calificacion?parseInt(calificacion):null, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString() }).eq('id', entregaId);
+    const { error } = await sb.from('academy_entregas_tareas').update({ calificacion: calificacion?parseInt(calificacion):null, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString(), rubrica_id: rubricaId, rubrica_puntajes: rubricaPuntajes }).eq('id', entregaId);
+    if(error) throw error;
     toast('Retroalimentación guardada.');
     // Antes esto quedaba guardado sin avisarle a nadie — el estudiante
     // solo se enteraba si volvía a entrar a revisar por su cuenta.
