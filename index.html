@@ -6216,6 +6216,7 @@ function dibujarPreguntaExamen(){
   const st = examenPracticaState;
   const cont = $('view-examen-practica');
   if(st.index >= st.preguntas.length){
+    clearInterval(window.__intervaloExamenEstricto);
     const correctas = st.respuestas.filter(r=>r.correcta).length;
     // Agrupar por etapa/concepto para mostrar dónde repasar, no solo la nota final.
     const porConcepto = {};
@@ -6265,7 +6266,9 @@ function dibujarPreguntaExamen(){
   const item = st.preguntas[st.index];
   const q = item.q;
   cont.innerHTML = `<div class="hero" style="padding-top:18px;">
-    <button class="btn btn-ghost btn-sm" onclick="salirDelExamenPractica('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir del examen</button>
+    ${st.modoEstricto
+      ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-weight:800;font-size:15px;color:${st.segundosRestantes<60?'var(--red)':'var(--t1)'};"><i class="ti ti-clock-hour-4"></i> <span id="cronometro-examen">${formatearTiempoExamen(st.segundosRestantes)}</span></div>`
+      : `<button class="btn btn-ghost btn-sm" onclick="salirDelExamenPractica('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir del examen</button>`}
     <div class="eyebrow"><i class="ti ti-clipboard-check"></i> Examen de práctica — pregunta ${st.index+1} de ${st.preguntas.length}</div>
     <div style="background:var(--c3);border-radius:6px;height:6px;margin:10px 0 18px;overflow:hidden;"><div style="background:var(--accent2);height:100%;width:${Math.round(st.index/st.preguntas.length*100)}%;"></div></div>
   </div>
@@ -6291,6 +6294,7 @@ function responderExamenPracticaNum(){
   const correcta = esRespuestaCorrecta(q, valor);
   const explicacionAMostrar = (item.yaFalloAntes && q.explicacionAlterna) ? q.explicacionAlterna : q.explain;
   st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: valor, correctaTexto: String(q.correct), explain: explicacionAMostrar });
+  if(st.modoEstricto){ st.index++; dibujarPreguntaExamen(); return; }
   $('examen-num-input').disabled = true;
   document.querySelector('#examen-opts button').style.display='none';
   const fb = $('examen-feedback');
@@ -6380,6 +6384,11 @@ function abrirAsignarExamen(examenExistente){
     <p>Tus estudiantes lo verán como una tarea pendiente al entrar a "${SUBJECTS.find(s=>s.id===currentUser.materia_id)?.title}".</p>
     <div class="form-field"><label>Título del examen</label><input type="text" id="ax-titulo" placeholder="Ej: Examen parcial — Unidad 2" value="${(examenExistente?.titulo||'Examen asignado').replace(/"/g,'&quot;')}"></div>
     <div class="form-field"><label>Fecha límite (opcional)</label><input type="date" id="ax-fecha-limite" value="${examenExistente?.fecha_limite||''}"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;cursor:pointer;">
+      <input type="checkbox" id="ax-modo-estricto" ${examenExistente?.modo_estricto?'checked':''} onchange="$('ax-tiempo-limite-campo').classList.toggle('hidden', !this.checked)">
+      <span style="font-size:12.5px;">Modo estricto — cronómetro, sin volver atrás, sin ver si acertó hasta terminar</span>
+    </label>
+    <div class="form-field ${examenExistente?.modo_estricto?'':'hidden'}" id="ax-tiempo-limite-campo"><label>Tiempo límite (minutos)</label><input type="number" min="1" id="ax-tiempo-limite" value="${examenExistente?.tiempo_limite_minutos||30}"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost btn-sm active" id="ax-tab-conceptos" onclick="mostrarPestanaAsignarExamen('conceptos')">Conceptos existentes</button>
       <button class="btn btn-ghost btn-sm" id="ax-tab-propias" onclick="mostrarPestanaAsignarExamen('propias')">Preguntas propias</button>
@@ -6437,7 +6446,9 @@ async function publicarExamenAsignado(examenIdExistente){
   if(!elegidos.length && !preguntasValidas.length){ msg.className='auth-msg show error'; msg.textContent='Elige al menos un concepto o añade al menos una pregunta propia completa.'; return; }
   try {
     const fechaLimite = $('ax-fecha-limite').value || null;
-    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos, preguntas_propias: preguntasValidas.length?preguntasValidas:null, fecha_limite: fechaLimite };
+    const modoEstricto = $('ax-modo-estricto').checked;
+    const tiempoLimite = modoEstricto ? (parseInt($('ax-tiempo-limite').value)||30) : null;
+    const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, conceptos: elegidos, preguntas_propias: preguntasValidas.length?preguntasValidas:null, fecha_limite: fechaLimite, modo_estricto: modoEstricto, tiempo_limite_minutos: tiempoLimite };
     const { error } = examenIdExistente
       ? await sb.from('academy_examenes_asignados').update(payload).eq('id', examenIdExistente)
       : await sb.from('academy_examenes_asignados').insert(payload);
@@ -6465,7 +6476,7 @@ async function abrirResultadosExamenAsignado(){
   </div>`;
   document.body.appendChild(overlay);
   try {
-    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,conceptos,preguntas_propias,fecha_limite,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
+    const { data: examenes, error } = await sb.from('academy_examenes_asignados').select('id,titulo,materia_id,activo,conceptos,preguntas_propias,fecha_limite,modo_estricto,tiempo_limite_minutos,creado_en').eq('grupo_id', currentUser.grupo_id).order('creado_en',{ascending:false});
     if(error) throw error;
     if(!examenes || !examenes.length){ $('resultados-examen-contenido').innerHTML = '<div class="auth-hint">Todavía no has asignado ningún examen.</div>'; return; }
     window.__examenesAsignadosCache = examenes;
@@ -6605,7 +6616,7 @@ async function verificarExamenAsignado(subjectId){
   const cont = $('examen-asignado-banner');
   if(!cont || !sb || !currentUser?.grupo_id || currentUser?.rol!=='estudiante') return;
   try {
-    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos,preguntas_propias,fecha_limite').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
+    const { data: examen } = await sb.from('academy_examenes_asignados').select('id,titulo,conceptos,preguntas_propias,fecha_limite,modo_estricto,tiempo_limite_minutos').eq('grupo_id', currentUser.grupo_id).eq('materia_id', subjectId).eq('activo', true).order('creado_en',{ascending:false}).limit(1).maybeSingle();
     if(!examen) return;
     const { data: yaHecho } = await sb.from('academy_examenes_resultados').select('correctas,total').eq('examen_id', examen.id).eq('usuario_id', currentUser.usuario_id).maybeSingle();
     window.__examenAsignadoActivo = { ...examen, subjectId };
@@ -6617,16 +6628,56 @@ async function verificarExamenAsignado(subjectId){
 }
 function iniciarExamenAsignado(){
   const examen = window.__examenAsignadoActivo;
-  const { subjectId, conceptos, preguntas_propias, id: examenId } = examen;
+  const { subjectId, conceptos, preguntas_propias, id: examenId, modo_estricto, tiempo_limite_minutos } = examen;
   const data = SUBJECT_DATA[subjectId];
   const preguntas = [];
   data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos?.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
   (preguntas_propias||[]).forEach(q => preguntas.push({ q: { type:'mc', ...q }, stageTitle: 'Pregunta del profesor', caseTitle: examen.titulo }));
   if(!preguntas.length){ toast('Este examen no tiene preguntas disponibles.'); return; }
   for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
-  examenPracticaState = { subjectId, preguntas, index:0, respuestas:[], examenAsignadoId: examenId };
-  showView('view-examen-practica');
-  dibujarPreguntaExamen();
+  const arrancar = () => {
+    examenPracticaState = { subjectId, preguntas, index:0, respuestas:[], examenAsignadoId: examenId, modoEstricto: !!modo_estricto };
+    showView('view-examen-practica');
+    if(modo_estricto){
+      examenPracticaState.segundosRestantes = (tiempo_limite_minutos||30)*60;
+      clearInterval(window.__intervaloExamenEstricto);
+      window.__intervaloExamenEstricto = setInterval(tickCronometroExamen, 1000);
+    }
+    dibujarPreguntaExamen();
+  };
+  if(!modo_estricto){ arrancar(); return; }
+  window.__arrancarExamenEstricto = arrancar;
+  // El modo estricto avisa antes de empezar — una vez que arranca el
+  // cronómetro, no hay forma de salir ni de volver atrás, así que la
+  // persona debe saber a qué se está metiendo.
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'aviso-modo-estricto-overlay';
+  overlay.innerHTML = `<div class="export-modal" style="text-align:center;">
+    <i class="ti ti-clock-hour-4" style="font-size:32px;color:var(--red);"></i>
+    <h2 style="margin-top:8px;">Examen en modo estricto</h2>
+    <p>Tienes <b>${tiempo_limite_minutos||30} minutos</b>. No podrás salir, pausar, ni volver a una pregunta anterior una vez que empieces. No sabrás si acertaste hasta terminar.</p>
+    <button class="auth-submit" onclick="$('aviso-modo-estricto-overlay').remove();window.__arrancarExamenEstricto()">Empezar el examen</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('aviso-modo-estricto-overlay').remove()">Todavía no</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function tickCronometroExamen(){
+  const st = examenPracticaState;
+  if(!st || !st.modoEstricto) { clearInterval(window.__intervaloExamenEstricto); return; }
+  st.segundosRestantes--;
+  const badge = $('cronometro-examen');
+  if(badge) badge.textContent = formatearTiempoExamen(st.segundosRestantes);
+  if(st.segundosRestantes<=0){
+    clearInterval(window.__intervaloExamenEstricto);
+    toast('Se acabó el tiempo — el examen se envía tal como está.');
+    st.index = st.preguntas.length;
+    dibujarPreguntaExamen();
+  }
+}
+function formatearTiempoExamen(segundos){
+  const m = Math.floor(Math.max(segundos,0)/60), s = Math.max(segundos,0)%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
 }
 
 function iniciarExamenPersonalizado(subjectId){
@@ -6653,6 +6704,7 @@ function responderExamenPractica(oi){
   // explicación que ya no ayudó no le sirve a nadie.
   const explicacionAMostrar = (item.yaFalloAntes && q.explicacionAlterna) ? q.explicacionAlterna : q.explain;
   st.respuestas.push({ correcta, stageTitle: item.stageTitle, pregunta:q.q, dada: q.opts[oi], correctaTexto: q.opts[q.correct], explain: explicacionAMostrar });
+  if(st.modoEstricto){ st.index++; dibujarPreguntaExamen(); return; }
   document.querySelectorAll('#examen-opts .q-opt').forEach((el,i)=>{
     if(i===q.correct) el.classList.add('correct'); else if(i===oi) el.classList.add('incorrect');
     el.style.pointerEvents='none';
