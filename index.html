@@ -3521,24 +3521,33 @@ async function cargarDetallePregunta(preguntaId){
     if(error) throw error;
     const { data: respuestas } = await sb.from('academy_respuestas_foro').select('id,contenido,marcada_como_solucion,creado_en,usuario_id,academy_usuarios!inner(nombre)').eq('pregunta_id', preguntaId).order('creado_en',{ascending:true});
     const puedoMarcarSolucion = currentUser.usuario_id===p.usuario_id || currentUser.rol==='docente';
-    const puedoBorrarPregunta = currentUser.usuario_id===p.usuario_id || currentUser.rol==='docente';
+    const puedoEditarPregunta = currentUser.usuario_id===p.usuario_id || currentUser.rol==='docente';
     $('ver-pregunta-contenido').innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <h2 style="margin:0;"><i class="ti ti-${p.resuelta?'circle-check':'help-circle'}" style="color:${p.resuelta?'var(--green)':'var(--gold)'};"></i> ${p.titulo}</h2>
-        ${puedoBorrarPregunta?`<i class="ti ti-trash" style="cursor:pointer;color:var(--red);flex-shrink:0;" onclick="eliminarPregunta('${p.id}')"></i>`:''}
+      <div id="pf-pregunta-vista">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <h2 style="margin:0;"><i class="ti ti-${p.resuelta?'circle-check':'help-circle'}" style="color:${p.resuelta?'var(--green)':'var(--gold)'};"></i> ${p.titulo}</h2>
+          ${puedoEditarPregunta?`<div style="display:flex;gap:10px;flex-shrink:0;"><i class="ti ti-pencil" style="cursor:pointer;color:var(--t3);" onclick="editarPreguntaInline('${p.id}','${(p.titulo||'').replace(/'/g,"\\'")}')"></i><i class="ti ti-trash" style="cursor:pointer;color:var(--red);" onclick="eliminarPregunta('${p.id}')"></i></div>`:''}
+        </div>
+        <div class="sub" style="margin:4px 0 12px;">${p.academy_usuarios.nombre} · ${new Date(p.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}</div>
+        ${p.contenido?`<p style="font-size:13.5px;line-height:1.6;margin-bottom:16px;">${p.contenido}</p>`:''}
       </div>
-      <div class="sub" style="margin:4px 0 12px;">${p.academy_usuarios.nombre} · ${new Date(p.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}</div>
-      ${p.contenido?`<p style="font-size:13.5px;line-height:1.6;margin-bottom:16px;">${p.contenido}</p>`:''}
       <div style="border-top:1px solid var(--c3);padding-top:14px;">
         <b style="font-size:12px;color:var(--t2);">${respuestas?.length||0} respuesta${respuestas?.length===1?'':'s'}</b>
-        ${(respuestas||[]).map(r => `<div class="card" style="margin-top:10px;${r.marcada_como_solucion?'border-color:var(--green);':''}">
+        ${(respuestas||[]).map(r => {
+          const puedoEditarRespuesta = currentUser.usuario_id===r.usuario_id;
+          const puedoBorrarRespuesta = currentUser.usuario_id===r.usuario_id || currentUser.rol==='docente';
+          return `<div class="card" style="margin-top:10px;${r.marcada_como_solucion?'border-color:var(--green);':''}" id="resp-vista-${r.id}">
           ${r.marcada_como_solucion?'<div style="font-size:10.5px;font-weight:800;color:var(--green);margin-bottom:4px;"><i class="ti ti-check"></i> MARCADA COMO SOLUCIÓN</div>':''}
-          <div style="font-size:13px;line-height:1.6;">${r.contenido}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="font-size:13px;line-height:1.6;flex:1;">${r.contenido}</div>
+            ${(puedoEditarRespuesta || puedoBorrarRespuesta) ? `<div style="display:flex;gap:8px;flex-shrink:0;">${puedoEditarRespuesta?`<i class="ti ti-pencil" style="cursor:pointer;color:var(--t3);font-size:14px;" onclick="editarRespuestaInline('${r.id}','${p.id}','${(r.contenido||'').replace(/'/g,"\\'").replace(/\n/g,' ')}')"></i>`:''}${puedoBorrarRespuesta?`<i class="ti ti-trash" style="cursor:pointer;color:var(--red);font-size:14px;" onclick="eliminarRespuesta('${r.id}','${p.id}')"></i>`:''}</div>` : ''}
+          </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
             <span style="font-size:10.5px;color:var(--t3);">${r.academy_usuarios.nombre} · ${new Date(r.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</span>
             ${(puedoMarcarSolucion && !r.marcada_como_solucion) ? `<button class="btn btn-ghost btn-sm" onclick="marcarRespuestaSolucion('${p.id}','${r.id}')">Marcar como solución</button>` : ''}
           </div>
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
       </div>
       <textarea id="pf-respuesta-texto" rows="3" placeholder="Escribe tu respuesta…" style="width:100%;margin-top:14px;padding:10px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;resize:vertical;"></textarea>
       <button class="auth-submit" onclick="responderPreguntaForo('${p.id}')">Responder</button>
@@ -3578,6 +3587,45 @@ async function eliminarPregunta(preguntaId){
   $('ver-pregunta-overlay')?.remove();
   toast('Pregunta eliminada.');
   cargarPreguntasForo();
+}
+function editarPreguntaInline(preguntaId, tituloActual){
+  $('pf-pregunta-vista').innerHTML = `
+    <input type="text" id="pf-titulo-editado" value="${tituloActual.replace(/"/g,'&quot;')}" style="width:100%;padding:9px 11px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;font-weight:700;margin-bottom:8px;">
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="guardarEdicionPregunta('${preguntaId}')"><i class="ti ti-check"></i> Guardar</button>
+      <button class="btn btn-ghost btn-sm" onclick="cargarDetallePregunta('${preguntaId}')">Cancelar</button>
+    </div>`;
+}
+async function guardarEdicionPregunta(preguntaId){
+  const titulo = $('pf-titulo-editado').value.trim();
+  if(!titulo){ toast('El título no puede quedar vacío.'); return; }
+  const { error } = await sb.from('academy_preguntas_foro').update({ titulo }).eq('id', preguntaId);
+  if(error){ toast('No se pudo guardar: ' + error.message); return; }
+  toast('Pregunta actualizada.');
+  cargarDetallePregunta(preguntaId);
+}
+function editarRespuestaInline(respuestaId, preguntaId, contenidoActual){
+  $('resp-vista-'+respuestaId).innerHTML = `
+    <textarea id="resp-editada-${respuestaId}" rows="3" style="width:100%;padding:9px 11px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;resize:vertical;margin-bottom:8px;">${contenidoActual}</textarea>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="guardarEdicionRespuesta('${respuestaId}','${preguntaId}')"><i class="ti ti-check"></i> Guardar</button>
+      <button class="btn btn-ghost btn-sm" onclick="cargarDetallePregunta('${preguntaId}')">Cancelar</button>
+    </div>`;
+}
+async function guardarEdicionRespuesta(respuestaId, preguntaId){
+  const contenido = $('resp-editada-'+respuestaId).value.trim();
+  if(!contenido){ toast('La respuesta no puede quedar vacía.'); return; }
+  const { error } = await sb.from('academy_respuestas_foro').update({ contenido }).eq('id', respuestaId);
+  if(error){ toast('No se pudo guardar: ' + error.message); return; }
+  toast('Respuesta actualizada.');
+  cargarDetallePregunta(preguntaId);
+}
+async function eliminarRespuesta(respuestaId, preguntaId){
+  if(!confirm('¿Eliminar esta respuesta?')) return;
+  const { error } = await sb.from('academy_respuestas_foro').delete().eq('id', respuestaId);
+  if(error){ toast('No se pudo eliminar: ' + error.message); return; }
+  toast('Respuesta eliminada.');
+  cargarDetallePregunta(preguntaId);
 }
 
 async function navDocumentos(){
