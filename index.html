@@ -534,6 +534,7 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="nav-item" id="nav-apuntes" onclick="navApuntes()"><i class="ti ti-notebook"></i> Mis apuntes</button>
       <button class="nav-item hidden" id="nav-metricas" onclick="navMetricas()"><i class="ti ti-chart-histogram"></i> Métricas del salón</button>
       <button class="nav-item" id="nav-documentos" onclick="navDocumentos()"><i class="ti ti-folder"></i> Documentos</button>
+      <button class="nav-item" id="nav-foro" onclick="navForo()"><i class="ti ti-message-circle-2"></i> Foro de dudas</button>
     </div>
 
     <div class="nav-group">
@@ -579,6 +580,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-apuntes" class="hidden"></section>
     <section id="view-metricas" class="hidden"></section>
     <section id="view-documentos" class="hidden"></section>
+    <section id="view-foro" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
@@ -2254,7 +2256,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -3308,6 +3310,158 @@ function salirDelModoLibro(subjectId){
     libroState = null;
     navSubject(subjectId);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORO DE DUDAS — la pieza que le falta a Academy que cualquier
+// herramienta de aprendizaje seria tiene: un lugar dentro de la app
+// donde preguntar algo puntual y recibir respuesta del docente o de
+// los compañeros, en vez de quedarse atorado sin ningún lugar a
+// dónde ir. Las preguntas se marcan como resueltas cuando el autor o
+// el docente confirman cuál respuesta la resolvió.
+// ═══════════════════════════════════════════════════════
+async function navForo(){
+  if(!currentUser.grupo_id){ toast('Entra a una sesión de clase primero.'); return; }
+  showView('view-foro');
+  setActiveNav('nav-foro'); setActiveSubjectPill(null);
+  afterNav();
+  const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
+  const cont = $('view-foro');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <div class="eyebrow"><i class="ti ti-message-circle-2"></i> Foro de dudas · ${s?.title||''}</div>
+    <h1>Pregunta lo que no te quedó claro</h1>
+    <p>El docente y tus compañeros de clase pueden responder — no te quedes con la duda.</p>
+  </div>
+  <button class="btn" onclick="abrirNuevaPregunta()" style="margin-bottom:16px;"><i class="ti ti-plus"></i> Nueva pregunta</button>
+  <div id="foro-lista"><div class="auth-hint">Cargando…</div></div>`;
+  cargarPreguntasForo();
+}
+async function cargarPreguntasForo(){
+  try {
+    const { data: preguntas, error } = await sb.from('academy_preguntas_foro').select('id,titulo,contenido,resuelta,creado_en,academy_usuarios!inner(nombre)').eq('grupo_id', currentUser.grupo_id).eq('materia_id', currentUser.materia_id).order('creado_en',{ascending:false});
+    if(error) throw error;
+    if(!preguntas?.length){ $('foro-lista').innerHTML = '<div class="auth-hint">Todavía no hay ninguna pregunta en esta materia — sé el primero.</div>'; return; }
+    // Contar respuestas por pregunta en una sola consulta, no una por
+    // cada tarjeta.
+    const { data: respuestas } = await sb.from('academy_respuestas_foro').select('pregunta_id').in('pregunta_id', preguntas.map(p=>p.id));
+    const conteo = {};
+    (respuestas||[]).forEach(r => conteo[r.pregunta_id] = (conteo[r.pregunta_id]||0)+1);
+    $('foro-lista').innerHTML = preguntas.map(p => `<div class="export-opt" style="cursor:pointer;align-items:flex-start;" onclick="abrirPreguntaForo('${p.id}')">
+      <i class="ti ti-${p.resuelta?'circle-check':'help-circle'}" style="color:${p.resuelta?'var(--green)':'var(--gold)'};margin-top:2px;"></i>
+      <div style="flex:1;min-width:0;">
+        <b>${p.titulo}</b>
+        <span>${p.academy_usuarios.nombre} · ${new Date(p.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})} · ${conteo[p.id]||0} respuesta${conteo[p.id]===1?'':'s'}${p.resuelta?' · resuelta':''}</span>
+      </div>
+    </div>`).join('');
+  } catch(e){
+    $('foro-lista').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+function abrirNuevaPregunta(){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'nueva-pregunta-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-message-circle-2" style="color:var(--gold)"></i> Nueva pregunta</h2>
+    <div class="form-field"><label>¿Qué quieres preguntar?</label><input type="text" id="pf-titulo" placeholder="Resume tu duda en una línea"></div>
+    <div class="form-field"><label>Detalle (opcional)</label><textarea id="pf-contenido" rows="4" placeholder="Da más contexto si hace falta"></textarea></div>
+    <div class="auth-msg" id="pf-msg"></div>
+    <button class="auth-submit" onclick="publicarPregunta()">Publicar pregunta</button>
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('nueva-pregunta-overlay').remove()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+async function publicarPregunta(){
+  const titulo = $('pf-titulo').value.trim();
+  const contenido = $('pf-contenido').value.trim();
+  const msg = $('pf-msg');
+  if(!titulo){ msg.className='auth-msg show error'; msg.textContent='Escribe tu pregunta.'; return; }
+  try {
+    const { error } = await sb.from('academy_preguntas_foro').insert({ grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, usuario_id: currentUser.usuario_id, titulo, contenido: contenido||null });
+    if(error) throw error;
+    $('nueva-pregunta-overlay').remove();
+    toast('Pregunta publicada.');
+    if(currentUser.rol==='estudiante'){
+      // Avisarle al docente de la materia, no solo a otros estudiantes
+      // — es quien más probablemente tenga la respuesta.
+      const { data: docentes } = await sb.from('academy_membresias').select('academy_usuarios!inner(id,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','docente');
+      const idsDocentes = (docentes||[]).map(d=>d.academy_usuarios.id);
+      if(idsDocentes.length) await sb.from('academy_notificaciones').insert(idsDocentes.map(id => ({ usuario_id:id, tipo:'contenido_editado', mensaje:`Nueva pregunta en el foro: "${titulo}"`, referencia_materia: currentUser.materia_id })));
+    }
+    cargarPreguntasForo();
+  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo publicar: ' + (e.message||e); }
+}
+async function abrirPreguntaForo(preguntaId){
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'ver-pregunta-overlay';
+  overlay.innerHTML = `<div class="export-modal"><div id="ver-pregunta-contenido"><div class="auth-hint">Cargando…</div></div></div>`;
+  document.body.appendChild(overlay);
+  await cargarDetallePregunta(preguntaId);
+}
+async function cargarDetallePregunta(preguntaId){
+  try {
+    const { data: p, error } = await sb.from('academy_preguntas_foro').select('*, academy_usuarios!inner(nombre)').eq('id', preguntaId).single();
+    if(error) throw error;
+    const { data: respuestas } = await sb.from('academy_respuestas_foro').select('id,contenido,marcada_como_solucion,creado_en,usuario_id,academy_usuarios!inner(nombre)').eq('pregunta_id', preguntaId).order('creado_en',{ascending:true});
+    const puedoMarcarSolucion = currentUser.usuario_id===p.usuario_id || currentUser.rol==='docente';
+    const puedoBorrarPregunta = currentUser.usuario_id===p.usuario_id || currentUser.rol==='docente';
+    $('ver-pregunta-contenido').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <h2 style="margin:0;"><i class="ti ti-${p.resuelta?'circle-check':'help-circle'}" style="color:${p.resuelta?'var(--green)':'var(--gold)'};"></i> ${p.titulo}</h2>
+        ${puedoBorrarPregunta?`<i class="ti ti-trash" style="cursor:pointer;color:var(--red);flex-shrink:0;" onclick="eliminarPregunta('${p.id}')"></i>`:''}
+      </div>
+      <div class="sub" style="margin:4px 0 12px;">${p.academy_usuarios.nombre} · ${new Date(p.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}</div>
+      ${p.contenido?`<p style="font-size:13.5px;line-height:1.6;margin-bottom:16px;">${p.contenido}</p>`:''}
+      <div style="border-top:1px solid var(--c3);padding-top:14px;">
+        <b style="font-size:12px;color:var(--t2);">${respuestas?.length||0} respuesta${respuestas?.length===1?'':'s'}</b>
+        ${(respuestas||[]).map(r => `<div class="card" style="margin-top:10px;${r.marcada_como_solucion?'border-color:var(--green);':''}">
+          ${r.marcada_como_solucion?'<div style="font-size:10.5px;font-weight:800;color:var(--green);margin-bottom:4px;"><i class="ti ti-check"></i> MARCADA COMO SOLUCIÓN</div>':''}
+          <div style="font-size:13px;line-height:1.6;">${r.contenido}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <span style="font-size:10.5px;color:var(--t3);">${r.academy_usuarios.nombre} · ${new Date(r.creado_en).toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}</span>
+            ${(puedoMarcarSolucion && !r.marcada_como_solucion) ? `<button class="btn btn-ghost btn-sm" onclick="marcarRespuestaSolucion('${p.id}','${r.id}')">Marcar como solución</button>` : ''}
+          </div>
+        </div>`).join('')}
+      </div>
+      <textarea id="pf-respuesta-texto" rows="3" placeholder="Escribe tu respuesta…" style="width:100%;margin-top:14px;padding:10px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;resize:vertical;"></textarea>
+      <button class="auth-submit" onclick="responderPreguntaForo('${p.id}')">Responder</button>
+      <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="$('ver-pregunta-overlay').remove();cargarPreguntasForo();">Cerrar</button>
+    `;
+  } catch(e){
+    $('ver-pregunta-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function responderPreguntaForo(preguntaId){
+  const contenido = $('pf-respuesta-texto').value.trim();
+  if(!contenido) return;
+  try {
+    const { error } = await sb.from('academy_respuestas_foro').insert({ pregunta_id: preguntaId, usuario_id: currentUser.usuario_id, contenido });
+    if(error) throw error;
+    // Avisarle al autor de la pregunta que alguien le respondió, si no
+    // es él mismo quien está respondiendo.
+    const { data: pregunta } = await sb.from('academy_preguntas_foro').select('usuario_id,titulo,materia_id').eq('id', preguntaId).maybeSingle();
+    if(pregunta && pregunta.usuario_id !== currentUser.usuario_id){
+      try { await sb.from('academy_notificaciones').insert({ usuario_id: pregunta.usuario_id, tipo:'contenido_editado', mensaje:`Respondieron tu pregunta: "${pregunta.titulo}"`, referencia_materia: pregunta.materia_id }); } catch(e){}
+    }
+    cargarDetallePregunta(preguntaId);
+  } catch(e){ toast('No se pudo responder: ' + (e.message||e)); }
+}
+async function marcarRespuestaSolucion(preguntaId, respuestaId){
+  try {
+    await sb.from('academy_respuestas_foro').update({ marcada_como_solucion:true }).eq('id', respuestaId);
+    await sb.from('academy_preguntas_foro').update({ resuelta:true }).eq('id', preguntaId);
+    toast('Marcada como solución.');
+    cargarDetallePregunta(preguntaId);
+  } catch(e){ toast('No se pudo marcar: ' + (e.message||e)); }
+}
+async function eliminarPregunta(preguntaId){
+  if(!confirm('¿Eliminar esta pregunta? También se borrarán sus respuestas.')) return;
+  const { error } = await sb.from('academy_preguntas_foro').delete().eq('id', preguntaId);
+  if(error){ toast('No se pudo eliminar: ' + error.message); return; }
+  $('ver-pregunta-overlay')?.remove();
+  toast('Pregunta eliminada.');
+  cargarPreguntasForo();
 }
 
 async function navDocumentos(){
