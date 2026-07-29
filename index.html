@@ -3179,7 +3179,7 @@ async function guardarPersonalizacion(){
   } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
 async function omitirPersonalizacion(){
-  await sb.from('academy_usuarios').update({ personalizacion_completada: true }).eq('id', currentUser.usuario_id).catch(()=>{});
+  try { await sb.from('academy_usuarios').update({ personalizacion_completada: true }).eq('id', currentUser.usuario_id); } catch(e){}
   currentUser.personalizacionCompletada = true;
   $('personalizacion-overlay').remove();
 }
