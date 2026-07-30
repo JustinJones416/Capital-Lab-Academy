@@ -1332,29 +1332,158 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
       {q:'¿Qué institución centraliza el historial de pagos de un solicitante de crédito en Panamá?', opts:['La Bolsa de Valores de Panamá','El buró de crédito','La Superintendencia de Bancos','El Ministerio de Comercio'], correct:1},
     ],
   },
+  {
+    id:'bancred-c2', expediente:'BC-2026-241', role:'Analista de Crédito Comercial',
+    title:'Un restaurante familiar pide crédito para expandirse — pero las razones financieras encienden una alerta',
+    brief:'Cadena de Restaurantes El Fogón, con tres locales en la ciudad de Panamá, solicita un crédito para abrir un cuarto local. El dueño presenta buenas proyecciones de ventas, pero al revisar sus estados financieros actuales aparecen señales que no cuadran con el optimismo de la solicitud.',
+    character:{name:'Ramón Aizpurúa', role:'Propietario, Cadena de Restaurantes El Fogón', quote:'"El cuarto local se va a pagar solo en dos años, se los garantizo. Los otros tres van muy bien."'},
+    facts:[['Locales actuales','3'],['Ventas anuales combinadas','US$ 1,850,000'],['Utilidad neta anual','US$ 42,000'],['Activo circulante','US$ 95,000'],['Pasivo circulante','US$ 168,000'],['Crédito solicitado','US$ 220,000'],['Plazo propuesto','5 años']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · La razón corriente no cuadra con el optimismo', icon:'ti-alert-triangle', competencia:'credito_riesgo',
+        intro:'Antes de revisar la proyección del cuarto local, hay que entender la salud financiera actual de los tres locales existentes.',
+        databox:{title:'Estado financiero actual', rows:[['Activo circulante','US$ 95,000'],['Pasivo circulante','US$ 168,000'],['Ventas anuales','US$ 1,850,000'],['Utilidad neta anual','US$ 42,000']]},
+        questions:[
+          {type:'num', q:'¿Cuál es la razón corriente actual del negocio? (dos decimales)', placeholder:'Ej: 0.57', correct:0.57, tolerance:0.02, explain:'Razón corriente = Activo circulante / Pasivo circulante = 95,000 / 168,000 = 0.57 — por debajo de 1.0, lo que significa que el negocio no tiene suficiente activo circulante para cubrir sus obligaciones de corto plazo con lo que tiene disponible hoy.'},
+          {type:'mc', q:'Una razón corriente de 0.57 en un negocio que pide crédito para expandirse, ¿qué debería generar en el analista?', opts:['Ninguna preocupación, es un dato irrelevante','Una señal de alerta — el negocio actual ya tiene tensión de liquidez de corto plazo, antes de sumarle una obligación nueva','Confirma que el crédito debe aprobarse de inmediato','Solo importa si la razón corriente es exactamente 1.0'], correct:1, explain:'Una razón corriente por debajo de 1.0 indica que el negocio actual, sin siquiera el crédito nuevo, ya tiene dificultad para cubrir sus obligaciones de corto plazo con sus activos líquidos — una señal que contradice el optimismo de la solicitud y merece investigarse antes de aprobar más deuda.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · El margen neto real', icon:'ti-percentage', competencia:'credito_riesgo',
+        intro:'Las ventas suenan grandes, pero lo que importa para pagar una deuda es cuánto queda realmente de utilidad.',
+        questions:[
+          {type:'num', q:'¿Cuál es el margen neto del negocio (Utilidad neta / Ventas)? (en %, un decimal)', placeholder:'Ej: 2.3', correct:2.3, tolerance:0.1, explain:'Margen neto = 42,000 / 1,850,000 × 100 = 2.3% — un margen muy delgado para la industria de restaurantes, que deja poco colchón ante cualquier imprevisto.'},
+          {type:'mc', q:'Con un margen neto de apenas 2.3%, ¿qué implica esto para la capacidad de absorber un cuarto local que no funcione como lo proyectado?', opts:['No tiene ninguna implicación','El negocio tiene muy poco margen de error — un local nuevo con desempeño débil podría comprometer la operación completa','Un margen bajo siempre es mejor que uno alto','El margen neto no se relaciona con el riesgo de crédito'], correct:1, explain:'Con un margen tan delgado, el negocio combinado tiene poco colchón: si el cuarto local no alcanza las proyecciones de ventas rápidamente, la presión sobre el flujo de caja del negocio completo puede ser severa, justo cuando ya existe tensión de liquidez de corto plazo (etapa 1).'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Qué preguntar antes de decidir?', icon:'ti-message-circle', competencia:'credito_riesgo',
+        intro:'Los números por sí solos no cuentan toda la historia — un buen analista de crédito no se queda solo con la alarma, investiga la causa.',
+        questions:[
+          {type:'mc', q:'Dado que la razón corriente es baja y el margen neto es delgado, ¿cuál sería la pregunta más relevante para el dueño antes de decidir?', opts:['Preguntar el color que planea usar en el nuevo local','Entender por qué el pasivo circulante es tan alto frente al activo circulante — ¿es estacional, es un problema estructural, o es deuda de corto plazo mal estructurada?','No hace falta preguntar nada más, los números ya lo dicen todo','Preguntar directamente si puede pagar el crédito, sin más contexto'], correct:1, explain:'Entender la CAUSA del desbalance es clave: si es estacional (por ejemplo, temporada baja del restaurante) es distinto a si es un problema estructural de manejo de caja. Esa respuesta cambia por completo cómo estructurar — o si conviene estructurar — el crédito nuevo.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al comité', icon:'ti-gavel',
+        intro:'Con la razón corriente débil (etapa 1), el margen delgado (etapa 2) y las preguntas pendientes (etapa 3), debes recomendar cómo proceder.',
+        verdictOptions:[
+          {v:'rechazar', label:'Rechazar el crédito en las condiciones actuales', desc:'La combinación de baja liquidez actual y margen delgado hace que sumar más deuda sea imprudente hasta que el negocio actual muestre estabilidad.'},
+          {v:'condicionar', label:'Aprobar un monto menor, condicionado a mejorar la liquidez actual primero', desc:'Reducir el monto y exigir que el negocio corrija su razón corriente antes de desembolsar, protegiendo tanto al banco como al propio negocio de sobreendeudarse.'},
+          {v:'aprobar', label:'Aprobar tal como se solicitó, confiando en las proyecciones de ventas', desc:'Las proyecciones de crecimiento compensan la situación actual, y el historial de operación de 3 locales da confianza suficiente.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando la razón corriente débil (etapa 1), el margen neto delgado (etapa 2), y qué información adicional (etapa 3) cambiaría o no tu decisión.',
+      },
+    ],
+    summary:'Este caso entrena una habilidad central del análisis de crédito: <b>no dejarse llevar por el optimismo de la proyección sin revisar primero la salud financiera actual</b>. Una razón corriente de 0.57 y un margen neto de apenas 2.3% son señales de alerta reales que un analista no puede pasar por alto solo porque el dueño presenta un plan de expansión convincente — los números actuales, no las proyecciones futuras, son el punto de partida de cualquier evaluación de crédito seria.',
+    flashcards:[
+      {q:'¿Qué indica una razón corriente por debajo de 1.0?', a:'Que el negocio no tiene suficiente activo circulante para cubrir sus obligaciones de corto plazo con lo que tiene disponible hoy — una señal de tensión de liquidez.'},
+      {q:'¿Por qué un margen neto delgado es relevante al evaluar un crédito de expansión?', a:'Porque deja poco colchón para absorber un desempeño más débil de lo proyectado en la parte nueva del negocio, sin comprometer la operación existente.'},
+    ],
+    glossary:[
+      {t:'Margen neto', d:'Utilidad neta dividida entre las ventas totales, expresada en porcentaje — cuánto de cada dólar vendido termina siendo ganancia real.'},
+    ],
+    quiz:[
+      {q:'¿Qué significa una razón corriente de 0.57?', opts:['El negocio tiene el doble de activo circulante que pasivo circulante','El activo circulante no alcanza para cubrir el pasivo circulante','No hay ninguna deuda de corto plazo','Es un dato positivo sin excepción'], correct:1},
+    ],
+  },
+  {
+    id:'bancred-c3', expediente:'BC-2026-268', role:'Analista de Crédito Comercial — Cartera en Vigilancia',
+    title:'Un cliente con crédito vigente empieza a atrasarse — ¿reestructurar o ejecutar la garantía?',
+    brief:'Ferretería Industrial del Norte tiene un crédito vigente de US$180,000 con tu banco, otorgado hace dos años. En los últimos tres meses ha atrasado sus cuotas por primera vez. El dueño pide una reunión para explicar la situación y proponer una reestructuración.',
+    character:{name:'Osvaldo Mendieta', role:'Propietario, Ferretería Industrial del Norte', quote:'"Un cliente grande nos dejó de pagar dos facturas grandes. No es que el negocio esté mal, es un problema puntual de cobro. Necesito un respiro con las cuotas."'},
+    facts:[['Saldo del crédito vigente','US$ 165,000'],['Cuota mensual actual','US$ 4,200'],['Meses de atraso','3'],['Cuentas por cobrar vencidas de un solo cliente','US$ 58,000'],['Valor de la garantía (bodega)','US$ 210,000'],['Flujo de caja mensual promedio (últimos 12 meses antes del atraso)','US$ 6,800']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · ¿La explicación del cliente es consistente con los números?', icon:'ti-search', competencia:'credito_riesgo',
+        intro:'Antes de decidir, hay que verificar si la causa que da el cliente realmente explica el atraso, o si hay algo más de fondo.',
+        databox:{title:'Datos de la situación', rows:[['Cuota mensual','US$ 4,200'],['Meses de atraso','3'],['Cuentas por cobrar vencidas de un cliente','US$ 58,000'],['Flujo de caja mensual promedio histórico','US$ 6,800']]},
+        questions:[
+          {type:'num', q:'¿A cuántas cuotas mensuales equivale el monto que el cliente grande le debe a la ferretería (US$58,000)? (un decimal)', placeholder:'Ej: 13.8', correct:13.8, tolerance:0.3, explain:'58,000 / 4,200 = 13.8 cuotas — el monto pendiente de cobro es más de 13 veces la cuota mensual, una cifra sustancial que sí podría explicar una tensión real de caja, consistente con la explicación del cliente.'},
+          {type:'mc', q:'¿Por qué es importante hacer este cálculo antes de decidir, en vez de solo aceptar o rechazar la explicación del cliente?', opts:['No es importante, la palabra del cliente basta','Porque verifica si la magnitud del problema que describe el cliente es consistente con el tamaño real del atraso, no solo si "suena" razonable','Porque siempre hay que desconfiar de cualquier cliente','El cálculo no tiene ninguna relación con la decisión'], correct:1, explain:'Un analista de crédito no acepta ni rechaza explicaciones por cómo "suenan" — las verifica con números. En este caso, la magnitud de la cuenta por cobrar vencida sí es consistente con la escala del problema que describe el cliente.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Alcanza el flujo para una cuota reestructurada?', icon:'ti-calculator', competencia:'credito_riesgo',
+        intro:'Si se decide reestructurar, hay que calcular una cuota que el negocio pueda sostener con su flujo real, no solo reducir la cuota a un número arbitrario.',
+        questions:[
+          {type:'mc', q:'El flujo de caja mensual promedio histórico es US$6,800, y la cuota original es US$4,200 (cobertura de 1.6x). Si se extiende el plazo del crédito para bajar la cuota a US$3,200, ¿qué le pasa a la cobertura?', opts:['Baja a 1.6x','Sube a aproximadamente 2.1x, dando más margen de seguridad mientras el cliente cobra la cuenta pendiente','Se mantiene exactamente igual','La cobertura no depende de la cuota'], correct:1, explain:'Cobertura = Flujo de caja / Cuota = 6,800 / 3,200 ≈ 2.1x — una cuota más baja, temporal, le da al negocio más margen de maniobra mientras resuelve el cobro de los US$58,000 pendientes, sin necesidad de tocar el saldo total de la deuda.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Y si la reestructuración no funciona?', icon:'ti-shield-check', competencia:'credito_riesgo',
+        intro:'Todo analista de crédito serio evalúa también el escenario donde el plan de reestructuración no resuelve el problema.',
+        questions:[
+          {type:'mc', q:'La garantía (bodega) vale US$210,000 frente a un saldo de US$165,000. ¿Qué papel juega esto en la decisión de dar una oportunidad de reestructuración antes de ejecutar la garantía?', opts:['Ningún papel, la garantía es irrelevante mientras el crédito esté vigente','Da al banco un colchón real: si la reestructuración no funciona, la garantía sigue cubriendo el saldo, lo que hace razonable dar una oportunidad antes de ejecutar','Significa que no hace falta ninguna reestructuración','La garantía solo importa si el cliente nunca se atrasa'], correct:1, explain:'Una garantía que cubre cómodamente el saldo (US$210,000 contra US$165,000) le da al banco margen para intentar una solución de reestructuración con el cliente, sabiendo que si finalmente no funciona, la posición del banco sigue protegida — muy distinto a un caso donde la garantía apenas cubre el saldo.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al comité de vigilancia', icon:'ti-gavel',
+        intro:'Con la explicación verificada (etapa 1), una cuota reestructurada sostenible (etapa 2), y la garantía como respaldo (etapa 3), debes recomendar el curso de acción.',
+        verdictOptions:[
+          {v:'reestructurar', label:'Aprobar la reestructuración con la cuota reducida y plazo extendido', desc:'La explicación es consistente, el flujo histórico sostiene una cuota reestructurada con buena cobertura, y la garantía respalda la posición del banco si el plan no funciona.'},
+          {v:'monitoreo', label:'Reestructurar, pero con reportes mensuales obligatorios de cobro de la cuenta pendiente', desc:'Da la oportunidad, pero exige evidencia continua de que el cliente está gestionando activamente el cobro que causó el problema, no solo esperando.'},
+          {v:'ejecutar', label:'Iniciar el proceso de ejecución de la garantía', desc:'A pesar del respaldo de la garantía, tres meses de atraso ya es una señal seria que amerita proceder con cautela extrema, sin dar más plazo.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando la consistencia de la explicación del cliente (etapa 1), la sostenibilidad de una cuota reestructurada (etapa 2), y el respaldo real de la garantía como red de seguridad (etapa 3).',
+      },
+    ],
+    summary:'Este caso entrena el <b>monitoreo activo de cartera</b>, la parte del crédito que continúa después de la aprobación inicial. Un atraso no significa automáticamente ejecutar la garantía ni tampoco aceptar cualquier explicación sin verificarla: el análisis combina revisar si la causa que da el cliente es consistente con los números reales, calcular si una cuota reestructurada es genuinamente sostenible con el flujo de caja del negocio, y confirmar que la garantía sigue dando un respaldo real si el plan no funciona.',
+    flashcards:[
+      {q:'¿Qué es la cobertura de flujo sobre cuota?', a:'El flujo de caja disponible dividido entre la cuota del crédito — mide cuánto margen tiene el negocio para pagar esa cuota específica.'},
+      {q:'¿Por qué verificar la explicación de un cliente atrasado con números, no solo con su palabra?', a:'Porque confirma si la magnitud del problema que describe es consistente con la escala real del atraso, antes de decidir cómo proceder.'},
+    ],
+    glossary:[
+      {t:'Reestructuración de crédito', d:'Modificación de los términos originales de un crédito (plazo, cuota, tasa) para adaptarlo a la capacidad de pago actual del deudor, generalmente ante dificultades de pago.'},
+      {t:'Cartera en vigilancia', d:'Créditos que muestran señales tempranas de deterioro (como atrasos recientes) y requieren seguimiento más cercano que la cartera normal, sin llegar aún a mora severa.'},
+    ],
+    quiz:[
+      {q:'¿Qué mide la cobertura de flujo sobre cuota?', opts:['El valor de la garantía','Cuánto margen tiene el flujo de caja del negocio para pagar la cuota del crédito','La tasa de interés del crédito','El historial en el buró de crédito'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.bancred.studyMaterial = {
-  summary:'<b>Negociación y Evaluación Crediticia</b> es la materia que enseña a decidir con rigor si una empresa o persona merece un crédito, en qué condiciones y con qué garantías. La herramienta central es el marco de las <b>5 C del crédito</b>, que estructuran el análisis de forma que ningún elemento quede sin evaluar.<br><br>El <b>Carácter</b> responde la pregunta más importante: ¿ha cumplido esta persona o empresa sus compromisos en el pasado? Se analiza el historial en el buró de crédito, la relación con proveedores y la reputación en el mercado. Un solicitante con buenas cifras pero historial de incumplimientos es más riesgoso que uno con cifras moderadas pero trayectoria impecable. La <b>Capacidad</b> cuantifica si el flujo de caja del negocio puede pagar la cuota del nuevo crédito; una cobertura de flujo sobre cuota de al menos 1.5x a 2x suele considerarse el umbral mínimo aceptable en banca comercial panameña. El <b>Capital</b> mide qué tanto tiene en juego el propio dueño: una empresa con alta razón Deuda/Patrimonio ya está apalancada y añadir más deuda incrementa el riesgo de insolvencia. El <b>Colateral</b> no reemplaza las otras cuatro C, sino que actúa como respaldo de último recurso; su valor debe cubrir el crédito más los costos de ejecución. Las <b>Condiciones</b> del sector y la macroeconomía pueden hacer que un crédito viable hoy se torne problemático mañana, por eso un buen analista no evalúa la empresa en aislamiento sino en su contexto sectorial.<br><br>El resultado del análisis no es solo un sí o un no: es una <b>propuesta estructurada</b> con monto, plazo, tasa y condiciones de monitoreo (como reportes periódicos) que equilibran el riesgo identificado con el potencial del negocio.',
+  summary:'<b>Negociación y Evaluación Crediticia</b> es la materia que enseña a decidir con rigor si una empresa o persona merece un crédito, en qué condiciones y con qué garantías — y qué hacer cuando un crédito ya otorgado empieza a mostrar señales de problemas. La herramienta central para la decisión inicial es el marco de las <b>5 C del crédito</b>, que estructuran el análisis de forma que ningún elemento quede sin evaluar.<br><br>El <b>Carácter</b> responde la pregunta más importante: ¿ha cumplido esta persona o empresa sus compromisos en el pasado? Se analiza el historial en el buró de crédito, la relación con proveedores y la reputación en el mercado. La <b>Capacidad</b> cuantifica si el flujo de caja del negocio puede pagar la cuota del nuevo crédito; una cobertura de flujo sobre cuota de al menos 1.5x a 2x suele considerarse el umbral mínimo aceptable en banca comercial panameña. El <b>Capital</b> mide qué tanto tiene en juego el propio dueño, mientras que una razón corriente por debajo de 1.0 — como la que revela uno de los casos de esta materia — es una señal de tensión de liquidez que ningún plan de expansión optimista debería tapar. El <b>Colateral</b> actúa como respaldo de último recurso, y las <b>Condiciones</b> del sector completan el análisis.<br><br>Pero el trabajo del analista no termina cuando se aprueba el crédito. La <b>cartera en vigilancia</b> — créditos con señales tempranas de deterioro, como un cliente que se atrasa por primera vez — exige un análisis distinto: verificar si la explicación del deudor es consistente con los números reales, calcular si una <b>reestructuración</b> (cuota más baja, plazo más largo) es genuinamente sostenible con el flujo de caja real del negocio, y confirmar que la garantía sigue dando respaldo suficiente si el plan no funciona. El resultado nunca es solo un sí o un no: es una <b>propuesta estructurada</b> que equilibra el riesgo identificado con el potencial real del negocio.',
   flashcards:[
     {q:'¿Cuáles son las 5 C del crédito?', a:'Carácter, Capacidad, Capital, Colateral y Condiciones.'},
     {q:'¿Qué evalúa específicamente el "Carácter"?', a:'La disposición histórica del solicitante a cumplir sus obligaciones de pago, más allá de su capacidad numérica.'},
     {q:'¿Qué mide la cobertura de flujo de caja sobre la cuota?', a:'Cuántas veces el flujo de caja disponible del solicitante cubre el pago periódico de la deuda; una cobertura más alta indica menor riesgo de incumplimiento.'},
     {q:'¿Qué es la razón Deuda/Patrimonio?', a:'La proporción de la deuda total de una empresa frente a su patrimonio; mide el nivel de apalancamiento financiero.'},
     {q:'¿Por qué se exige cobertura de garantía superior a 1x del crédito?', a:'Para que, en caso de ejecutar la garantía, su valor sea suficiente para cubrir el saldo del crédito más los costos de recuperación.'},
+    {q:'¿Qué indica una razón corriente por debajo de 1.0 en un solicitante de crédito?', a:'Que el negocio ya tiene tensión de liquidez de corto plazo antes de sumarle una obligación nueva — una señal de alerta que no debe pasarse por alto solo por buenas proyecciones futuras.'},
+    {q:'¿Qué es la reestructuración de un crédito?', a:'Modificar los términos originales (plazo, cuota, tasa) para adaptarlos a la capacidad de pago actual del deudor, generalmente ante dificultades de pago.'},
   ],
   glossary:[
     {t:'Las 5 C del crédito', d:'Marco de análisis crediticio que evalúa Carácter, Capacidad, Capital, Colateral y Condiciones del solicitante.'},
     {t:'Colateral', d:'Bien o activo que el solicitante ofrece como garantía del crédito, ejecutable por el banco en caso de incumplimiento.'},
     {t:'Buró de crédito', d:'Entidad que centraliza el historial de pago de personas y empresas, consultada por las instituciones financieras al evaluar un crédito.'},
     {t:'Razón corriente', d:'Activo circulante dividido entre pasivo circulante; mide la capacidad de una empresa de cubrir sus obligaciones de corto plazo.'},
+    {t:'Margen neto', d:'Utilidad neta dividida entre las ventas totales, expresada en porcentaje — cuánto de cada dólar vendido termina siendo ganancia real, y cuánto colchón real tiene el negocio.'},
+    {t:'Reestructuración de crédito', d:'Modificación de los términos originales de un crédito para adaptarlo a la capacidad de pago actual del deudor.'},
+    {t:'Cartera en vigilancia', d:'Créditos que muestran señales tempranas de deterioro y requieren seguimiento más cercano que la cartera normal, sin llegar aún a mora severa.'},
   ],
   quiz:[
     {q:'¿Cuál de las 5 C evalúa el historial de pago del solicitante?', opts:['Capacidad','Carácter','Capital','Condiciones'], correct:1},
     {q:'¿Qué representa una razón Deuda/Patrimonio de 1.5x?', opts:['La deuda es 1.5 veces el patrimonio','El patrimonio es 1.5 veces la deuda','No hay deuda','La empresa es insolvente'], correct:0},
     {q:'¿Qué institución centraliza el historial de pagos de un solicitante de crédito en Panamá?', opts:['La Bolsa de Valores de Panamá','El buró de crédito','La Superintendencia de Bancos','El Ministerio de Comercio'], correct:1},
+    {q:'¿Qué indica una razón corriente de 0.57?', opts:['El activo circulante duplica al pasivo circulante','El activo circulante no alcanza para cubrir el pasivo circulante','No hay ninguna deuda de corto plazo','Es siempre un dato positivo'], correct:1},
+    {q:'¿Qué mide la cobertura de flujo sobre cuota en una reestructuración?', opts:['El valor de la garantía','Cuánto margen tiene el flujo de caja del negocio para pagar la nueva cuota propuesta','La tasa de interés original','El historial en el buró de crédito'], correct:1},
   ],
 };
+SUBJECT_DATA.bancred.formulas = [
+  { nombre:'Razón corriente', formula:'Razón corriente = Activo circulante ÷ Pasivo circulante',
+    variables:'Activo circulante: efectivo, cuentas por cobrar e inventario que se convierten en dinero dentro de un año. Pasivo circulante: obligaciones que vencen dentro de un año.',
+    ejemplo:'Un negocio con US$95,000 en activo circulante y US$168,000 en pasivo circulante tiene una razón corriente de 95,000/168,000 = 0.57 — señal de tensión de liquidez de corto plazo.' },
+  { nombre:'Margen neto', formula:'Margen neto = (Utilidad neta ÷ Ventas) × 100',
+    variables:'Utilidad neta: lo que queda después de todos los gastos e impuestos. Ventas: los ingresos totales del período.',
+    ejemplo:'Con US$42,000 de utilidad neta y US$1,850,000 en ventas, el margen neto es 42,000/1,850,000 × 100 = 2.3%.' },
+  { nombre:'Cobertura de flujo sobre cuota', formula:'Cobertura = Flujo de caja disponible ÷ Cuota del crédito',
+    variables:'Flujo de caja disponible: el efectivo que genera el negocio antes del pago de esa deuda específica.',
+    ejemplo:'Un negocio con US$6,800 de flujo mensual y una cuota de US$3,200 tiene una cobertura de 6,800/3,200 ≈ 2.1x — un margen razonable de seguridad.' },
+  { nombre:'Razón Deuda/Patrimonio', formula:'Deuda/Patrimonio = Deuda total ÷ Patrimonio',
+    variables:'Deuda total: todas las obligaciones financieras de la empresa. Patrimonio: el capital propio de los dueños o accionistas.',
+    ejemplo:'Una razón de 1.5x significa que la empresa tiene US$1.50 de deuda por cada US$1.00 de capital propio invertido.' },
+];
+SUBJECT_DATA.bancred.leyes = [
+  { nombre:'Ley de Buró de Crédito', numero:'Ley 24 de 2002 y sus modificaciones',
+    resumen:'Regula el funcionamiento de las agencias de información de datos (burós de crédito) en Panamá: qué información pueden recopilar sobre el historial de pago de personas y empresas, cómo deben mantenerla, y los derechos del titular de esa información, incluyendo el derecho a conocerla y corregirla si es incorrecta.',
+    temasClave:['Qué información puede recopilar un buró de crédito', 'Derechos del titular de la información crediticia', 'Plazos de permanencia de información negativa en el historial'] },
+  { nombre:'Normativa de clasificación de cartera de crédito de la SBP',
+    resumen:'La Superintendencia de Bancos de Panamá exige a los bancos clasificar su cartera de préstamos según el nivel de riesgo (normal, mención especial, subnormal, dudoso, irrecuperable), con reglas específicas sobre cuándo un crédito pasa a "cartera en vigilancia" o mora, y cuánta provisión debe constituirse en cada categoría.',
+    temasClave:['Clasificación de cartera por nivel de riesgo', 'Criterios para pasar a cartera en vigilancia o mora', 'Constitución de provisiones según la clasificación'] },
+];
 
 SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
   {
