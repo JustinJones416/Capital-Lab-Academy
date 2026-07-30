@@ -1810,6 +1810,65 @@ SUBJECT_DATA.mdofin.leyes = [
     resumen:'Panamá no tiene banco central emisor ni controles cambiarios — el dólar estadounidense circula como moneda de curso legal junto al balboa. Esto simplifica ciertas operaciones, pero una empresa panameña que compra o vende en otra moneda (euros, yenes, etc.) sigue expuesta al riesgo cambiario de esa moneda frente al dólar, y debe gestionarlo con los instrumentos que ofrece el mercado, como los contratos forward.',
     temasClave:['El dólar como moneda de curso legal en Panamá', 'Riesgo cambiario en operaciones en moneda distinta al dólar', 'Contratos forward como instrumento de cobertura'] },
 ];
+SUBJECT_DATA.mdofin.simulaciones = [
+  {
+    id: 'sim-mdofin-gestor-portafolio',
+    titulo: 'Gestor de Portafolio — Casa de Valores del Istmo',
+    rolJugador: 'Gestor de Portafolio',
+    descripcion: 'No vas a responder preguntas sobre el mercado — vas a administrar un portafolio real de US$500,000 durante varias rondas. Cada decisión de inversión que tomes cambia el valor, el riesgo y la liquidez del portafolio para la siguiente ronda.',
+    kpisIniciales: { valorPortafolio: 500000, rendimientoAcumulado: 0, riesgoNivel: 35, liquidez: 40, diversificacion: 50 },
+    rondas: [
+      { titulo:'Ronda 1 — La asignación inicial de activos',
+        contexto:'Recibes US$500,000 para gestionar. El comité de inversión espera una propuesta de asignación entre bonos (renta fija), acciones (renta variable) y efectivo, antes de tomar posiciones específicas.',
+        opciones: [
+          { texto:'Asignación conservadora: 70% bonos, 20% acciones, 10% efectivo', efectos:{riesgoNivel:-10, rendimientoAcumulado:0.5, liquidez:5},
+            resultado:'Priorizaste estabilidad. El portafolio queda menos expuesto a caídas bruscas del mercado accionario, pero también con menor potencial de rendimiento si las acciones suben con fuerza.'},
+          { texto:'Asignación balanceada: 50% bonos, 40% acciones, 10% efectivo', efectos:{riesgoNivel:0, rendimientoAcumulado:1.2, diversificacion:10},
+            resultado:'Un punto intermedio razonable. El portafolio queda diversificado entre las dos clases de activo principales, sin apostar fuerte a ninguna dirección del mercado.'},
+          { texto:'Asignación agresiva: 25% bonos, 65% acciones, 10% efectivo', efectos:{riesgoNivel:15, rendimientoAcumulado:2.5, diversificacion:-5},
+            resultado:'Apostaste a mayor rendimiento potencial, asumiendo más riesgo. Si el mercado accionario sube, el portafolio se beneficia más — pero también es más vulnerable si el mercado cae.'},
+        ]},
+      { titulo:'Ronda 2 — Una oportunidad en el mercado de bonos',
+        contexto:'La Superintendencia del Mercado de Valores anuncia una nueva emisión de bonos corporativos calificados BBB, colocándose al 96% del valor nominal con un cupón de 6.5%. Las tasas de mercado podrían subir en los próximos meses.',
+        opciones: [
+          { texto:'Comprar una posición grande en el bono con descuento', efectos:{rendimientoAcumulado:1.8, liquidez:-15, riesgoNivel:5},
+            resultado:'El descuento de colocación (96% del nominal) aumenta el rendimiento efectivo por encima del cupón — una buena captura de valor, aunque inmoviliza liquidez del portafolio en un instrumento de plazo fijo.'},
+          { texto:'Comprar una posición pequeña, conservando liquidez', efectos:{rendimientoAcumulado:0.6, liquidez:-5},
+            resultado:'Capturaste parte del rendimiento adicional sin comprometer demasiada liquidez — un balance razonable ante la posibilidad de que suban las tasas y aparezcan mejores oportunidades después.'},
+          { texto:'No comprar — esperar a que suban más las tasas', efectos:{liquidez:5, rendimientoAcumulado:-0.3},
+            resultado:'Conservaste toda la liquidez, apostando a que vendrán mejores oportunidades si las tasas efectivamente suben — pero también corres el riesgo de que no suban tanto como esperabas, perdiendo esta oportunidad concreta.'},
+        ]},
+      { titulo:'Ronda 3 — Una acción con P/E bajo frente al sector, pero con una noticia negativa reciente',
+        contexto:'Una empresa del sector retail cotiza con un P/E de 9x, notablemente por debajo del promedio del sector (14x). Sin embargo, acaba de anunciar la salida de su gerente general en medio de rumores de problemas internos.',
+        opciones: [
+          { texto:'Comprar una posición, confiando en que el múltiplo bajo compensa el ruido de la noticia', efectos:{rendimientoAcumulado:2.2, riesgoNivel:10, diversificacion:5},
+            resultado:'Apostaste a que el mercado está sobrerreaccionando a la noticia. Si la empresa se estabiliza, el múltiplo bajo ofrece un margen de seguridad real — pero si los problemas internos son más serios de lo que parece, el riesgo era genuino.'},
+          { texto:'Esperar más información antes de decidir', efectos:{rendimientoAcumulado:0, liquidez:3},
+            resultado:'Preferiste no actuar sobre información incompleta. Conservas la posición de liquidez, pero si la acción se recupera rápido antes de que salga más información, pierdes la oportunidad de haber comprado barata.'},
+          { texto:'Descartar la acción por completo — el riesgo de gobernanza pesa más que el múltiplo', efectos:{riesgoNivel:-8, rendimientoAcumulado:-0.2},
+            resultado:'Priorizaste evitar el riesgo de gobernanza corporativa por encima de la oportunidad de valoración. Una decisión prudente, aunque también renuncias a cualquier beneficio si la empresa se recupera.'},
+        ]},
+      { titulo:'Ronda 4 — Un cliente institucional pide exposición internacional',
+        contexto:'Un cliente grande de la casa de valores pide invertir parte de su posición en un fondo que cotiza en euros, expuesto al tipo de cambio EUR/USD durante los próximos 6 meses.',
+        opciones: [
+          { texto:'Tomar la posición y cubrir el riesgo cambiario con un forward', efectos:{riesgoNivel:-5, rendimientoAcumulado:0.4, liquidez:-8},
+            resultado:'Ofreciste al cliente la exposición internacional que pedía, sin el riesgo adicional del tipo de cambio — un servicio más completo, aunque el costo del forward reduce ligeramente el rendimiento neto de la posición.'},
+          { texto:'Tomar la posición sin cobertura cambiaria', efectos:{riesgoNivel:12, rendimientoAcumulado:1.0},
+            resultado:'Mayor rendimiento potencial si el euro se fortalece frente al dólar, pero el portafolio (y el cliente) quedan expuestos por completo a que el tipo de cambio se mueva en la dirección contraria.'},
+          { texto:'Declinar la solicitud — fuera del perfil de riesgo actual del portafolio', efectos:{riesgoNivel:-10, diversificacion:-5},
+            resultado:'Protegiste el perfil de riesgo del portafolio, aunque el cliente podría buscar ese servicio en otra casa de valores que sí ofrezca exposición internacional.'},
+        ]},
+      { titulo:'Ronda 5 — Cierre del período: ¿mantener posiciones o rebalancear?',
+        contexto:'Termina el período de revisión. El comité de inversión pregunta si el portafolio actual sigue alineado con el perfil de riesgo original, o si conviene rebalancear.',
+        opciones: [
+          { texto:'Mantener las posiciones actuales sin cambios', efectos:{rendimientoAcumulado:0.3},
+            resultado:'Evitaste costos de transacción innecesarios, confiando en que el portafolio sigue bien alineado — razonable si no hubo grandes desviaciones del plan original.'},
+          { texto:'Rebalancear hacia la asignación original de la Ronda 1', efectos:{riesgoNivel:-6, diversificacion:8, liquidez:-3},
+            resultado:'Devolviste el portafolio a su perfil de riesgo objetivo, vendiendo lo que se sobreponderó y comprando lo que quedó rezagado — la disciplina que evita que un portafolio se desvíe silenciosamente de su estrategia original.'},
+        ]},
+    ],
+  },
+];
 
 SUBJECT_DATA.proy = { casesPlanned:3, cases:[
   {
@@ -3893,9 +3952,9 @@ function avanzarDespuesDeCapitulo(){
 // números de la ronda siguiente — no hay una sola respuesta correcta,
 // hay compromisos, y cada uno tiene un costo real.
 // ═══════════════════════════════════════════════════════
-const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'] };
+const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'] };
 function formatearValorKpi(clave, valor){
-  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado') return valor.toFixed(1)+'%';
+  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion') return valor.toFixed(1)+'%';
   return 'US$ '+Math.round(valor).toLocaleString('es-PA');
 }
 async function abrirSimulacion(subjectId, simId){
@@ -3920,7 +3979,7 @@ async function abrirSimulacion(subjectId, simId){
 function dibujarBarraKpis(){
   const k = simulacionState.kpis;
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:18px;">
-    ${Object.entries(ETIQUETAS_KPI).map(([clave,[etiqueta,icono]]) => `<div class="card" style="padding:10px;text-align:center;"><i class="ti ${icono}" style="font-size:16px;color:var(--rose);"></i><div style="font-size:13px;font-weight:800;margin-top:2px;">${formatearValorKpi(clave, k[clave])}</div><div style="font-size:9px;color:var(--t3);">${etiqueta}</div></div>`).join('')}
+    ${Object.entries(k).map(([clave,valor]) => { const [etiqueta,icono] = ETIQUETAS_KPI[clave]||[clave,'ti-chart-bar']; return `<div class="card" style="padding:10px;text-align:center;"><i class="ti ${icono}" style="font-size:16px;color:var(--rose);"></i><div style="font-size:13px;font-weight:800;margin-top:2px;">${formatearValorKpi(clave, valor)}</div><div style="font-size:9px;color:var(--t3);">${etiqueta}</div></div>`; }).join('')}
   </div>`;
 }
 function dibujarRondaSimulacion(){
