@@ -535,6 +535,7 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="nav-item" id="nav-apuntes" onclick="navApuntes()"><i class="ti ti-notebook"></i> Mis apuntes</button>
       <button class="nav-item hidden" id="nav-metricas" onclick="navMetricas()"><i class="ti ti-chart-histogram"></i> Métricas del salón</button>
       <button class="nav-item" id="nav-documentos" onclick="navDocumentos()"><i class="ti ti-folder"></i> Documentos</button>
+      <button class="nav-item" id="nav-glosario" onclick="navGlosarioGeneral()"><i class="ti ti-alphabet-latin"></i> Glosario general</button>
       <button class="nav-item" id="nav-foro" onclick="navForo()"><i class="ti ti-message-circle-2"></i> Foro de dudas</button>
     </div>
 
@@ -581,6 +582,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-apuntes" class="hidden"></section>
     <section id="view-metricas" class="hidden"></section>
     <section id="view-documentos" class="hidden"></section>
+    <section id="view-glosario" class="hidden"></section>
     <section id="view-foro" class="hidden"></section>
     <section id="view-dashboard" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
@@ -1557,16 +1559,127 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
       {q:'¿Por qué la UONDI no incluye los gastos financieros?', opts:['Por error de cálculo','Porque aísla el desempeño operativo del efecto de cómo se financia la empresa','Porque los intereses no existen contablemente','No es correcto, sí los incluye'], correct:1},
     ],
   },
+  {
+    id:'aeef-c2', expediente:'FIN340-2026-318', role:'Analista de Inversiones',
+    title:'Dos empresas con el mismo ROE — pero por razones completamente distintas',
+    brief:'Tu jefe te pide comparar dos empresas del sector retail que reportan exactamente el mismo ROE (Retorno sobre el Patrimonio) del 15%. A simple vista parecen igual de atractivas. Tu trabajo es descomponer ese ROE para entender qué hay detrás de cada una — y cuál es realmente la inversión más sólida.',
+    character:{name:'Adriana Ríos', role:'Jefa de Análisis, Fondo de Inversión Istmeño', quote:'"El ROE de las dos es idéntico en el papel. Pero llevo suficientes años en esto para saber que un mismo número puede esconder historias muy distintas. Necesito que me digas cuál es cuál."'},
+    facts:[['Empresa A — Margen neto','3%'],['Empresa A — Rotación de activos','2.5x'],['Empresa A — Multiplicador de capital (Activos/Patrimonio)','2.0x'],['Empresa B — Margen neto','10%'],['Empresa B — Rotación de activos','1.0x'],['Empresa B — Multiplicador de capital','1.5x']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · La fórmula DuPont', icon:'ti-chart-donut-3', competencia:'analisis_financiero',
+        intro:'El análisis DuPont descompone el ROE en tres partes, cada una contando una historia distinta sobre de dónde viene la rentabilidad: qué tan rentable es cada venta, qué tan eficiente es la empresa usando sus activos, y qué tanto apalancamiento financiero usa.',
+        databox:{title:'Componentes de la Empresa A', rows:[['Margen neto','3%'],['Rotación de activos','2.5x'],['Multiplicador de capital','2.0x']]},
+        questions:[
+          {type:'num', q:'Con la fórmula ROE = Margen neto × Rotación de activos × Multiplicador de capital, ¿cuál es el ROE de la Empresa A? (en %, un decimal)', placeholder:'Ej: 15.0', correct:15.0, tolerance:0.3, explain:'ROE = 3% × 2.5 × 2.0 = 15.0%. Confirma el dato que ya te dieron — el punto de este ejercicio es entender CÓMO se llega a ese número, no solo verificarlo.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · La misma fórmula, la otra empresa', icon:'ti-chart-donut-2', competencia:'analisis_financiero',
+        intro:'Ahora aplica la misma descomposición a la Empresa B, que llega al mismo 15% de ROE por un camino completamente distinto.',
+        databox:{title:'Componentes de la Empresa B', rows:[['Margen neto','10%'],['Rotación de activos','1.0x'],['Multiplicador de capital','1.5x']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el ROE de la Empresa B con estos componentes? (en %, un decimal)', placeholder:'Ej: 15.0', correct:15.0, tolerance:0.3, explain:'ROE = 10% × 1.0 × 1.5 = 15.0% — el mismo resultado final que la Empresa A, pero la Empresa B lo logra con un margen mucho más alto por venta, no vendiendo mucho volumen ni apalancándose tanto.'},
+          {type:'mc', q:'¿Qué historia distinta cuenta cada empresa detrás del mismo 15% de ROE?', opts:['No hay ninguna diferencia real entre ambas','La Empresa A gana poco por venta pero vende mucho y usa más deuda; la Empresa B gana mucho por venta, vende menos, y usa menos deuda','Ambas usan exactamente la misma estrategia','El ROE siempre significa lo mismo sin importar sus componentes'], correct:1, explain:'La Empresa A parece un modelo de alto volumen y margen delgado (como un supermercado), apoyado en más apalancamiento financiero. La Empresa B parece un modelo de margen alto y menor rotación (como una boutique especializada), con menos deuda. Mismo ROE, riesgos y estrategias de negocio completamente distintos.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Cuál es realmente más riesgosa?', icon:'ti-alert-triangle', competencia:'analisis_financiero',
+        intro:'El multiplicador de capital (Activos/Patrimonio) es, en el fondo, una medida de apalancamiento — y el apalancamiento amplifica tanto las ganancias como las pérdidas.',
+        questions:[
+          {type:'mc', q:'La Empresa A tiene un multiplicador de capital de 2.0x frente a 1.5x de la Empresa B. ¿Qué implica esto sobre el riesgo financiero relativo de cada una?', opts:['No tiene ninguna implicación de riesgo','La Empresa A usa más deuda relativa a su patrimonio, lo que significa que una caída en sus utilidades afectaría más severamente a sus accionistas que en la Empresa B','La Empresa B es siempre la más riesgosa por definición','El multiplicador de capital no se relaciona con el riesgo'], correct:1, explain:'Un multiplicador de capital más alto significa que una porción mayor de los activos de la empresa está financiada con deuda en vez de patrimonio propio. Eso amplifica el ROE cuando las cosas van bien, pero también amplifica las pérdidas para los accionistas cuando las cosas van mal — la Empresa A es, en ese sentido específico, la más apalancada de las dos.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al fondo', icon:'ti-gavel',
+        intro:'Con el ROE descompuesto de ambas empresas (etapas 1 y 2) y el análisis de riesgo relativo (etapa 3), debes recomendar cuál conviene más para el fondo, considerando su perfil de riesgo.',
+        verdictOptions:[
+          {v:'empresa_a', label:'Recomendar la Empresa A', desc:'Si el fondo busca exposición a un modelo de alto volumen y está cómodo con mayor apalancamiento financiero, la Empresa A ofrece el mismo ROE con ese perfil.'},
+          {v:'empresa_b', label:'Recomendar la Empresa B', desc:'Con menor apalancamiento y un margen más alto por venta, la Empresa B logra el mismo ROE con un perfil de riesgo financiero más conservador.'},
+          {v:'depende_perfil', label:'Ninguna es objetivamente mejor — depende del perfil de riesgo del fondo', desc:'El mismo ROE no significa la misma calidad de inversión; la decisión depende de cuánto apalancamiento y qué modelo de negocio prefiere asumir el fondo.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando por qué un ROE idéntico (15% en ambos casos) no es suficiente información por sí sola para decidir entre las dos empresas — y qué otro factor, más allá del ROE, sería importante conocer antes de comprometer capital del fondo.',
+      },
+    ],
+    summary:'Este caso trabaja el <b>análisis DuPont</b>, la herramienta que evita el error más común al leer un ROE: tratarlo como un solo número que basta por sí mismo. Descomponer el ROE en <b>margen neto</b>, <b>rotación de activos</b> y <b>multiplicador de capital</b> revela que dos empresas con el mismo 15% de ROE pueden tener modelos de negocio y niveles de riesgo financiero completamente distintos — una gana poco por venta pero vende mucho y se apalanca más, la otra gana mucho por venta con menos volumen y menos deuda. El ROE es el resultado final; DuPont es lo que explica cómo se llegó ahí.',
+    flashcards:[
+      {q:'¿Cuál es la fórmula DuPont del ROE?', a:'ROE = Margen neto × Rotación de activos × Multiplicador de capital.'},
+      {q:'¿Qué mide el multiplicador de capital (Activos/Patrimonio)?', a:'El nivel de apalancamiento financiero de la empresa — cuánto de sus activos está financiado con deuda en vez de patrimonio propio.'},
+      {q:'¿Por qué dos empresas pueden tener el mismo ROE con perfiles de riesgo distintos?', a:'Porque el ROE es el producto de tres componentes distintos (margen, rotación, apalancamiento); combinaciones muy diferentes de esos tres factores pueden dar el mismo resultado final.'},
+    ],
+    glossary:[
+      {t:'Análisis DuPont', d:'Método que descompone el ROE en margen neto, rotación de activos y multiplicador de capital, para entender qué factores impulsan la rentabilidad sobre el patrimonio.'},
+      {t:'Rotación de activos', d:'Ventas divididas entre activos totales; mide qué tan eficientemente una empresa genera ventas con los activos que tiene.'},
+      {t:'Multiplicador de capital', d:'Activos totales divididos entre patrimonio; mide el nivel de apalancamiento financiero de la empresa.'},
+    ],
+    quiz:[
+      {q:'¿Cuáles son los tres componentes del ROE según DuPont?', opts:['Ventas, costos y gastos','Margen neto, rotación de activos y multiplicador de capital','Activos, pasivos y patrimonio','Ingresos, egresos y utilidad'], correct:1},
+      {q:'¿Qué mide el multiplicador de capital?', opts:['La rentabilidad de las ventas','El nivel de apalancamiento financiero','La eficiencia operativa','El costo de la deuda'], correct:1},
+    ],
+  },
+  {
+    id:'aeef-c3', expediente:'FIN340-2026-334', role:'Analista de Riesgo Corporativo',
+    title:'El análisis horizontal revela una señal que el estado de resultados solo no muestra',
+    brief:'Comercial Andina, S.A. presenta sus estados financieros de los últimos dos años para una revisión de línea de crédito. Las ventas y la utilidad neta crecieron ambos años — a simple vista, todo luce saludable. Pero un análisis horizontal más detallado revela algo que el crecimiento de la utilidad no deja ver a simple vista.',
+    character:{name:'Patricia Solís', role:'Contralora, Comercial Andina, S.A.', quote:'"Nuestras ventas crecieron 18% este año y la utilidad neta creció 12%. Estamos creciendo de forma sólida."'},
+    facts:[['Ventas año anterior','US$ 8,200,000'],['Ventas año actual','US$ 9,676,000'],['Cuentas por cobrar año anterior','US$ 680,000'],['Cuentas por cobrar año actual','US$ 1,190,000'],['Utilidad neta año anterior','US$ 410,000'],['Utilidad neta año actual','US$ 459,200']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · El crecimiento de ventas, confirmado', icon:'ti-trending-up', competencia:'analisis_financiero',
+        intro:'El análisis horizontal compara una misma partida entre dos períodos, para ver cuánto y a qué ritmo creció o disminuyó cada una.',
+        databox:{title:'Ventas', rows:[['Año anterior','US$ 8,200,000'],['Año actual','US$ 9,676,000']]},
+        questions:[
+          {type:'num', q:'¿Cuál fue el crecimiento porcentual de las ventas? (en %, un decimal)', placeholder:'Ej: 18.0', correct:18.0, tolerance:0.3, explain:'Crecimiento = (9,676,000 - 8,200,000) / 8,200,000 × 100 = 18.0%, confirmando el dato que dio la contralora.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Pero las cuentas por cobrar crecieron mucho más rápido', icon:'ti-alert-triangle', competencia:'analisis_financiero',
+        intro:'El mismo análisis horizontal, aplicado a las cuentas por cobrar, cuenta una historia distinta.',
+        databox:{title:'Cuentas por cobrar', rows:[['Año anterior','US$ 680,000'],['Año actual','US$ 1,190,000']]},
+        questions:[
+          {type:'num', q:'¿Cuál fue el crecimiento porcentual de las cuentas por cobrar? (en %, un decimal)', placeholder:'Ej: 75.0', correct:75.0, tolerance:1, explain:'Crecimiento = (1,190,000 - 680,000) / 680,000 × 100 = 75.0% — más de cuatro veces el ritmo de crecimiento de las ventas (18%).'},
+          {type:'mc', q:'¿Qué significa que las cuentas por cobrar crezcan a 75% mientras las ventas solo crecen 18%?', opts:['No significa nada relevante, es una coincidencia','La empresa está tardando considerablemente más en cobrar sus ventas — el crecimiento de ingresos no se está convirtiendo en efectivo al mismo ritmo','Significa que la empresa está vendiendo menos','Es una señal positiva sin excepción'], correct:1, explain:'Cuando las cuentas por cobrar crecen mucho más rápido que las ventas, generalmente indica que la empresa está flexibilizando sus términos de cobro (o que sus clientes están tardando más en pagar) para sostener el crecimiento de ventas — un riesgo real de calidad de esas ventas, que la utilidad neta reportada no muestra.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Por qué esto no se ve en la utilidad neta?', icon:'ti-eye-off', competencia:'analisis_financiero',
+        intro:'La utilidad neta creció 12% — un número saludable en apariencia. Pero la utilidad neta se calcula por el principio de devengado, no por efectivo realmente cobrado.',
+        questions:[
+          {type:'mc', q:'¿Por qué la utilidad neta puede crecer de forma saludable (12%) aunque la calidad del cobro se esté deteriorando?', opts:['Es imposible, si la utilidad crece todo está bien','Porque la utilidad neta se registra cuando se realiza la venta, no cuando se cobra en efectivo — una venta a crédito que tarda más en cobrarse igual cuenta como utilidad del período','La utilidad neta y las cuentas por cobrar nunca están relacionadas','El crecimiento de la utilidad siempre refleja el crecimiento del efectivo'], correct:1, explain:'Bajo el principio de devengado (el estándar contable), una venta se reconoce como ingreso cuando ocurre, no cuando se cobra. Por eso una empresa puede mostrar utilidad neta creciendo de forma saludable mientras la calidad real de esas ventas — qué tan rápido se convierten en efectivo — se deteriora, algo que solo el análisis horizontal de las cuentas por cobrar (o el estado de flujo de efectivo) revela.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación sobre la línea de crédito', icon:'ti-gavel',
+        intro:'Con el crecimiento de ventas confirmado (etapa 1), el crecimiento desproporcionado de cuentas por cobrar (etapa 2), y la explicación de por qué esto no aparece en la utilidad neta (etapa 3), debes recomendar cómo proceder con la revisión de la línea de crédito.',
+        verdictOptions:[
+          {v:'aprobar_sin_condiciones', label:'Aprobar la renovación sin condiciones adicionales', desc:'El crecimiento de ventas y utilidad son sólidos, y la empresa tiene una trayectoria de pago aceptable.'},
+          {v:'investigar', label:'Solicitar más información antes de decidir — entender por qué se alargaron los plazos de cobro', desc:'El deterioro en la velocidad de cobro merece una explicación concreta del cliente antes de comprometer más crédito, sin necesariamente rechazar la solicitud.'},
+          {v:'condicionar', label:'Aprobar con condiciones — límite más bajo y reportes trimestrales de antigüedad de cuentas por cobrar', desc:'Da continuidad a la relación comercial, pero exige monitoreo activo de la señal de alerta detectada antes de que se convierta en un problema mayor de liquidez.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando por qué el crecimiento de la utilidad neta (12%) no es suficiente para aprobar la renovación sin más análisis, dado lo que revela el crecimiento desproporcionado de las cuentas por cobrar (75% frente a 18% de las ventas).',
+      },
+    ],
+    summary:'Este caso entrena el <b>análisis horizontal</b> — comparar el crecimiento de distintas partidas entre períodos para detectar señales que un solo número, como la utilidad neta, puede esconder. Una empresa con ventas creciendo 18% y utilidad neta creciendo 12% luce saludable en el estado de resultados — pero sus cuentas por cobrar crecieron 75%, más de cuatro veces el ritmo de las ventas, una señal real de que la calidad del crecimiento se está deteriorando aunque la utilidad reportada no lo muestre. El principio de devengado explica por qué: una venta cuenta como utilidad del período aunque tarde mucho más en convertirse en efectivo real.',
+    flashcards:[
+      {q:'¿Qué es el análisis horizontal?', a:'Comparar una misma partida de los estados financieros entre dos o más períodos, para ver su crecimiento o disminución en el tiempo.'},
+      {q:'¿Qué señal de alerta indica que las cuentas por cobrar crecen mucho más rápido que las ventas?', a:'Que la empresa está tardando más en cobrar, o flexibilizando sus términos de crédito para sostener el crecimiento — un riesgo de calidad en el crecimiento de ventas.'},
+      {q:'¿Por qué la utilidad neta puede crecer de forma saludable aunque el cobro se deteriore?', a:'Porque bajo el principio de devengado, una venta se registra como ingreso cuando ocurre, no cuando se cobra en efectivo.'},
+    ],
+    glossary:[
+      {t:'Análisis horizontal', d:'Comparación del crecimiento o disminución de una misma partida financiera entre dos o más períodos, generalmente expresado en porcentaje.'},
+      {t:'Análisis vertical', d:'Expresar cada partida del estado financiero como porcentaje de una partida base (como las ventas totales), para comparar la estructura financiera entre períodos o empresas de distinto tamaño.'},
+      {t:'Principio de devengado', d:'Principio contable que reconoce los ingresos cuando ocurre la venta, no cuando se cobra el efectivo — la base de por qué la utilidad neta puede diferir del flujo de efectivo real.'},
+    ],
+    quiz:[
+      {q:'¿Qué compara el análisis horizontal?', opts:['Distintas empresas del mismo tamaño','El crecimiento de una misma partida entre períodos','Solo el balance general','Únicamente los impuestos pagados'], correct:1},
+      {q:'¿Qué señal de alerta indica que las cuentas por cobrar crecen mucho más rápido que las ventas?', opts:['Ninguna, es normal y esperado','Un posible deterioro en la calidad y velocidad del cobro','Que la empresa está vendiendo menos','Que las ventas están sobrevaluadas'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.aeef.studyMaterial = {
-  summary:'<b>Análisis Económico de Estados Financieros</b> enseña a leer más allá de la utilidad neta reportada y llegar al efectivo real que genera un negocio, que es lo que realmente determina su capacidad de pagar deudas e invertir en crecimiento.<br><br>El recorrido parte de la <b>UAII</b> (Utilidad Antes de Intereses e Impuestos), que mide el desempeño operativo puro del negocio antes de que la estructura de financiamiento o el régimen fiscal distorsionen la imagen. A partir de ahí, la <b>UONDI</b> (Utilidad Operativa Neta Después de Impuestos) incorpora el impacto fiscal pero excluye los gastos financieros, permitiendo comparar empresas con distinto nivel de deuda sobre la misma base operativa. El paso siguiente es el <b>FEO</b> (Flujo de Efectivo Operativo): se suma de vuelta la depreciación y amortización porque, aunque reducen la utilidad contable, no implican una salida real de efectivo en ese período. El resultado es el efectivo que genera la operación antes de considerar inversiones.<br><br>El indicador más revelador es el <b>FEL</b> (Flujo de Efectivo Libre): al restar del FEO el Incremento de Activos Fijos Netos (IAFN) y el Incremento de Activos Corrientes Netos (IACN), se obtiene el efectivo que queda disponible después de que la empresa reinvierte lo necesario para sostener y hacer crecer su operación. Una empresa con utilidad neta creciente pero FEL negativo o muy ajustado puede estar en una trampa de crecimiento: crece en papel pero consume más efectivo del que genera, lo que la hace dependiente de financiamiento externo continuo. Esa es la "lectura forense" que esta materia desarrolla.',
+  summary:'<b>Análisis Económico de Estados Financieros</b> enseña a leer más allá de la utilidad neta reportada y llegar al efectivo real que genera un negocio, que es lo que realmente determina su capacidad de pagar deudas e invertir en crecimiento.<br><br>El recorrido parte de la <b>UAII</b> (Utilidad Antes de Intereses e Impuestos), que mide el desempeño operativo puro del negocio antes de que la estructura de financiamiento o el régimen fiscal distorsionen la imagen. A partir de ahí, la <b>UONDI</b> (Utilidad Operativa Neta Después de Impuestos) incorpora el impacto fiscal pero excluye los gastos financieros, permitiendo comparar empresas con distinto nivel de deuda sobre la misma base operativa. El paso siguiente es el <b>FEO</b> (Flujo de Efectivo Operativo): se suma de vuelta la depreciación y amortización porque, aunque reducen la utilidad contable, no implican una salida real de efectivo en ese período. El resultado es el efectivo que genera la operación antes de considerar inversiones.<br><br>El indicador más revelador es el <b>FEL</b> (Flujo de Efectivo Libre): al restar del FEO el Incremento de Activos Fijos Netos (IAFN) y el Incremento de Activos Corrientes Netos (IACN), se obtiene el efectivo que queda disponible después de que la empresa reinvierte lo necesario para sostener y hacer crecer su operación. Una empresa con utilidad neta creciente pero FEL negativo o muy ajustado puede estar en una trampa de crecimiento: crece en papel pero consume más efectivo del que genera.<br><br>El <b>análisis DuPont</b> descompone el ROE en tres factores (margen neto, rotación de activos y multiplicador de capital) para explicar de dónde viene la rentabilidad sobre el patrimonio — dos empresas pueden llegar al mismo ROE por caminos de riesgo completamente distintos. El <b>análisis horizontal</b> completa el cuadro comparando el crecimiento de cada partida entre períodos: cuando las cuentas por cobrar crecen mucho más rápido que las ventas, es una señal de alerta sobre la calidad real de ese crecimiento que la utilidad neta, calculada bajo el principio de devengado, no revela por sí sola. Esa combinación — desde la UAII hasta DuPont y el análisis horizontal — es la "lectura forense" que esta materia desarrolla.',
   flashcards:[
     {q:'¿Qué es la UAII?', a:'Utilidad Antes de Intereses e Impuestos: mide el desempeño operativo del negocio, sin el efecto de cómo se financia ni del régimen fiscal.'},
     {q:'¿Qué es la UONDI?', a:'Utilidad Operativa Neta Después de Impuestos: UAII ajustada por impuestos, pero sin restar los gastos financieros.'},
     {q:'¿Qué es el FEO?', a:'Flujo de Efectivo Operativo: UONDI más la depreciación y amortización del período, que son gastos contables sin salida real de efectivo.'},
     {q:'¿Qué es el FEL?', a:'Flujo de Efectivo Libre: el FEO menos la inversión necesaria en activos fijos y corrientes para sostener la operación; es el efectivo realmente disponible.'},
     {q:'¿Por qué puede una empresa tener utilidad neta creciente y FEL muy bajo?', a:'Porque una inversión intensiva en activos fijos o capital de trabajo puede consumir gran parte del efectivo operativo, aunque la utilidad contable sea positiva.'},
+    {q:'¿Cuál es la fórmula DuPont del ROE?', a:'ROE = Margen neto × Rotación de activos × Multiplicador de capital.'},
+    {q:'¿Qué compara el análisis horizontal?', a:'El crecimiento o disminución de una misma partida de los estados financieros entre dos o más períodos.'},
+    {q:'¿Por qué una empresa puede mostrar utilidad neta creciente aunque su cobro se deteriore?', a:'Porque bajo el principio de devengado, una venta se registra como ingreso cuando ocurre, no cuando se cobra en efectivo.'},
   ],
   glossary:[
     {t:'UAII', d:'Utilidad Antes de Intereses e Impuestos; también llamada utilidad operativa.'},
@@ -1575,13 +1688,100 @@ SUBJECT_DATA.aeef.studyMaterial = {
     {t:'IAFN', d:'Incremento de Activos Fijos Netos; inversión neta del período en activos de largo plazo.'},
     {t:'IACN', d:'Incremento de Activos Corrientes Netos; inversión neta del período en capital de trabajo.'},
     {t:'FEL', d:'Flujo de Efectivo Libre; efectivo disponible después de cubrir toda la inversión necesaria para sostener la operación.'},
+    {t:'Análisis DuPont', d:'Método que descompone el ROE en margen neto, rotación de activos y multiplicador de capital, para entender qué factores impulsan la rentabilidad sobre el patrimonio.'},
+    {t:'Análisis horizontal', d:'Comparación del crecimiento o disminución de una misma partida financiera entre dos o más períodos.'},
+    {t:'Principio de devengado', d:'Principio contable que reconoce los ingresos cuando ocurre la venta, no cuando se cobra el efectivo.'},
   ],
   quiz:[
     {q:'¿Qué partida se suma de vuelta al pasar de UONDI a FEO?', opts:['Los impuestos','La depreciación y amortización','Los intereses','Las ventas'], correct:1},
     {q:'¿Qué se resta al FEO para llegar al FEL?', opts:['Los impuestos','El IAFN y el IACN','La utilidad neta','El costo de ventas'], correct:1},
     {q:'¿Por qué la UONDI no incluye los gastos financieros?', opts:['Por error de cálculo','Porque aísla el desempeño operativo del efecto de cómo se financia la empresa','Porque los intereses no existen contablemente','No es correcto, sí los incluye'], correct:1},
+    {q:'¿Cuáles son los tres componentes del ROE según DuPont?', opts:['Ventas, costos y gastos','Margen neto, rotación de activos y multiplicador de capital','Activos, pasivos y patrimonio','Ingresos, egresos y utilidad'], correct:1},
+    {q:'¿Qué señal de alerta indica que las cuentas por cobrar crecen mucho más rápido que las ventas?', opts:['Ninguna, es normal y esperado','Un posible deterioro en la calidad y velocidad del cobro','Que la empresa está vendiendo menos','Que las ventas están sobrevaluadas'], correct:1},
   ],
 };
+SUBJECT_DATA.aeef.formulas = [
+  { nombre:'UAII (Utilidad operativa)', formula:'UAII = Ventas − Costo de ventas − Gastos operativos',
+    variables:'No incluye gastos financieros (intereses) ni impuestos — mide el desempeño puro del negocio, antes de cómo se financia.',
+    ejemplo:'Una empresa con ventas de US$18,400,000, costos de US$12,200,000 y gastos operativos de US$4,050,000 tiene una UAII de 18,400,000 − 12,200,000 − 4,050,000 = US$2,150,000.' },
+  { nombre:'FEO (Flujo de Efectivo Operativo)', formula:'FEO = UONDI + Depreciación y amortización',
+    variables:'UONDI: la utilidad operativa ya ajustada por impuestos. Depreciación y amortización: gastos contables que no representan salida real de efectivo.',
+    ejemplo:'Con una UONDI de US$1,505,000 y depreciación de US$420,000, el FEO es 1,505,000 + 420,000 = US$1,925,000.' },
+  { nombre:'FEL (Flujo de Efectivo Libre)', formula:'FEL = FEO − IAFN − IACN',
+    variables:'IAFN: inversión neta en activos fijos. IACN: inversión neta en capital de trabajo (activos corrientes).',
+    ejemplo:'Con un FEO de US$1,925,000, IAFN de US$1,100,000 e IACN de US$540,000, el FEL es 1,925,000 − 1,100,000 − 540,000 = US$285,000.' },
+  { nombre:'ROE por DuPont', formula:'ROE = Margen neto × Rotación de activos × Multiplicador de capital',
+    variables:'Margen neto: Utilidad neta/Ventas. Rotación de activos: Ventas/Activos totales. Multiplicador de capital: Activos totales/Patrimonio.',
+    ejemplo:'Con un margen de 3%, rotación de 2.5x y multiplicador de 2.0x, el ROE es 3% × 2.5 × 2.0 = 15.0%.' },
+  { nombre:'Crecimiento porcentual (análisis horizontal)', formula:'Crecimiento = ((Valor actual − Valor anterior) ÷ Valor anterior) × 100',
+    variables:'Se aplica a cualquier partida financiera para comparar su evolución entre dos períodos.',
+    ejemplo:'Cuentas por cobrar que pasan de US$680,000 a US$1,190,000 crecieron (1,190,000−680,000)/680,000 × 100 = 75.0%.' },
+];
+SUBJECT_DATA.aeef.leyes = [
+  { nombre:'Normas Internacionales de Información Financiera (NIIF)',
+    resumen:'Las empresas panameñas, especialmente las que cotizan en bolsa o buscan financiamiento bancario formal, preparan sus estados financieros conforme a las NIIF (o su versión simplificada, NIIF para PYMES). Estas normas establecen el principio de devengado como base de reconocimiento de ingresos y gastos, y estandarizan cómo se presentan el estado de resultados, el balance general y el estado de flujo de efectivo.',
+    temasClave:['Principio de devengado en el reconocimiento de ingresos', 'Presentación estandarizada de los estados financieros', 'NIIF para PYMES como versión simplificada'] },
+  { nombre:'Código de Comercio de Panamá — obligaciones contables',
+    resumen:'Establece la obligación de los comerciantes de llevar contabilidad organizada y conservar sus libros y estados financieros, base legal sobre la cual se apoya el análisis financiero formal que exigen bancos e inversionistas al evaluar una empresa.',
+    temasClave:['Obligación de llevar contabilidad formal', 'Conservación de libros y estados financieros', 'Base legal de la información financiera auditable'] },
+];
+SUBJECT_DATA.aeef.simulaciones = [
+  {
+    id: 'sim-aeef-analista-forense',
+    titulo: 'Analista Financiero Forense — Firma de Auditoría Istmeña',
+    rolJugador: 'Analista Financiero Forense',
+    descripcion: 'No vas a responder preguntas sobre una empresa — vas a auditar sus estados financieros durante varias rondas de revisión, decidiendo en cada una si profundizas la investigación, aceptas la explicación de la gerencia, o escalas una señal de alerta.',
+    kpisIniciales: { confianzaInforme: 70, horasInvertidas: 0, hallazgosGraves: 0, relacionCliente: 60, precisionAnalisis: 50 },
+    rondas: [
+      { titulo:'Ronda 1 — La utilidad neta crece, pero algo no cuadra en el flujo de caja',
+        contexto:'Revisas los estados financieros de un cliente y notas que la utilidad neta creció 15%, pero el flujo de efectivo operativo apenas creció 2%. La gerencia dice que es "normal, por el ciclo del negocio".',
+        opciones: [
+          { texto:'Aceptar la explicación de la gerencia sin más indagación', efectos:{confianzaInforme:-15, horasInvertidas:2, relacionCliente:10},
+            resultado:'Avanzaste rápido y mantuviste buena relación con el cliente, pero si la discrepancia tiene una causa real no detectada, la confiabilidad de tu informe final queda comprometida.'},
+          { texto:'Pedir el detalle de las partidas que explican la diferencia entre utilidad y flujo', efectos:{confianzaInforme:12, horasInvertidas:8, precisionAnalisis:10},
+            resultado:'Invertiste más tiempo, pero obtuviste evidencia real de qué está causando la diferencia — la base de un análisis forense serio, no solo aceptar explicaciones verbales.'},
+          { texto:'Escalar de inmediato como hallazgo grave, sin pedir más información primero', efectos:{hallazgosGraves:1, relacionCliente:-15, confianzaInforme:-5},
+            resultado:'Actuaste con precaución extrema, pero escalar sin investigar primero puede generar una alarma innecesaria si la explicación resulta ser legítima — y deteriora la relación con el cliente.'},
+        ]},
+      { titulo:'Ronda 2 — El detalle revela un aumento fuerte en cuentas por cobrar',
+        contexto:'Si pediste el detalle en la ronda anterior (o incluso si no lo hiciste), encuentras que las cuentas por cobrar crecieron 75% mientras las ventas crecieron solo 18% — la misma señal de alerta del análisis horizontal.',
+        opciones: [
+          { texto:'Investigar la antigüedad de esas cuentas por cobrar específicas', efectos:{precisionAnalisis:15, horasInvertidas:6, confianzaInforme:8},
+            resultado:'El análisis de antigüedad de saldos es exactamente el siguiente paso correcto — revela si son cuentas nuevas normales del crecimiento, o saldos viejos que no se están cobrando.'},
+          { texto:'Asumir que es una señal de alerta sin investigar más a fondo', efectos:{hallazgosGraves:1, precisionAnalisis:-5, horasInvertidas:2},
+            resultado:'Documentaste la señal, pero sin el detalle de antigüedad, tu hallazgo es menos preciso de lo que podría ser — un informe forense sólido necesita evidencia específica, no solo una tendencia general.'},
+          { texto:'Descartar la señal por considerarla normal en una empresa en crecimiento', efectos:{precisionAnalisis:-15, confianzaInforme:-20},
+            resultado:'Un crecimiento de cuentas por cobrar cuatro veces más rápido que las ventas rara vez es "normal" sin explicación — descartarlo sin evidencia compromete seriamente la calidad de tu análisis.'},
+        ]},
+      { titulo:'Ronda 3 — El cliente pide que suavices el lenguaje del hallazgo en el informe',
+        contexto:'El director financiero del cliente te pide que, en vez de calificar el hallazgo como "señal de alerta de deterioro en la calidad del cobro", lo describas como "oportunidad de mejora en el proceso de cobro".',
+        opciones: [
+          { texto:'Mantener el lenguaje original, con la evidencia que respalda la calificación', efectos:{confianzaInforme:15, relacionCliente:-10, precisionAnalisis:5},
+            resultado:'Protegiste la integridad técnica de tu informe. La relación con el cliente se tensiona en el corto plazo, pero la credibilidad de tu firma como analista independiente es lo más valioso a largo plazo.'},
+          { texto:'Suavizar el lenguaje como pide el cliente', efectos:{confianzaInforme:-20, relacionCliente:10},
+            resultado:'Mantuviste al cliente contento, pero comprometiste la objetividad del informe — quien lo lea después (un banco, un inversionista) recibe una versión menos clara de la realidad financiera de la empresa.'},
+          { texto:'Ofrecer un punto medio: mantener la calificación técnica, pero agregar contexto sobre las acciones correctivas que el cliente ya está tomando', efectos:{confianzaInforme:8, relacionCliente:5, precisionAnalisis:3},
+            resultado:'Mantuviste la precisión técnica del hallazgo sin perder de vista que un informe forense también debe ser justo — reconociendo lo que el cliente ya está haciendo para corregir la situación.'},
+        ]},
+      { titulo:'Ronda 4 — El análisis DuPont del cliente frente a su competencia directa',
+        contexto:'Comparas el ROE del cliente (15%) con su principal competidor, que también reporta 15% de ROE. El comité de tu firma pregunta si esto significa que ambas empresas tienen el mismo perfil de riesgo financiero.',
+        opciones: [
+          { texto:'Descomponer el ROE de ambas empresas con DuPont antes de concluir nada', efectos:{precisionAnalisis:15, horasInvertidas:5, confianzaInforme:10},
+            resultado:'El paso correcto — un ROE idéntico puede esconder perfiles de riesgo muy distintos, y solo la descomposición DuPont lo revela con claridad.'},
+          { texto:'Concluir que ambas empresas son igual de riesgosas, ya que el ROE es idéntico', efectos:{precisionAnalisis:-15, confianzaInforme:-10},
+            resultado:'Un error común pero serio: dos empresas con el mismo ROE pueden tener niveles de apalancamiento financiero muy distintos, lo que las hace fundamentalmente distintas en riesgo, no iguales.'},
+        ]},
+      { titulo:'Ronda 5 — Cierre del informe forense',
+        contexto:'Con todo el análisis reunido, debes decidir el nivel de detalle y contundencia con el que presentas tus conclusiones finales al comité que tomará la decisión de crédito o inversión.',
+        opciones: [
+          { texto:'Presentar un informe detallado con toda la evidencia y metodología, aunque sea más extenso', efectos:{confianzaInforme:15, precisionAnalisis:10, horasInvertidas:4},
+            resultado:'Un informe más largo, pero que le da al comité toda la evidencia necesaria para tomar su propia decisión informada, sin depender solo de tu conclusión resumida.'},
+          { texto:'Presentar un resumen ejecutivo breve con solo la conclusión final', efectos:{horasInvertidas:-3, confianzaInforme:-8},
+            resultado:'Más rápido de leer, pero el comité pierde la oportunidad de entender el razonamiento completo detrás de tu conclusión — y confía más ciegamente en tu juicio, sin poder verificarlo ellos mismos.'},
+        ]},
+    ],
+  },
+];
 
 SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
   {
@@ -2727,7 +2927,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion','view-glosario'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -3282,6 +3482,61 @@ async function guardarEntregaTarea(tareaId){
 // cualquier tarea al calificar, para que el estudiante vea exactamente
 // qué estuvo bien y qué no en cada parte, no solo el número final.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// GLOSARIO GENERAL — no es una lista escrita a mano: se genera cada
+// vez que se abre, recorriendo el contenido real de todas las
+// materias (el resumen general y cada caso). Si se agrega un
+// término nuevo en cualquier materia, aparece aquí solo, sin tener
+// que mantener una copia aparte.
+// ═══════════════════════════════════════════════════════
+function recopilarGlosarioGeneral(){
+  const vistos = new Set();
+  const terminos = [];
+  SUBJECTS.forEach(s => {
+    const data = SUBJECT_DATA[s.id];
+    if(!data) return;
+    const fuentes = [...(data.studyMaterial?.glossary||[]), ...data.cases.flatMap(c=>c.glossary||[])];
+    fuentes.forEach(({t,d}) => {
+      const clave = t.toLowerCase().trim();
+      if(vistos.has(clave)) return;
+      vistos.add(clave);
+      terminos.push({ termino:t, definicion:d, materia:s.title, materiaId:s.id, color:s.color });
+    });
+  });
+  return terminos.sort((a,b)=>a.termino.localeCompare(b.termino,'es'));
+}
+function navGlosarioGeneral(){
+  showView('view-glosario');
+  setActiveNav('nav-glosario'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-glosario');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <div class="eyebrow"><i class="ti ti-alphabet-latin"></i> Glosario general</div>
+    <h1>Todos los términos, de todas las materias</h1>
+    <p>Se arma solo con el contenido real — si algo cambia en una materia, aparece aquí sin tener que actualizar nada aparte.</p>
+  </div>
+  <input type="text" id="glosario-buscador" placeholder="Buscar un término…" oninput="filtrarGlosarioGeneral()" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;margin-bottom:16px;box-sizing:border-box;">
+  <div id="glosario-contenido"></div>`;
+  window.__glosarioGeneralCache = recopilarGlosarioGeneral();
+  dibujarGlosarioGeneral(window.__glosarioGeneralCache);
+}
+function dibujarGlosarioGeneral(terminos){
+  const cont = $('glosario-contenido');
+  if(!terminos.length){ cont.innerHTML = '<div class="auth-hint">Ningún término coincide con la búsqueda.</div>'; return; }
+  cont.innerHTML = `<div class="sub" style="margin-bottom:10px;">${terminos.length} término${terminos.length===1?'':'s'}</div>` + terminos.map(x => `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <b style="font-size:13.5px;">${x.termino}</b>
+        <span style="font-size:9.5px;font-weight:700;color:${x.color};background:${x.color}22;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">${x.materia}</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-top:6px;">${x.definicion}</p>
+    </div>`).join('');
+}
+function filtrarGlosarioGeneral(){
+  const q = $('glosario-buscador').value.toLowerCase().trim();
+  const filtrados = !q ? window.__glosarioGeneralCache : window.__glosarioGeneralCache.filter(x => x.termino.toLowerCase().includes(q) || x.definicion.toLowerCase().includes(q) || x.materia.toLowerCase().includes(q));
+  dibujarGlosarioGeneral(filtrados);
+}
 function abrirGestionRubricas(){
   const overlay = document.createElement('div');
   overlay.className = 'export-modal-overlay';
@@ -3952,9 +4207,10 @@ function avanzarDespuesDeCapitulo(){
 // números de la ronda siguiente — no hay una sola respuesta correcta,
 // hay compromisos, y cada uno tiene un costo real.
 // ═══════════════════════════════════════════════════════
-const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'] };
+const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'], confianzaInforme:['Confianza del informe','ti-shield-check'], horasInvertidas:['Horas invertidas','ti-clock'], hallazgosGraves:['Hallazgos graves','ti-alert-octagon'], relacionCliente:['Relación con el cliente','ti-users'], precisionAnalisis:['Precisión del análisis','ti-target'] };
 function formatearValorKpi(clave, valor){
-  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion') return valor.toFixed(1)+'%';
+  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion' || clave==='confianzaInforme' || clave==='relacionCliente' || clave==='precisionAnalisis') return valor.toFixed(1)+'%';
+  if(clave==='horasInvertidas' || clave==='hallazgosGraves') return Math.round(valor).toLocaleString('es-PA');
   return 'US$ '+Math.round(valor).toLocaleString('es-PA');
 }
 async function abrirSimulacion(subjectId, simId){
