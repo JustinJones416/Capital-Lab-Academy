@@ -1090,6 +1090,37 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
   },
 ]};
 
+SUBJECT_DATA.banmer.formulas = [
+  { nombre:'Índice de Adecuación de Capital (IAC)', formula:'IAC = (Capital regulatorio ÷ Activos ponderados por riesgo) × 100',
+    variables:'Capital regulatorio: capital propio del banco ajustado según normativa. Activos ponderados por riesgo: cada activo se pesa según qué tan riesgoso es (un préstamo hipotecario pesa menos que uno sin garantía).',
+    ejemplo:'Un banco con US$40 millones de capital regulatorio y US$380 millones en activos ponderados por riesgo tiene un IAC de 40/380 × 100 = 10.5%. En Panamá, el mínimo regulatorio exigido por la SBP es 8%.' },
+  { nombre:'Índice de morosidad', formula:'Morosidad = (Cartera vencida ÷ Cartera bruta total) × 100',
+    variables:'Cartera vencida: préstamos con pago de capital o intereses en mora, típicamente más de 90 días. Cartera bruta: el total de préstamos otorgados, sin descontar provisiones.',
+    ejemplo:'Si un banco tiene US$1,120 millones en cartera bruta y US$42.5 millones en mora, su morosidad es 42.5/1,120 × 100 = 3.8%.' },
+  { nombre:'Cobertura de provisiones', formula:'Cobertura = (Provisiones ÷ Cartera vencida) × 100',
+    variables:'Provisiones: reservas contables que el banco separa anticipando que parte de la cartera vencida no se recuperará.',
+    ejemplo:'Con US$39.2 millones en provisiones y US$42.5 millones en cartera vencida, la cobertura es 39.2/42.5 × 100 = 92% — el banco tiene reservas para cubrir el 92% de lo que ya está en mora.' },
+  { nombre:'Razón de liquidez legal', formula:'Razón de liquidez = (Activos líquidos ÷ Depósitos exigibles) × 100',
+    variables:'Activos líquidos: efectivo, depósitos en el banco central, e inversiones fácilmente convertibles en efectivo. Depósitos exigibles: depósitos que los clientes pueden retirar sin previo aviso o en el corto plazo.',
+    ejemplo:'El mínimo regulatorio en Panamá es 30%. Un banco con exactamente ese nivel cumple, pero no tiene margen ante una salida inesperada de depósitos.' },
+  { nombre:'ROE (Retorno sobre el Patrimonio)', formula:'ROE = (Utilidad neta ÷ Patrimonio promedio) × 100',
+    variables:'Utilidad neta: la ganancia del período después de todos los gastos e impuestos. Patrimonio: el capital propio de los accionistas.',
+    ejemplo:'Un banco con US$8 millones de utilidad neta y US$70 millones de patrimonio promedio tiene un ROE de 8/70 × 100 = 11.4% — cuánto están ganando los accionistas por cada dólar que tienen invertido en el banco.' },
+  { nombre:'Margen de intermediación', formula:'Margen = Tasa activa promedio − Tasa pasiva promedio',
+    variables:'Tasa activa: lo que el banco cobra en sus préstamos. Tasa pasiva: lo que el banco paga por los depósitos que capta.',
+    ejemplo:'Si un banco presta en promedio al 9% y paga 3% por los depósitos, su margen de intermediación es 6 puntos porcentuales — la ganancia bruta antes de gastos operativos y provisiones.' },
+];
+SUBJECT_DATA.banmer.leyes = [
+  { nombre:'Ley Bancaria de Panamá', numero:'Decreto Ley 9 de 1998, modificado por la Ley 2 de 2008',
+    resumen:'Es la norma central que regula el sistema bancario panameño. Crea y le da facultades a la Superintendencia de Bancos de Panamá (SBP) como el ente regulador y supervisor, establece los tipos de licencia bancaria (general e internacional), y fija los requisitos mínimos de capital, adecuación patrimonial, y las facultades de supervisión que ya se han visto en los casos de esta materia.',
+    temasClave:['Creación y facultades de la Superintendencia de Bancos', 'Licencias bancarias: general vs. internacional', 'Requisitos mínimos de capital y del Índice de Adecuación de Capital', 'Facultades de intervención y liquidación de bancos'] },
+  { nombre:'Ley del Mercado de Valores', numero:'Ley 67 de 2011',
+    resumen:'Regula la Bolsa de Valores de Panamá, la emisión y oferta pública de valores (acciones, bonos), y crea la Superintendencia del Mercado de Valores (SMV) como su ente regulador — distinto de la SBP, que solo supervisa bancos.',
+    temasClave:['Diferencia entre SBP (bancos) y SMV (valores)', 'Requisitos para ofertas públicas de valores', 'Protección al inversionista', 'Emisión de bonos corporativos, relevante para financiar el crecimiento de un banco'] },
+  { nombre:'Normativa prudencial de la Superintendencia de Bancos',
+    resumen:'Además de la Ley Bancaria, la SBP emite acuerdos específicos que desarrollan los detalles técnicos: cómo se calcula exactamente el IAC, cómo se clasifica la cartera de crédito por nivel de riesgo, cuánta provisión se exige según esa clasificación, y los requisitos de las pruebas de estrés de liquidez que se practicaron en los casos de esta materia.',
+    temasClave:['Clasificación de cartera de crédito por riesgo', 'Reglas de constitución de provisiones', 'Pruebas de estrés de liquidez', 'Reportes periódicos obligatorios a la SBP'] },
+];
 SUBJECT_DATA.banmer.simulaciones = [
   {
     id: 'sim-banmer-gerente-creditos',
@@ -3643,6 +3674,53 @@ function salirDeSimulacion(subjectId){
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// BANCO DE FÓRMULAS — referencia rápida por materia. Cada fórmula con
+// sus variables explicadas y un ejemplo resuelto, no solo la
+// ecuación sola sin contexto.
+// ═══════════════════════════════════════════════════════
+function abrirBancoFormulas(subjectId){
+  const formulas = SUBJECT_DATA[subjectId].formulas || [];
+  const s = SUBJECTS.find(x=>x.id===subjectId);
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'banco-formulas-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-math-function" style="color:var(--gold)"></i> Banco de fórmulas — ${s?.title||''}</h2>
+    ${formulas.map(f => `<div class="card" style="margin-bottom:12px;">
+      <b style="font-size:13.5px;">${f.nombre}</b>
+      <div style="background:var(--c2);border-radius:var(--r);padding:10px 12px;margin:8px 0;font-family:Georgia,serif;font-size:13.5px;text-align:center;color:var(--gold);">${f.formula}</div>
+      <div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:6px;">${f.variables}</div>
+      <div style="font-size:11.5px;color:var(--t3);border-top:1px solid var(--c3);padding-top:6px;"><b>Ejemplo:</b> ${f.ejemplo}</div>
+    </div>`).join('')}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:6px;" onclick="$('banco-formulas-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+// ═══════════════════════════════════════════════════════
+// BIBLIOTECA LEGAL — referencia general de las leyes y normativa
+// relevantes a la materia. Es material educativo de contexto, no
+// asesoría legal ni una cita exhaustiva de cada artículo.
+// ═══════════════════════════════════════════════════════
+function abrirBibliotecaLegal(subjectId){
+  const leyes = SUBJECT_DATA[subjectId].leyes || [];
+  const s = SUBJECTS.find(x=>x.id===subjectId);
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'biblioteca-legal-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-gavel" style="color:var(--gold)"></i> Biblioteca legal — ${s?.title||''}</h2>
+    <div class="auth-hint" style="margin-bottom:14px;">Referencia educativa de contexto general — no sustituye la consulta directa de la ley ni asesoría legal profesional.</div>
+    ${leyes.map(l => `<div class="card" style="margin-bottom:12px;">
+      <b style="font-size:13.5px;">${l.nombre}</b>${l.numero?`<div style="font-size:11px;color:var(--t3);margin-top:2px;">${l.numero}</div>`:''}
+      <p style="font-size:12.5px;color:var(--t2);line-height:1.6;margin:8px 0;">${l.resumen}</p>
+      <div style="font-size:11px;color:var(--t3);"><b>Temas clave:</b> ${l.temasClave.join(' · ')}</div>
+    </div>`).join('')}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:6px;" onclick="$('biblioteca-legal-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
 // ═══════════════════════════════════════════════════════════════
 // FORO DE DUDAS — la pieza que le falta a Academy que cualquier
 // herramienta de aprendizaje seria tiene: un lugar dentro de la app
@@ -4066,6 +4144,10 @@ function renderSubjectView(subjectId){
       <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
       <button class="btn btn-ghost" onclick="iniciarModoLibro('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-book"></i> Modo libro — leer por capítulos con autoevaluación</button>
       ${SUBJECT_DATA[subjectId].simulaciones?.length ? SUBJECT_DATA[subjectId].simulaciones.map(s=>`<button class="btn" onclick="abrirSimulacion('${subjectId}','${s.id}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--rose),#a855f7);border:none;"><i class="ti ti-building-bank"></i> Simulación: ${s.titulo}</button>`).join('') : ''}
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        ${SUBJECT_DATA[subjectId].formulas?.length ? `<button class="btn btn-ghost" onclick="abrirBancoFormulas('${subjectId}')" style="flex:1;justify-content:center;"><i class="ti ti-math-function"></i> Banco de fórmulas</button>` : ''}
+        ${SUBJECT_DATA[subjectId].leyes?.length ? `<button class="btn btn-ghost" onclick="abrirBibliotecaLegal('${subjectId}')" style="flex:1;justify-content:center;"><i class="ti ti-gavel"></i> Biblioteca legal</button>` : ''}
+      </div>
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
