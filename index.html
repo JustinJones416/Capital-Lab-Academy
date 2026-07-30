@@ -912,7 +912,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
         databox:{title:'Indicadores de solvencia', rows:[['Activos totales','US$ 1,840,000,000'],['Patrimonio (fondos de capital)','US$ 243,000,000'],['Activos ponderados por riesgo','US$ 1,840,000,000 × factor promedio 0.66'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8.0%']]},
         chart:{type:'bar', title:'IAC del banco vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP','Promedio sistema'], data:[13.2,8.0,14.5], color:'var(--accent)'},
         questions:[
-          {type:'mc', q:'¿Qué indica un Índice de Adecuación de Capital (IAC) de 13.2% frente a un mínimo regulatorio de 8%?', opts:['El banco está en incumplimiento técnico','El banco mantiene un colchón de capital superior al mínimo exigido','El banco tiene exceso de liquidez, no de capital','El dato es irrelevante sin más contexto'], correct:1, explain:'Un IAC de 13.2% frente al mínimo de 8% indica que el banco tiene un colchón de capital de 5.2 puntos porcentuales por encima de lo exigido, lo cual es una posición de solvencia razonablemente sólida.', explicacionAlterna:'Resta los dos números: 13.2% menos 8% son 5.2 puntos de margen. Ese margen es capital propio "de sobra" — dinero que el banco tiene guardado por encima de lo que la ley le obliga, listo para absorber pérdidas antes de que le toque a los depositantes.'},
+          {type:'mc', q:'¿Qué indica un Índice de Adecuación de Capital (IAC) de 13.2% frente a un mínimo regulatorio de 8%?', opts:['El banco está en incumplimiento técnico','El banco mantiene un colchón de capital superior al mínimo exigido','El banco tiene exceso de liquidez, no de capital','El dato es irrelevante sin más contexto'], correct:1, explain:'Un IAC de 13.2% frente al mínimo de 8% indica que el banco tiene un colchón de capital de 5.2 puntos porcentuales por encima de lo exigido, lo cual es una posición de solvencia razonablemente sólida.', explicacionAlterna:'Resta los dos números: 13.2% menos 8% son 5.2 puntos de margen. Ese margen es capital propio "de sobra" — dinero que el banco tiene guardado por encima de lo que la ley le obliga, listo para absorber pérdidas antes de que le toque a los depositantes.', patronConfusion:'solvencia_vs_liquidez'},
           {type:'mc', q:'Comparado con el promedio del sistema bancario panameño (14.5%), ¿cómo se posiciona este banco?', opts:['Por encima del sistema','Ligeramente por debajo del promedio del sistema, aunque sobre el mínimo','Igual al sistema','No es comparable'], correct:1, explain:'13.2% está por debajo del promedio del sistema (14.5%), aunque sigue siendo holgadamente superior al mínimo regulatorio. Esto no es una alerta por sí sola, pero merece seguimiento.', explicacionAlterna:'Hay dos comparaciones distintas aquí, y es fácil mezclarlas: contra el mínimo legal (8%) el banco va muy bien. Pero contra sus competidores (14.5% de promedio) va un poco por debajo. Ninguna de las dos comparaciones invalida a la otra — cumplir la ley y ser competitivo frente al resto del sistema son dos preguntas distintas.'},
         ],
       },
@@ -920,8 +920,8 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
         intro:'La solvencia no basta: hay que revisar qué tan sana está la cartera de préstamos que sostiene esos activos.',
         databox:{title:'Indicadores de cartera', rows:[['Cartera bruta de préstamos','US$ 1,120,000,000'],['Cartera vencida (mora > 90 días)','US$ 42,560,000'],['Índice de morosidad','3.8%'],['Provisiones constituidas','US$ 39,160,000'],['Cobertura de provisiones sobre cartera vencida','92%']]},
         questions:[
-          {type:'num', q:'¿Cuál es el índice de morosidad si la cartera vencida es US$ 42,560,000 y la cartera bruta es US$ 1,120,000,000? (en %, dos decimales)', placeholder:'En %, ej: 3.80', correct:3.8, tolerance:0.05, explain:'Índice de morosidad = Cartera vencida / Cartera bruta = 42,560,000 / 1,120,000,000 = 3.8%.'},
-          {type:'mc', q:'Con una cobertura de provisiones de 92% sobre la cartera vencida, ¿qué significa esto para el banco?', opts:['El banco ha provisionado más del 100% de su riesgo de mora','El banco tiene reservas para cubrir el 92% de su cartera vencida en caso de pérdida total','El 92% de los clientes morosos pagarán','La cobertura no tiene relación con el riesgo de crédito'], correct:1, explain:'Una cobertura del 92% significa que, si toda la cartera vencida se perdiera, el banco ya tiene provisionado el 92% de esa pérdida potencial; queda un 8% sin cubrir, una brecha menor pero a vigilar.'},
+          {type:'num', q:'¿Cuál es el índice de morosidad si la cartera vencida es US$ 42,560,000 y la cartera bruta es US$ 1,120,000,000? (en %, dos decimales)', placeholder:'En %, ej: 3.80', correct:3.8, tolerance:0.05, explain:'Índice de morosidad = Cartera vencida / Cartera bruta = 42,560,000 / 1,120,000,000 = 3.8%.', patronConfusion:'morosidad_vs_cobertura'},
+          {type:'mc', q:'Con una cobertura de provisiones de 92% sobre la cartera vencida, ¿qué significa esto para el banco?', opts:['El banco ha provisionado más del 100% de su riesgo de mora','El banco tiene reservas para cubrir el 92% de su cartera vencida en caso de pérdida total','El 92% de los clientes morosos pagarán','La cobertura no tiene relación con el riesgo de crédito'], correct:1, explain:'Una cobertura del 92% significa que, si toda la cartera vencida se perdiera, el banco ya tiene provisionado el 92% de esa pérdida potencial; queda un 8% sin cubrir, una brecha menor pero a vigilar.', patronConfusion:'morosidad_vs_cobertura'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Liquidez y calce de plazos', icon:'ti-droplet-half-2',
@@ -929,7 +929,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
         databox:{title:'Indicadores de liquidez', rows:[['Activos líquidos disponibles','US$ 276,000,000'],['Depósitos a la vista y ahorro (exigibles)','US$ 920,000,000'],['Razón de liquidez legal (activos líquidos/depósitos exigibles)','30%'],['Mínimo regulatorio SBP de liquidez','30%']]},
         chart:{type:'bar', title:'Razón de liquidez vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP'], data:[30,30], color:'var(--accent2)'},
         questions:[
-          {type:'mc', q:'La razón de liquidez del banco es exactamente igual al mínimo regulatorio (30%). ¿Qué implica esto para el analista de supervisión?', opts:['No hay ningún motivo de atención, está en cumplimiento', 'Aunque cumple, está en el límite exacto, sin margen ante una salida inesperada de depósitos','El banco está en incumplimiento','El dato es insuficiente para opinar'], correct:1, explain:'Cumplir exactamente el mínimo regulatorio, sin margen adicional, es una señal de atención: cualquier salida de depósitos mayor a la esperada podría llevar al banco a un incumplimiento técnico de liquidez.'},
+          {type:'mc', q:'La razón de liquidez del banco es exactamente igual al mínimo regulatorio (30%). ¿Qué implica esto para el analista de supervisión?', opts:['No hay ningún motivo de atención, está en cumplimiento', 'Aunque cumple, está en el límite exacto, sin margen ante una salida inesperada de depósitos','El banco está en incumplimiento','El dato es insuficiente para opinar'], correct:1, explain:'Cumplir exactamente el mínimo regulatorio, sin margen adicional, es una señal de atención: cualquier salida de depósitos mayor a la esperada podría llevar al banco a un incumplimiento técnico de liquidez.', patronConfusion:'solvencia_vs_liquidez'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Prueba de estrés de liquidez', icon:'ti-test-pipe',
@@ -6149,6 +6149,7 @@ async function cargarDashboardEstudiante(){
         ${fortalezas.length ? `<div style="margin-top:10px;"><b style="font-size:11.5px;color:var(--green);">FUERTE EN</b>${fortalezas.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span>${f.materia.title}</span><span style="color:var(--green);font-weight:700;">${Math.round(f.promedio)}%</span></div>`).join('')}</div>` : ''}
         ${debilidades.length ? `<div style="margin-top:${fortalezas.length?'12px':'10px'};"><b style="font-size:11.5px;color:var(--red);">NECESITA REFUERZO</b>${debilidades.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span>${f.materia.title}</span><span style="color:var(--red);font-weight:700;">${Math.round(f.promedio)}%</span></div>`).join('')}</div>` : ''}
       </div>` : ''}
+      <button class="btn btn-ghost" onclick="abrirTutorDeErrores()" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-brain" style="color:var(--red);"></i> Tutor de errores — patrones que se repiten</button>
       ${temasDebiles.length ? `<div class="card" style="margin-bottom:16px;">
         <div class="card-title"><i class="ti ti-target-arrow" style="color:var(--red)"></i> Temas para repasar</div>
         ${temasDebiles.map(([tema,info]) => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${info.materia.id}')"><i class="ti ti-alert-triangle" style="color:var(--red);"></i><div><b>${tema}</b><span>${info.materia.title} · ${info.cuenta} error${info.cuenta===1?'':'es'}</span></div></div>`).join('')}
@@ -6996,6 +6997,62 @@ async function iniciarRepasoProgramado(repasoId, subjectId, conceptos){
   }, 300);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// TUTOR DE ERRORES POR PATRÓN — la diferencia con "temas débiles" es
+// que esto no dice "fallaste esta pregunta", dice "siempre confundes X
+// con Y" — agrupa preguntas etiquetadas con el mismo patrón de
+// confusión, y solo lo señala cuando el estudiante falló DOS O MÁS
+// preguntas de ese mismo patrón — una sola vez no es un patrón real.
+// ═══════════════════════════════════════════════════════
+const PATRONES_CONFUSION = {
+  solvencia_vs_liquidez: {
+    titulo: 'Confundes solvencia con liquidez',
+    explicacion: 'Solvencia es tener suficiente capital propio para cubrir pérdidas en el papel. Liquidez es poder pagar en efectivo, hoy, a quien viene a pedir su dinero. Son cosas distintas — un banco puede ser solvente y aun así quedarse sin efectivo, o tener mucho efectivo disponible y muy poco capital propio de respaldo.',
+  },
+  morosidad_vs_cobertura: {
+    titulo: 'Confundes morosidad con cobertura de provisiones',
+    explicacion: 'La morosidad mide qué porcentaje de la cartera de préstamos ya está en problemas de pago. La cobertura mide qué tanto de esa cartera problemática ya tiene reservas separadas para cubrir la pérdida si no se recupera. Son dos preguntas distintas: "¿cuánto está mal?" no es lo mismo que "¿cuánto de eso ya está cubierto?".',
+  },
+};
+function analizarPatronesDeError(){
+  const conteoFallas = {};
+  SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+    const data = SUBJECT_DATA[s.id];
+    if(!data) return;
+    data.cases.forEach(c => {
+      const ans = studentAnswers[c.id];
+      if(!ans || !ans.stages) return;
+      c.stages.forEach(st => {
+        if(!st.questions) return;
+        const stAns = ans.stages[st.id] || {};
+        st.questions.forEach((q,i) => {
+          if(!q.patronConfusion) return;
+          if(esRespuestaCorrecta(q, stAns[i]) === false){
+            conteoFallas[q.patronConfusion] = (conteoFallas[q.patronConfusion]||0) + 1;
+          }
+        });
+      });
+    });
+  });
+  return Object.entries(conteoFallas).filter(([,cuenta])=>cuenta>=2).map(([clave,cuenta]) => ({ clave, cuenta, ...PATRONES_CONFUSION[clave] }));
+}
+function abrirTutorDeErrores(){
+  const patrones = analizarPatronesDeError();
+  const overlay = document.createElement('div');
+  overlay.className = 'export-modal-overlay';
+  overlay.id = 'tutor-errores-overlay';
+  overlay.innerHTML = `<div class="export-modal">
+    <h2><i class="ti ti-brain" style="color:var(--red)"></i> Tutor de errores</h2>
+    ${patrones.length ? `<p class="sub" style="margin-bottom:14px;">No son solo preguntas falladas sueltas — esto es lo que se repite.</p>
+      ${patrones.map(p => `<div class="card" style="margin-bottom:12px;border-color:var(--red);">
+        <b style="font-size:13.5px;color:var(--red);"><i class="ti ti-repeat"></i> ${p.titulo}</b>
+        <div style="font-size:11px;color:var(--t3);margin:2px 0 8px;">Detectado en ${p.cuenta} preguntas distintas</div>
+        <p style="font-size:12.5px;line-height:1.6;color:var(--t2);">${p.explicacion}</p>
+      </div>`).join('')}` : `<div class="auth-hint">Todavía no se detecta ningún patrón que se repita — sigue así, o vuelve aquí después de practicar más.</div>`}
+    <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:6px;" onclick="$('tutor-errores-overlay').remove()">Cerrar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
 function abrirMisPuntosDebiles(){
   const debiles = [];
   SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
