@@ -1521,6 +1521,113 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
       {q:'¿Qué mide la razón Deuda/EBITDA?', opts:['La rentabilidad de la empresa','Cuántos años de EBITDA se necesitarían para pagar toda la deuda','El margen neto','El valor de mercado de la empresa'], correct:1},
     ],
   },
+  {
+    id:'mdofin-c2', expediente:'BVP-2026-027', role:'Analista de Renta Variable',
+    title:'¿Está cara o barata la oferta pública inicial de una cadena de farmacias?',
+    brief:'Una cadena de farmacias panameña con presencia nacional anuncia su oferta pública inicial (OPI) en la Bolsa de Valores de Panamá. Tu firma de corretaje te asigna evaluar si el precio de salida propuesto es razonable, comparándolo con empresas similares que ya cotizan.',
+    character:{name:'Marisol Guardia', role:'CFO, Farmacias del Istmo, S.A.', quote:'"Creemos que el precio refleja bien nuestro crecimiento. Pero entiendo que ustedes lo van a comparar con el resto del sector antes de recomendarlo a sus clientes."'},
+    facts:[['Utilidad neta anual','US$ 12,000,000'],['Acciones a emitir','8,000,000'],['Precio de salida propuesto','US$ 18.50 por acción'],['Dividendo anual por acción proyectado','US$ 0.74'],['P/E promedio del sector farmacéutico listado','13.5x']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · El múltiplo Precio/Utilidad (P/E)', icon:'ti-chart-bar', competencia:'valoracion',
+        intro:'El múltiplo P/E (Precio/Utilidad por acción) es el punto de partida más común para comparar si una acción sale cara o barata frente a empresas similares.',
+        databox:{title:'Datos de la oferta', rows:[['Utilidad neta anual','US$ 12,000,000'],['Acciones totales en circulación tras la OPI','8,000,000'],['Precio de salida propuesto','US$ 18.50'],['P/E promedio del sector','13.5x']]},
+        questions:[
+          {type:'num', q:'¿Cuál es la utilidad por acción (UPA)? (US$, dos decimales)', placeholder:'Ej: 1.50', correct:1.50, tolerance:0.02, explain:'UPA = Utilidad neta / Acciones en circulación = 12,000,000 / 8,000,000 = US$1.50 por acción.'},
+          {type:'num', q:'Con esa UPA y el precio de salida de US$18.50, ¿cuál es el P/E implícito de la oferta? (un decimal)', placeholder:'Ej: 12.3', correct:12.3, tolerance:0.2, explain:'P/E = Precio / UPA = 18.50 / 1.50 = 12.3x.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Comparación contra el sector', icon:'ti-scale', competencia:'valoracion',
+        intro:'Un múltiplo por sí solo no dice nada — hay que compararlo contra empresas similares que ya cotizan en bolsa.',
+        questions:[
+          {type:'mc', q:'El P/E implícito de la oferta (12.3x) está por debajo del promedio del sector (13.5x). ¿Qué sugiere esto, en principio?', opts:['Que la empresa está sobrevalorada frente al sector','Que la oferta podría estar relativamente barata frente a empresas comparables, no cara','Que el precio no tiene ninguna relación con el sector','Que la empresa necesariamente tendrá pérdidas'], correct:1, explain:'Un P/E por debajo del promedio del sector sugiere, en principio, que el mercado está pidiendo pagar menos por cada dólar de utilidad de esta empresa comparado con sus pares — una señal de que podría estar relativamente barata, no cara.'},
+          {type:'mc', q:'¿Por qué no basta con mirar solo el P/E para decidir si conviene invertir?', opts:['El P/E siempre es un dato exacto y suficiente','Porque no captura diferencias en crecimiento futuro, riesgo del negocio, o calidad de las utilidades reportadas entre empresas','El P/E nunca es relevante en ningún análisis','Porque solo aplica a empresas tecnológicas'], correct:1, explain:'Dos empresas pueden tener el mismo P/E y ser inversiones muy distintas si una crece mucho más rápido, tiene más deuda, o su utilidad reportada es de menor calidad. El múltiplo es un punto de partida, no la respuesta completa.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · El rendimiento por dividendo', icon:'ti-percentage', competencia:'valoracion',
+        intro:'Además de la utilidad, muchos inversionistas de renta variable en Panamá valoran el flujo de dividendos que reciben cada año.',
+        databox:{title:'Datos de dividendo', rows:[['Dividendo anual proyectado por acción','US$ 0.74'],['Precio de salida','US$ 18.50']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el rendimiento por dividendo (dividend yield) de la oferta? (en %, un decimal)', placeholder:'Ej: 4.0', correct:4.0, tolerance:0.1, explain:'Rendimiento por dividendo = Dividendo por acción / Precio = 0.74 / 18.50 = 4.0%.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación a los clientes', icon:'ti-gavel',
+        intro:'Con el múltiplo comparado (etapas 1 y 2) y el rendimiento por dividendo (etapa 3), debes recomendar si tu firma sugiere participar en la oferta.',
+        verdictOptions:[
+          {v:'recomendar', label:'Recomendar la participación', desc:'El P/E relativamente bajo frente al sector y un rendimiento por dividendo de 4% hacen atractiva la oferta para clientes de perfil moderado.'},
+          {v:'cautela', label:'Recomendar con cautela, esperando más información', desc:'El P/E más bajo podría reflejar menor crecimiento esperado, no necesariamente una oportunidad — conviene revisar los estados financieros completos antes de comprometer capital de clientes.'},
+          {v:'no_recomendar', label:'No recomendar la participación', desc:'Sin más contexto sobre la calidad de las utilidades y el crecimiento futuro, el múltiplo bajo por sí solo no es garantía suficiente.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando tanto el múltiplo P/E comparado contra el sector (etapas 1 y 2) como el rendimiento por dividendo (etapa 3) — y qué información adicional, si la hay, pedirías antes de comprometer el capital de tus clientes.',
+      },
+    ],
+    summary:'Este caso trabaja la <b>valoración relativa por múltiplos</b>, la forma más común en que un analista de renta variable hace un primer filtro rápido sobre una oferta pública. El <b>P/E implícito</b> de la oferta (12.3x) resultó por debajo del promedio del sector (13.5x), una señal inicial de que el precio podría ser relativamente atractivo — pero el caso también entrena la disciplina de no quedarse solo con un múltiplo: el <b>rendimiento por dividendo</b> (4.0%) añade otra dimensión, y ninguna de las dos cifras reemplaza revisar la calidad real de las utilidades y el crecimiento esperado de la empresa.',
+    flashcards:[
+      {q:'¿Cómo se calcula el P/E (Precio/Utilidad)?', a:'Precio por acción dividido entre la utilidad por acción (UPA).'},
+      {q:'¿Qué sugiere un P/E por debajo del promedio del sector?', a:'Que el mercado está pidiendo pagar menos por cada dólar de utilidad de esa empresa frente a sus comparables — una señal inicial de que podría estar relativamente barata, aunque no es una conclusión definitiva por sí sola.'},
+    ],
+    glossary:[
+      {t:'P/E (Precio/Utilidad)', d:'Múltiplo que compara el precio de una acción con la utilidad por acción que genera la empresa — cuántos años de utilidad actual "cuesta" comprar la acción, en términos simples.'},
+      {t:'Rendimiento por dividendo (dividend yield)', d:'El dividendo anual por acción dividido entre el precio de la acción, expresado en porcentaje — cuánto retorno en efectivo recibe el inversionista cada año, sin contar la variación del precio.'},
+      {t:'Oferta pública inicial (OPI)', d:'La primera vez que una empresa ofrece sus acciones al público en una bolsa de valores.'},
+    ],
+    quiz:[
+      {q:'¿Qué mide el múltiplo P/E?', opts:['La deuda de una empresa','Cuánto paga el mercado por cada dólar de utilidad de la empresa','El margen bruto','El tipo de cambio'], correct:1},
+      {q:'¿Qué es el rendimiento por dividendo?', opts:['El precio de la acción dividido entre las ventas','El dividendo anual por acción dividido entre el precio de la acción','La utilidad neta total de la empresa','El P/E del sector'], correct:1},
+    ],
+  },
+  {
+    id:'mdofin-c3', expediente:'BVP-2026-041', role:'Analista de Riesgo Cambiario', materiasConectadas:['deriv'],
+    title:'Una importadora panameña decide si cubrirse del riesgo cambiario',
+    brief:'Distribuidora del Istmo importa maquinaria industrial de Alemania, facturada en euros. Firmó un contrato para pagar €2,000,000 en 90 días. El dólar (moneda de curso legal en Panamá) podría debilitarse o fortalecerse frente al euro en ese plazo. Te toca evaluar si conviene cubrir ese riesgo cambiario con un contrato forward, o asumirlo sin cobertura.',
+    character:{name:'Eduardo Chen', role:'Gerente Financiero, Distribuidora del Istmo, S.A.', quote:'"Si el euro sube frente al dólar antes de que paguemos, nos cuesta más caro en dólares. Necesito saber si conviene cerrar el tipo de cambio ya, o esperar."'},
+    facts:[['Monto a pagar','€2,000,000'],['Plazo','90 días'],['Tipo de cambio spot actual (USD por EUR)','1.08'],['Tipo de cambio forward a 90 días ofrecido por el banco','1.095'],['Costo del contrato forward','Sin costo directo, solo el diferencial de tasa implícito']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · El costo en dólares sin cobertura', icon:'ti-currency-dollar', competencia:'valoracion',
+        intro:'Primero hay que entender cuánto costaría el pago en dólares si el tipo de cambio se mantuviera igual al de hoy — el punto de partida antes de decidir si cubrirse o no.',
+        databox:{title:'Datos de la operación', rows:[['Monto a pagar','€2,000,000'],['Tipo de cambio spot actual','1.08 USD por EUR'],['Tipo de cambio forward a 90 días','1.095 USD por EUR']]},
+        questions:[
+          {type:'num', q:'Al tipo de cambio spot actual (1.08), ¿cuántos dólares costarían los €2,000,000 hoy? (en millones de US$, dos decimales)', placeholder:'Ej: 2.16', correct:2.16, tolerance:0.02, explain:'2,000,000 × 1.08 = US$2,160,000.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Cerrar el precio con un forward', icon:'ti-lock', competencia:'valoracion',
+        intro:'Un contrato forward permite fijar hoy el tipo de cambio al que se pagará en 90 días, eliminando la incertidumbre — a cambio de un tipo de cambio distinto al spot de hoy.',
+        questions:[
+          {type:'num', q:'Con el tipo de cambio forward ofrecido (1.095), ¿cuántos dólares costarían los €2,000,000 si se cubre con el forward? (en millones de US$, dos decimales)', placeholder:'Ej: 2.19', correct:2.19, tolerance:0.02, explain:'2,000,000 × 1.095 = US$2,190,000 — US$30,000 más que al tipo de cambio spot de hoy, el "precio" de la certeza que da el forward.'},
+          {type:'mc', q:'¿Por qué el tipo de cambio forward (1.095) es distinto al spot actual (1.08)?', opts:['Es un error del banco','Refleja el diferencial de tasas de interés entre las dos monedas durante el plazo del contrato, entre otros factores del mercado','El forward siempre es igual al spot','Depende únicamente de la opinión del banco'], correct:1, explain:'El tipo de cambio forward normalmente difiere del spot por el diferencial de tasas de interés entre las dos monedas durante el plazo — no es una opinión arbitraria del banco, sino un reflejo de condiciones de mercado.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Qué pasa si NO se cubre?', icon:'ti-alert-triangle', competencia:'valoracion',
+        intro:'La alternativa a cerrar el forward es esperar y pagar al tipo de cambio spot que exista dentro de 90 días — que puede ser mejor o peor que el forward de hoy.',
+        questions:[
+          {type:'mc', q:'Si en 90 días el euro se fortalece más de lo esperado y el tipo de cambio spot sube a 1.13, ¿qué hubiera pasado si la empresa NO se cubrió con el forward?', opts:['Habría pagado menos que con el forward','Habría pagado más que con el forward (2,000,000 × 1.13 = US$2,260,000, más que los US$2,190,000 del forward)','El resultado sería exactamente igual','El tipo de cambio spot no afecta el pago'], correct:1, explain:'Sin cobertura, la empresa paga al tipo de cambio que exista en ese momento — si sube a 1.13, pagaría US$2,260,000, US$70,000 más que si hubiera cerrado el forward a 1.095. Ese es exactamente el riesgo que el forward elimina.'},
+          {type:'mc', q:'¿Y si en cambio el euro se debilita y el spot baja a 1.05 dentro de 90 días? ¿Qué hubiera convenido más?', opts:['Haber cerrado el forward a 1.095','No haberse cubierto, pagando al spot más bajo de 1.05','Es imposible saberlo','Ambas opciones dan exactamente el mismo resultado'], correct:1, explain:'Si el euro se debilita, no cubrirse hubiera resultado en pagar menos (2,000,000 × 1.05 = US$2,100,000) que con el forward fijado en 1.095. El forward elimina tanto el riesgo de pagar más, como la posibilidad de beneficiarse si el tipo de cambio se mueve a favor.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación a la gerencia', icon:'ti-gavel',
+        intro:'Con el costo cierto del forward (etapa 2) y el riesgo real de no cubrirse en ambas direcciones (etapa 3), debes recomendar qué hacer.',
+        verdictOptions:[
+          {v:'cubrir', label:'Cerrar el forward a 1.095', desc:'Elimina por completo la incertidumbre sobre el costo del pago, a cambio de un costo cierto conocido desde hoy — adecuado si la empresa prioriza previsibilidad de flujo de caja sobre especular con el tipo de cambio.'},
+          {v:'no_cubrir', label:'No cubrirse y pagar al spot en 90 días', desc:'Conserva la posibilidad de pagar menos si el euro se debilita, pero asume el riesgo completo de pagar más si se fortalece.'},
+          {v:'parcial', label:'Cubrir solo una parte del monto (ej. 50%)', desc:'Reduce el riesgo sin eliminarlo por completo, ni renunciar del todo a la posibilidad de un tipo de cambio más favorable.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando el costo cierto de cubrirse (etapa 2) frente al riesgo real de no hacerlo en ambas direcciones (etapa 3) — y qué tan cómoda está la empresa asumiendo incertidumbre sobre un pago de este tamaño.',
+      },
+    ],
+    summary:'Este caso trabaja el <b>riesgo cambiario</b> desde la perspectiva de una empresa panameña con una obligación de pago en una moneda distinta al dólar. Un contrato <b>forward</b> permite fijar hoy el tipo de cambio de un pago futuro (1.095 en este caso, frente al spot de 1.08), eliminando la incertidumbre a cambio de un costo cierto. El caso muestra las dos caras de no cubrirse: si el euro se fortalece más de lo esperado, no cubrirse cuesta más caro que el forward; si se debilita, no cubrirse hubiera resultado en pagar menos. La decisión de cubrirse no es "acertar" el tipo de cambio futuro — es decidir cuánta incertidumbre está dispuesta a asumir la empresa.',
+    flashcards:[
+      {q:'¿Qué es un contrato forward de moneda?', a:'Un contrato que fija hoy el tipo de cambio al que se realizará una operación de cambio de divisas en una fecha futura, eliminando la incertidumbre sobre ese tipo de cambio.'},
+      {q:'¿Por qué el tipo de cambio forward suele ser distinto al spot?', a:'Principalmente por el diferencial de tasas de interés entre las dos monedas durante el plazo del contrato.'},
+    ],
+    glossary:[
+      {t:'Tipo de cambio spot', d:'El tipo de cambio vigente para una operación de cambio de divisas inmediata, hoy.'},
+      {t:'Tipo de cambio forward', d:'El tipo de cambio fijado hoy para una operación de cambio de divisas que se ejecutará en una fecha futura acordada.'},
+      {t:'Riesgo cambiario', d:'La exposición de una empresa a que el valor de sus pagos o cobros futuros en moneda extranjera cambie por movimientos en el tipo de cambio.'},
+    ],
+    quiz:[
+      {q:'¿Qué elimina un contrato forward de moneda?', opts:['El riesgo de crédito de la contraparte','La incertidumbre sobre el tipo de cambio de una operación futura','El riesgo de tasa de interés','Todos los riesgos de la empresa'], correct:1},
+      {q:'Si una empresa no se cubre y la moneda que debe pagar se fortalece frente al dólar, ¿qué le pasa al costo del pago?', opts:['Baja','Sube','No cambia','Depende del banco'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.mdofin.studyMaterial = {
