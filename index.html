@@ -6162,6 +6162,7 @@ async function cargarDashboardEstudiante(){
         ${debilidades.length ? `<div style="margin-top:${fortalezas.length?'12px':'10px'};"><b style="font-size:11.5px;color:var(--red);">NECESITA REFUERZO</b>${debilidades.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;"><span>${f.materia.title}</span><span style="color:var(--red);font-weight:700;">${Math.round(f.promedio)}%</span></div>`).join('')}</div>` : ''}
       </div>` : ''}
       <button class="btn btn-ghost" onclick="abrirTutorDeErrores()" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-brain" style="color:var(--red);"></i> Tutor de errores — patrones que se repiten</button>
+      <button class="btn" onclick="generarPortafolio()" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--gold),#e0a000);border:none;color:#1a1404;"><i class="ti ti-file-certificate"></i> Descargar mi portafolio académico</button>
       ${temasDebiles.length ? `<div class="card" style="margin-bottom:16px;">
         <div class="card-title"><i class="ti ti-target-arrow" style="color:var(--red)"></i> Temas para repasar</div>
         ${temasDebiles.map(([tema,info]) => `<div class="export-opt" style="cursor:pointer;" onclick="navSubject('${info.materia.id}')"><i class="ti ti-alert-triangle" style="color:var(--red);"></i><div><b>${tema}</b><span>${info.materia.title} · ${info.cuenta} error${info.cuenta===1?'':'es'}</span></div></div>`).join('')}
@@ -7101,6 +7102,58 @@ function abrirTutorDeErrores(){
     <button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:6px;" onclick="$('tutor-errores-overlay').remove()">Cerrar</button>
   </div>`;
   document.body.appendChild(overlay);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PORTAFOLIO ACADÉMICO AUTOMÁTICO — todo lo que el estudiante ha
+// hecho, convertido en un PDF profesional en segundos. Reutiliza el
+// mismo sistema de generación de PDF ya validado en el resto de la
+// app — no es un documento nuevo, es una nueva forma de presentar
+// datos que ya existen.
+// ═══════════════════════════════════════════════════════
+async function generarPortafolio(){
+  toast('Reuniendo tu portafolio…');
+  try {
+    const [{ data: examenes }, { data: tareasCalif }] = await Promise.all([
+      sb.from('academy_examenes_resultados').select('correctas,total,academy_examenes_asignados!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id),
+      sb.from('academy_entregas_tareas').select('calificacion,academy_tareas!inner(titulo,materia_id)').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
+    ]);
+    const notasExamenes = (examenes||[]).map(e=>e.correctas/e.total*100);
+    const notasTareas = (tareasCalif||[]).map(t=>t.calificacion);
+    const todasLasNotas = [...notasExamenes, ...notasTareas];
+    const promedio = todasLasNotas.length ? Math.round(todasLasNotas.reduce((a,b)=>a+b,0)/todasLasNotas.length) : null;
+
+    const casosResueltos = [];
+    SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+      const data = SUBJECT_DATA[s.id];
+      if(!data) return;
+      data.cases.forEach(c => {
+        const ans = studentAnswers[c.id];
+        if(ans?.score!==undefined) casosResueltos.push({ materia:s.title, caso:c.title, pct: Math.round(ans.score/ans.total*100) });
+      });
+    });
+
+    const mapaCompetencias = calcularMapaCompetencias();
+    const fechaHoy = new Date().toLocaleDateString('es-PA',{day:'2-digit',month:'long',year:'numeric'});
+
+    let cuerpo = `<h1>Portafolio académico</h1>
+      <div class="sub">${currentUser.nombre} · ${fechaHoy} · CapitalLab Academy</div>
+      <h2>Resumen</h2>
+      <div class="preg">Casos resueltos: <b>${casosResueltos.length}</b></div>
+      <div class="preg">Promedio general: <b>${promedio!==null?promedio+'%':'sin datos suficientes'}</b></div>`;
+
+    if(mapaCompetencias.length){
+      cuerpo += `<h2>Competencias desarrolladas</h2>` + mapaCompetencias.map(c => `<div class="preg">${c.nombre}: <b>${c.porcentaje}%</b></div>`).join('');
+    }
+    if(casosResueltos.length){
+      cuerpo += `<h2>Casos resueltos</h2>` + casosResueltos.map(c => `<div class="preg">${c.caso} <span class="resp">(${c.materia})</span> — <b>${c.pct}%</b></div>`).join('');
+    }
+    if(!casosResueltos.length && !mapaCompetencias.length){
+      cuerpo += `<h2>Todavía no hay actividad suficiente</h2><div class="preg">Resuelve algunos casos primero para que tu portafolio tenga contenido real que mostrar.</div>`;
+    }
+
+    await abrirVentanaImpresion(`Portafolio académico — ${currentUser.nombre}`, cuerpo);
+  } catch(e){ toast('No se pudo generar el portafolio: ' + (e.message||e)); }
 }
 function abrirMisPuntosDebiles(){
   const debiles = [];
