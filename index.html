@@ -899,7 +899,7 @@ const MENTOR_QUOTES = {
 // Cada materia: { cases: [ {id, expediente, role, title, brief, character:{name,role,quote}, facts:[], stages:[...], summary, flashcards:[], glossary:[], quiz:[] } ], casesPlanned:3 }
 const SUBJECT_DATA = {};
 
-SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
+SUBJECT_DATA.banmer = { casesPlanned:4, cases:[
   {
     id:'banmer-c1', expediente:'SBP-2026-101', role:'Analista de Supervisión Bancaria',
     title:'Diagnóstico prudencial de un banco de plaza panameño',
@@ -1086,6 +1086,59 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
     quiz:[
       {q:'¿Qué busca verificar la debida diligencia en una compra bancaria?', opts:['Solo el nombre legal de la empresa','La veracidad de la información financiera y de riesgo reportada por el vendedor','El color del logo del banco','Nada, es un trámite solo formal'], correct:1},
       {q:'Si la cartera vencida real es mayor a la reportada, ¿qué pasa con el patrimonio real del banco?', opts:['Aumenta','Disminuye','Se mantiene igual','No tiene relación'], correct:1},
+    ],
+  },
+  {
+    id:'banmer-c4', expediente:'SBP-2026-118', role:'Analista de Fondeo y Capital', materiasConectadas:['mdofin'],
+    title:'Un banco panameño emite bonos para fortalecer su capital',
+    brief:'El Banco Itsmeño necesita reforzar su Índice de Adecuación de Capital antes del próximo ciclo de supervisión. La junta decide emitir bonos subordinados en la Bolsa de Valores de Panamá. Te toca evaluar si la emisión realmente resuelve el problema de capital, y a qué costo real.',
+    character:{name:'Roberto Saavedra', role:'Gerente General, Banco Itsmeño, S.A.', quote:'"Necesitamos capital fresco antes de la próxima revisión de la SBP. La pregunta es cuánto nos va a costar de verdad conseguirlo en el mercado."'},
+    facts:[['IAC actual','9.1%'],['Mínimo regulatorio SBP','8%'],['Monto de la emisión de bonos subordinados','US$ 25,000,000'],['Plazo','7 años'],['Cupón ofrecido','7.25% anual'],['Precio de colocación','97% del valor nominal'],['Activos ponderados por riesgo','US$ 950,000,000']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · ¿El bono sí cuenta como capital?', icon:'ti-building-bank', competencia:'regulacion_bancaria',
+        intro:'No toda deuda que emite un banco cuenta para el IAC. Un bono subordinado, si cumple ciertas condiciones regulatorias (plazo largo, sin garantía, y que en caso de quiebra se paga después que los depositantes), puede reconocerse como capital complementario — pero no siempre al 100% del monto.',
+        databox:{title:'Datos de la emisión', rows:[['IAC actual','9.1%'],['Monto de bonos subordinados','US$ 25,000,000'],['Reconocimiento regulatorio como capital','80% del monto emitido'],['Activos ponderados por riesgo','US$ 950,000,000']]},
+        questions:[
+          {type:'num', q:'Si el bono se reconoce como capital al 80% de su monto, ¿cuánto capital adicional real le suma al banco? (en millones de US$, un decimal)', placeholder:'Ej: 20.0', correct:20.0, tolerance:0.5, explain:'US$25 millones × 80% = US$20 millones de capital adicional reconocido — no los US$25 millones completos que se emitieron.', patronConfusion:'solvencia_vs_liquidez'},
+          {type:'mc', q:'¿Por qué un bono subordinado no se reconoce al 100% de su monto como capital regulatorio?', opts:['Es un error del regulador sin justificación','Porque sigue siendo deuda que el banco debe repagar, a diferencia del capital de los accionistas que no tiene que devolverse','Porque los bonos siempre pierden valor','Porque el plazo es demasiado corto'], correct:1, explain:'A diferencia del capital accionario, un bono subordinado es deuda — el banco está obligado a pagarlo. Por eso los reguladores solo lo reconocen parcialmente como colchón de capital, no como capital "puro".'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · El IAC después de la emisión', icon:'ti-calculator', competencia:'regulacion_bancaria',
+        intro:'Con el capital adicional reconocido, hay que recalcular el IAC para confirmar si de verdad resuelve el problema.',
+        questions:[
+          {type:'num', q:'El banco tenía capital regulatorio de US$ 86,450,000 (que da el IAC de 9.1% sobre US$ 950,000,000 en activos ponderados). Sumando los US$20 millones reconocidos del bono, ¿cuál es el nuevo IAC? (en %, un decimal)', placeholder:'Ej: 11.2', correct:11.2, tolerance:0.2, explain:'Nuevo capital = 86,450,000 + 20,000,000 = 106,450,000. Nuevo IAC = 106,450,000 / 950,000,000 = 11.2% — bien por encima del mínimo de 8%, y con más margen que antes de la emisión.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · El costo real de este capital', icon:'ti-chart-candle', competencia:'valoracion',
+        intro:'Ahora el problema cambia de materia: como analista, no basta con saber que el IAC mejora — hay que entender qué tan caro es este capital comparado con otras formas de fondearse. Esto es lectura de mercado de valores, no supervisión bancaria.',
+        databox:{title:'Términos de la emisión de bonos', rows:[['Cupón nominal','7.25% anual'],['Precio de colocación','97% del valor nominal'],['Plazo','7 años']]},
+        questions:[
+          {type:'mc', q:'El bono se coloca al 97% del valor nominal, pero paga 100% al vencimiento. ¿Qué efecto tiene esto sobre el costo efectivo de este capital para el banco, comparado con el cupón nominal de 7.25%?', opts:['Lo reduce, porque el banco recibe menos dinero hoy','Lo aumenta, porque el banco recibe menos efectivo del que tendrá que devolver a la par en 7 años','No tiene ningún efecto sobre el costo','Depende únicamente de la calificación de riesgo del banco'], correct:1, explain:'Exactamente el mismo principio que en cualquier bono corporativo del mercado de valores: si el banco recibe 97 pero debe devolver 100, ese descuento de colocación hace que el costo efectivo de esta deuda sea mayor al 7.25% nominal — el mismo cálculo que se hace al evaluar cualquier emisión en la Bolsa de Valores de Panamá.'},
+          {type:'mc', q:'Comparado con emitir más acciones (capital puro, sin obligación de repago fijo), ¿qué ventaja y qué desventaja tiene fondearse con este bono subordinado?', opts:['No tiene ninguna diferencia real','Ventaja: no diluye a los accionistas actuales. Desventaja: es una obligación fija que hay que pagar sin importar cómo le vaya al banco','Ventaja: es más barato siempre. Desventaja: ninguna','Emitir acciones siempre es mejor en cualquier escenario'], correct:1, explain:'El bono no diluye la propiedad de los accionistas actuales (a diferencia de emitir más acciones), pero a cambio el banco asume una obligación de pago fija — intereses y principal — que debe cumplir sin importar si el banco tiene un buen o mal período, a diferencia de un dividendo que se puede reducir o no pagar.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al comité', icon:'ti-gavel',
+        intro:'Con el análisis regulatorio (etapas 1 y 2) y el análisis de mercado de valores (etapa 3) completos, debes recomendar si esta es la mejor forma de resolver el problema de capital.',
+        verdictOptions:[
+          {v:'proceder', label:'Proceder con la emisión de bonos', desc:'El IAC mejora considerablemente (de 9.1% a 11.2%) y el banco conserva el control accionario, a pesar del costo efectivo mayor al cupón nominal.'},
+          {v:'accion', label:'Recomendar emitir acciones en su lugar', desc:'Aunque diluye a los accionistas actuales, evita comprometer al banco con pagos fijos obligatorios en los próximos 7 años.'},
+          {v:'mixta', label:'Proponer una combinación de ambas fuentes', desc:'Reduce tanto la dilución accionaria como la carga total de deuda fija, repartiendo el riesgo entre ambas fuentes de capital.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando tanto el efecto regulatorio sobre el IAC (etapas 1 y 2) como el costo real de este capital frente a otras alternativas de fondeo (etapa 3) — un banco fuerte en supervisión pero mal fondeado en el mercado de capitales sigue siendo un banco en problemas.',
+      },
+    ],
+    summary:'Este caso conecta dos materias que en la práctica profesional nunca están separadas: la <b>supervisión bancaria</b> (¿el bono realmente mejora el IAC, y cuánto?) y los <b>mercados financieros</b> (¿qué tan caro es este capital comparado con otras alternativas de fondeo?). Un analista que solo domina una de las dos partes se queda a medias — el IAC mejoró de 9.1% a 11.2%, pero ese capital tiene un costo efectivo real por encima del cupón nominal del 7.25%, exactamente el mismo tipo de cálculo que se hace al evaluar cualquier bono en la Bolsa de Valores de Panamá.',
+    flashcards:[
+      {q:'¿Por qué un bono subordinado no se reconoce al 100% de su monto como capital regulatorio?', a:'Porque sigue siendo deuda que el banco debe repagar, a diferencia del capital accionario que no tiene obligación de devolución.'},
+      {q:'Si un bono se coloca por debajo de su valor nominal, ¿qué pasa con su costo efectivo frente al cupón nominal?', a:'Sube — el banco recibe menos dinero hoy del que tendrá que devolver a la par al vencimiento.'},
+    ],
+    glossary:[
+      {t:'Bono subordinado', d:'Un bono que, en caso de quiebra del emisor, se paga después que otras deudas (como los depósitos de un banco) — por ese mayor riesgo, suele pagar una tasa más alta, y bajo ciertas condiciones puede reconocerse parcialmente como capital regulatorio.'},
+      {t:'Capital complementario', d:'Capital regulatorio de menor calidad que el capital accionario puro, que algunos instrumentos de deuda (como bonos subordinados) pueden aportar bajo condiciones específicas del regulador.'},
+    ],
+    quiz:[
+      {q:'¿Qué tipo de instrumento puede reconocerse parcialmente como capital regulatorio bajo ciertas condiciones?', opts:['Un depósito a la vista','Un bono subordinado','Una cuenta de ahorros','Un préstamo hipotecario'], correct:1},
+      {q:'¿Qué le pasa al costo efectivo de un bono si se coloca por debajo de su valor nominal?', opts:['Baja','Sube','No cambia','Depende solo del plazo'], correct:1},
     ],
   },
 ]};
@@ -4097,6 +4150,7 @@ function renderSubjectView(subjectId){
         <span class="casetype"><i class="ti ti-layers-intersect"></i> Caso extenso · 5 etapas</span>
         <h3>${c.title}</h3>
         <div class="sub">${c.brief.slice(0,130)}${c.brief.length>130?'…':''}</div>
+        ${c.materiasConectadas?.length ? `<div style="margin:6px 0;font-size:10.5px;color:var(--teal);"><i class="ti ti-arrows-cross"></i> Conecta con: ${c.materiasConectadas.map(mid=>SUBJECTS.find(s=>s.id===mid)?.title).filter(Boolean).join(', ')}</div>` : ''}
         <div class="case-meta">
           <span class="meta-pill"><i class="ti ti-clock"></i> 35–50 min</span>
           <span class="meta-pill"><i class="ti ti-user"></i> ${c.character.name}</span>
@@ -4369,6 +4423,7 @@ function renderCase(){
         </div>
       </div>
       <div class="brief">${c.brief}</div>
+      ${c.materiasConectadas?.length ? `<div class="card" style="border-color:var(--teal);margin-bottom:16px;padding:10px 14px;"><i class="ti ti-arrows-cross" style="color:var(--teal);"></i> <b>Este caso conecta con:</b> ${c.materiasConectadas.map(mid=>SUBJECTS.find(s=>s.id===mid)?.title).filter(Boolean).join(', ')} — necesitas conceptos de ambas materias para resolverlo bien.</div>` : ''}
       <div class="docfacts">${c.facts.map(f=>`<div><div class="k">${f[0]}</div><div class="v">${f[1]}</div></div>`).join('')}</div>
       <div style="display:flex;gap:8px;margin-top:18px;overflow-x:auto;padding-bottom:4px;">${stageNav}</div>
     </div>
