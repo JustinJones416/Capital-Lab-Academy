@@ -584,6 +584,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-foro" class="hidden"></section>
     <section id="view-dashboard" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
+    <section id="view-simulacion" class="hidden"></section>
 
     <!-- ░░░ VISTA DE MATERIA ░░░ -->
     <section id="view-subject" class="hidden"></section>
@@ -1089,6 +1090,63 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
   },
 ]};
 
+SUBJECT_DATA.banmer.simulaciones = [
+  {
+    id: 'sim-banmer-gerente-creditos',
+    titulo: 'Gerente de Créditos — Banco Itsmeño',
+    rolJugador: 'Gerente de Créditos',
+    descripcion: 'No vas a responder preguntas sobre un banco — vas a administrar uno. Cada decisión que tomes esta semana afecta los números de la semana siguiente. No hay una sola respuesta correcta: hay compromisos, y cada uno tiene un costo.',
+    kpisIniciales: { utilidad: 45000, liquidez: 280000, roe: 11, flujoCaja: 60000, endeudamiento: 42, participacionMercado: 7.5 },
+    rondas: [
+      { titulo:'Ronda 1 — Una solicitud de crédito con historial mixto',
+        contexto:'Una empresa mediana solicita US$180,000 para expandir su inventario. Su historial de pago es aceptable, pero no sobresaliente, y su sector viene de un año difícil.',
+        opciones: [
+          { texto:'Aprobar el crédito completo, sin garantía adicional', efectos:{utilidad:9000, liquidez:-180000, endeudamiento:6, participacionMercado:0.5},
+            resultado:'Aprobaste el crédito completo. Ganaste un cliente agradecido y algo de participación de mercado, pero tu liquidez bajó fuerte y tu exposición a un solo cliente riesgoso subió — si algo sale mal con esta empresa, lo sentirás en la ronda siguiente.'},
+          { texto:'Aprobar solo el 60%, exigiendo garantía real', efectos:{utilidad:4000, liquidez:-108000, endeudamiento:3, participacionMercado:0.1},
+            resultado:'Un término intermedio. El cliente acepta, aunque menos entusiasmado. Tu exposición es menor, y la garantía te protege si el cliente no paga — el costo es una relación algo más fría con esa empresa.'},
+          { texto:'Rechazar la solicitud', efectos:{utilidad:0, liquidez:0, participacionMercado:-1.2},
+            resultado:'Protegiste tu liquidez por completo, pero el cliente se fue a un banco competidor. Tu participación de mercado bajó — y ese cliente, si le va bien, nunca vuelve.'},
+        ]},
+      { titulo:'Ronda 2 — El mismo cliente pide reestructurar',
+        contexto:'Semanas después, la empresa a la que le prestaste (si aprobaste algo) pide reestructurar su deuda: el sector no se recuperó como esperaban.',
+        opciones: [
+          { texto:'Reestructurar con una quita parcial del 15%', efectos:{utilidad:-6750, liquidez:15000, endeudamiento:-2},
+            resultado:'Aceptaste perder parte de lo prestado para recuperar el resto de forma segura. Tu utilidad se resiente, pero evitas un impago total, que hubiera sido mucho peor para tu liquidez a mediano plazo.'},
+          { texto:'Mantener los términos originales, sin ceder', efectos:{utilidad:0, liquidez:-5000, endeudamiento:1},
+            resultado:'Te mantuviste firme. El cliente sigue pagando, a duras penas, pero el riesgo de un impago completo más adelante sigue sobre la mesa — no resolviste el problema, solo lo aplazaste.'},
+          { texto:'Refinanciar extendiendo el plazo a cambio de una tasa mayor', efectos:{utilidad:2000, liquidez:-2000, endeudamiento:0},
+            resultado:'Le diste aire al cliente sin perder dinero de inmediato — a cambio de una tasa más alta que compensa el riesgo extra. Es la opción que más equilibrio busca entre ambas partes.'},
+        ]},
+      { titulo:'Ronda 3 — Inversión en la plataforma digital del banco',
+        contexto:'Tu comité te pregunta si vale la pena invertir en modernizar la banca digital, mientras la competencia ya lo está haciendo.',
+        opciones: [
+          { texto:'Invertir fuerte — US$40,000 en la plataforma', efectos:{utilidad:-15000, flujoCaja:-40000, participacionMercado:2.5},
+            resultado:'Una apuesta fuerte a futuro. Tu flujo de caja y tu utilidad de este período se resienten bastante, pero ganas terreno real frente a la competencia — si la inversión da resultado, se paga sola en las próximas rondas.'},
+          { texto:'Invertir de forma moderada — US$15,000', efectos:{utilidad:-4000, flujoCaja:-15000, participacionMercado:0.8},
+            resultado:'Un paso intermedio, razonable. No te quedas atrás del todo, pero tampoco apuestas todo el flujo de caja a una sola decisión.'},
+          { texto:'No invertir este período', efectos:{flujoCaja:3000, participacionMercado:-1.5},
+            resultado:'Conservaste tu caja, pero la competencia sí invirtió. Perdiste participación de mercado — los clientes jóvenes, sobre todo, empiezan a irse a bancos con mejor plataforma.'},
+        ]},
+      { titulo:'Ronda 4 — ¿Emitir bonos para fondear el crecimiento?',
+        contexto:'El banco necesita capital fresco para seguir creciendo. Tu equipo de finanzas propone emitir bonos corporativos.',
+        opciones: [
+          { texto:'Emitir bonos por US$100,000', efectos:{liquidez:100000, endeudamiento:8, utilidad:-2000},
+            resultado:'Conseguiste liquidez real para seguir prestando y creciendo, pero tu endeudamiento sube, y ahora tienes intereses fijos que pagar sin importar cómo te vaya — eso reduce tu margen de maniobra si viene un mal período.'},
+          { texto:'No emitir — crecer con lo que ya tienes', efectos:{participacionMercado:-0.8},
+            resultado:'Tu estructura de capital se mantiene sana, sin deuda adicional — pero creces más lento que quien sí se financió, y eso también tiene un costo: participación de mercado que no ganaste.'},
+        ]},
+      { titulo:'Ronda 5 — Cierre del período: ¿dividendos o reinversión?',
+        contexto:'Termina el período. El directorio te pregunta: ¿reparten utilidades a los accionistas, o lo reinvierten todo en el banco?',
+        opciones: [
+          { texto:'Repartir dividendos altos a los accionistas', efectos:{liquidez:-25000, flujoCaja:-25000, roe:1.5},
+            resultado:'Los accionistas quedan contentos de inmediato, y tu ROE sube porque devolviste capital — pero tu liquidez y tu flujo de caja quedan más ajustados para el siguiente período.'},
+          { texto:'Reinvertir todo en el banco', efectos:{liquidez:15000, flujoCaja:15000, roe:-1},
+            resultado:'Fortaleces el banco a futuro — más colchón de liquidez y de caja — pero el ROE de este período se ve menos atractivo, ya que no le devolviste nada a quienes invirtieron su dinero en el banco.'},
+        ]},
+    ],
+  },
+];
 SUBJECT_DATA.banmer.studyMaterial = {
   libro:[
     { titulo:'De dónde sale la plata que presta un banco', texto:`Cuando alguien deposita dinero en un banco, casi nunca piensa en lo que pasa después. El dinero no se queda guardado en una bóveda esperando a que su dueño lo pida de vuelta: el banco lo presta a otras personas y empresas, cobra intereses por ese préstamo, y con esa diferencia se sostiene el negocio entero. Esto significa algo que conviene tener presente desde el primer capítulo: un banco opera, en gran parte, con dinero que no es suyo. Es dinero de terceros — de miles de depositantes que confían en poder retirarlo cuando lo necesiten.<br><br>Esa confianza es frágil, y por eso existe toda una capa de reglas pensadas para protegerla. La primera pregunta que se hace cualquier supervisor bancario, o cualquier analista serio, es: si algo sale mal — si varios préstamos dejan de pagarse a la vez, si el banco tomó decisiones imprudentes — ¿tiene el banco suficiente capital propio para absorber ese golpe antes de que le toque a los depositantes perder algo? Esa capacidad de aguante se mide con un número concreto: el Índice de Adecuación de Capital, o IAC. Se calcula dividiendo el capital regulatorio del banco entre sus activos ponderados por riesgo, y en Panamá la Superintendencia de Bancos exige que ese número nunca baje de 8%.<br><br>Pensemos en un ejemplo real. Un banco con US$ 40 millones de capital regulatorio y US$ 380 millones en activos ponderados por riesgo tiene un IAC de 40 entre 380, es decir, 10.5%. A simple vista, ese banco cumple — está por encima del mínimo. Pero un analista cuidadoso no se detiene ahí: el colchón real por encima del piso regulatorio es de apenas 2.5 puntos porcentuales. Si ese mismo banco tuviera 15% de IAC, la conversación sería completamente distinta, porque el margen de maniobra ante una sorpresa desagradable sería mucho mayor. El número que cumple el mínimo y el número que da tranquilidad real no son la misma cosa, aunque ambos "pasen" la regla.` },
@@ -2258,7 +2316,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -2925,10 +2983,18 @@ async function verEntregasTarea(tareaId, titulo){
 // se veía hasta cerrar y volver a abrir el panel.
 async function cargarContenidoEntregas(tareaId){
   try {
-    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,rubrica_id,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
+    const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,rubrica_id,usuario_id,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
     const { data: rubricas } = await sb.from('academy_rubricas').select('id,nombre,criterios').eq('grupo_id', currentUser.grupo_id);
     window.__rubricasCache = rubricas||[];
+    // Antes esta lista solo mostraba a quien ya había entregado — no
+    // había ninguna forma de calificar a quien nunca lo hizo. Ahora se
+    // trae también a todos los estudiantes inscritos, y a quien le
+    // falte se le muestra aparte, con la opción de calificarlo igual
+    // (por ejemplo, con un 0 y un comentario de por qué).
+    const { data: membresias } = await sb.from('academy_membresias').select('usuario_id, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+    const idsConEntrega = new Set((entregas||[]).map(e=>e.usuario_id));
+    const sinEntregar = (membresias||[]).filter(m=>!idsConEntrega.has(m.usuario_id));
     $('ver-entregas-contenido').innerHTML = `
       ${rubricas?.length ? `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-list-check"></i> Gestionar rúbricas</button>` : `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-plus"></i> Crear una rúbrica de evaluación</button>`}
     ` + (entregas?.length ? entregas.map(e => `
@@ -2949,10 +3015,21 @@ async function cargarContenidoEntregas(tareaId){
             <input type="number" min="0" max="100" id="calif-${e.id}" value="${e.calificacion??''}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
           </div>
           <textarea id="coment-${e.id}" placeholder="Comentario para el estudiante (opcional)" rows="3" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:8px;">${e.comentario_docente||''}</textarea>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('${e.id}')"><i class="ti ti-check"></i> Guardar</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('${e.id}','${tareaId}')"><i class="ti ti-check"></i> Guardar</button>
         </div>
         ${e.calificacion!==null ? `<div style="font-size:11px;color:var(--green);margin-top:6px;"><i class="ti ti-circle-check"></i> Ya calificada — ${e.calificacion}/100</div>` : ''}
-      </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>');
+      </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>')
+    + (sinEntregar.length ? `<div class="card-title" style="margin:16px 0 10px;color:var(--red);"><i class="ti ti-alert-triangle"></i> Sin entregar (${sinEntregar.length})</div>` + sinEntregar.map(m => `
+      <div class="card" style="margin-bottom:10px;border-color:var(--red);">
+        <b>${m.academy_usuarios.nombre}</b><span style="font-size:11px;color:var(--red);margin-left:8px;">no ha entregado</span>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--c3);">
+          <div id="calif-bloque-nuevo-${m.usuario_id}">
+            <input type="number" min="0" max="100" id="calif-nuevo-${m.usuario_id}" placeholder="0-100" style="width:70px;padding:7px 8px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;">
+          </div>
+          <textarea id="coment-nuevo-${m.usuario_id}" placeholder="Comentario (ej: por qué no entregó, o la calificación)" rows="2" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:8px;"></textarea>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('nuevo-${m.usuario_id}','${tareaId}')"><i class="ti ti-check"></i> Calificar de todos modos</button>
+        </div>
+      </div>`).join('') : '');
   } catch(e){
     $('ver-entregas-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
@@ -2966,9 +3043,10 @@ async function descargarEntregaArchivo(ruta, nombre){
     a.click();
   } catch(e){ toast('No se pudo descargar: ' + (e.message||e)); }
 }
-async function guardarRetroalimentacionTarea(entregaId){
+async function guardarRetroalimentacionTarea(entregaId, tareaId){
   const calificacion = $('calif-'+entregaId).value;
   const comentario = $('coment-'+entregaId).value.trim();
+  const esNuevo = entregaId.startsWith('nuevo-');
   const rubricaId = $('rubrica-usada-'+entregaId)?.value || null;
   let rubricaPuntajes = null;
   if(rubricaId){
@@ -2976,22 +3054,36 @@ async function guardarRetroalimentacionTarea(entregaId){
     rubricaPuntajes = rubrica.criterios.map((c,i) => ({ nombre:c.nombre, puntaje: parseInt($('rub-'+entregaId+'-'+i).value)||0, puntos_max:c.puntos_max }));
   }
   try {
-    const { error } = await sb.from('academy_entregas_tareas').update({ calificacion: calificacion?parseInt(calificacion):null, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString(), rubrica_id: rubricaId, rubrica_puntajes: rubricaPuntajes }).eq('id', entregaId);
-    if(error) throw error;
+    let usuarioId, tareaIdFinal;
+    if(esNuevo){
+      // Nunca entregó — se crea la entrega directamente con la
+      // calificación del docente, para no dejarlo sin nota.
+      usuarioId = entregaId.replace('nuevo-','');
+      tareaIdFinal = tareaId;
+      const { error } = await sb.from('academy_entregas_tareas').insert({ tarea_id: tareaId, usuario_id: usuarioId, contenido: '(No entregada — calificada directamente por el docente)', calificacion: calificacion?parseInt(calificacion):0, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString(), rubrica_id: rubricaId, rubrica_puntajes: rubricaPuntajes });
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('academy_entregas_tareas').update({ calificacion: calificacion?parseInt(calificacion):null, comentario_docente: comentario||null, retroalimentado_en: new Date().toISOString(), rubrica_id: rubricaId, rubrica_puntajes: rubricaPuntajes }).eq('id', entregaId);
+      if(error) throw error;
+      const { data: entrega } = await sb.from('academy_entregas_tareas').select('usuario_id, tarea_id').eq('id', entregaId).maybeSingle();
+      usuarioId = entrega?.usuario_id; tareaIdFinal = entrega?.tarea_id;
+    }
     toast('Retroalimentación guardada.');
     // Antes esto quedaba guardado sin avisarle a nadie — el estudiante
     // solo se enteraba si volvía a entrar a revisar por su cuenta.
-    const { data: entrega } = await sb.from('academy_entregas_tareas').select('usuario_id, tarea_id, academy_tareas!inner(titulo,materia_id)').eq('id', entregaId).maybeSingle();
-    if(entrega){
-      await sb.from('academy_notificaciones').insert({
-        usuario_id: entrega.usuario_id, tipo:'contenido_editado',
-        mensaje: `Tu profesor calificó tu tarea "${entrega.academy_tareas.titulo}"${calificacion?` — ${calificacion}/100`:''}.`,
-        referencia_materia: entrega.academy_tareas.materia_id,
-      });
+    if(usuarioId && tareaIdFinal){
+      const { data: tareaInfo } = await sb.from('academy_tareas').select('titulo,materia_id').eq('id', tareaIdFinal).maybeSingle();
+      if(tareaInfo){
+        await sb.from('academy_notificaciones').insert({
+          usuario_id: usuarioId, tipo:'contenido_editado',
+          mensaje: `Tu profesor calificó tu tarea "${tareaInfo.titulo}"${calificacion?` — ${calificacion}/100`:''}.`,
+          referencia_materia: tareaInfo.materia_id,
+        });
+      }
       // Antes esto se quedaba tal cual estaba en pantalla hasta cerrar
       // y volver a abrir — ahora se refresca al instante para que se
       // vea guardado de verdad, no solo el aviso pasajero.
-      if($('ver-entregas-overlay')) cargarContenidoEntregas(entrega.tarea_id);
+      if($('ver-entregas-overlay')) cargarContenidoEntregas(tareaIdFinal);
     }
   } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
@@ -3067,13 +3159,15 @@ async function guardarApunteEstructurado(){
   if(!titulo){ toast('Ponle un título a tu apunte.'); return; }
   try {
     if(apunteActualId){
-      await sb.from('academy_apuntes').update({ titulo, materia_id: materia, contenido, actualizado_en: new Date().toISOString() }).eq('id', apunteActualId);
+      const { error } = await sb.from('academy_apuntes').update({ titulo, materia_id: materia, contenido, actualizado_en: new Date().toISOString() }).eq('id', apunteActualId);
+      if(error) throw error;
     } else {
       const { data, error } = await sb.from('academy_apuntes').insert({ usuario_id: currentUser.usuario_id, materia_id: materia, titulo, contenido }).select().single();
       if(error) throw error;
       apunteActualId = data.id;
     }
     toast('Apunte guardado.');
+    notificarSeguidoresDeApunteNuevo(materia, titulo);
     cargarListaApuntesEstructurados();
   } catch(e){ toast('No se pudo guardar: ' + (e.message||e)); }
 }
@@ -3335,6 +3429,7 @@ function mostrarTipPersonalizadoSiCorresponde(subjectId){
 // materia completa.
 // ═══════════════════════════════════════════════════════
 let libroState = null;
+let simulacionState = null;
 function iniciarModoLibro(subjectId){
   const libroEscrito = SUBJECT_DATA[subjectId].studyMaterial?.libro;
   let capitulos, esNarrativo;
@@ -3423,9 +3518,111 @@ function avanzarDespuesDeCapitulo(){
     </div>`;
   }
 }
-function salirDelModoLibro(subjectId){
-  if(confirm('¿Salir del modo libro? Tu progreso en esta lectura se perderá.')){
-    libroState = null;
+
+// ═══════════════════════════════════════════════════════
+// SIMULADOR DE DECISIONES — la pieza distinta a todo lo demás: en vez
+// de responder una pregunta y ver si acertó, el estudiante administra
+// un banco durante varias rondas. Cada decisión que toma cambia los
+// números de la ronda siguiente — no hay una sola respuesta correcta,
+// hay compromisos, y cada uno tiene un costo real.
+// ═══════════════════════════════════════════════════════
+const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'] };
+function formatearValorKpi(clave, valor){
+  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado') return valor.toFixed(1)+'%';
+  return 'US$ '+Math.round(valor).toLocaleString('es-PA');
+}
+async function abrirSimulacion(subjectId, simId){
+  const sim = SUBJECT_DATA[subjectId].simulaciones.find(s=>s.id===simId);
+  if(!sim) return;
+  let progreso = null;
+  try {
+    const { data } = await sb.from('academy_simulacion_progreso').select('*').eq('simulacion_id', simId).eq('usuario_id', currentUser.usuario_id).maybeSingle();
+    progreso = data;
+  } catch(e){ /* si falla, se empieza de cero */ }
+  simulacionState = {
+    subjectId, sim,
+    rondaActual: progreso?.ronda_actual ?? 0,
+    kpis: progreso?.estado_actual || { ...sim.kpisIniciales },
+    decisiones: progreso?.decisiones_tomadas || [],
+    completada: progreso?.completada || false,
+  };
+  showView('view-simulacion');
+  if(simulacionState.completada) dibujarResultadoFinalSimulacion();
+  else dibujarRondaSimulacion();
+}
+function dibujarBarraKpis(){
+  const k = simulacionState.kpis;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:18px;">
+    ${Object.entries(ETIQUETAS_KPI).map(([clave,[etiqueta,icono]]) => `<div class="card" style="padding:10px;text-align:center;"><i class="ti ${icono}" style="font-size:16px;color:var(--rose);"></i><div style="font-size:13px;font-weight:800;margin-top:2px;">${formatearValorKpi(clave, k[clave])}</div><div style="font-size:9px;color:var(--t3);">${etiqueta}</div></div>`).join('')}
+  </div>`;
+}
+function dibujarRondaSimulacion(){
+  const st = simulacionState;
+  const cont = $('view-simulacion');
+  const ronda = st.sim.rondas[st.rondaActual];
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    <button class="btn btn-ghost btn-sm" onclick="salirDeSimulacion('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir de la simulación</button>
+    <div class="eyebrow" style="color:var(--rose);"><i class="ti ti-building-bank"></i> ${st.sim.titulo} · Ronda ${st.rondaActual+1} de ${st.sim.rondas.length}</div>
+  </div>
+  ${dibujarBarraKpis()}
+  <div class="card">
+    <h2 style="font-size:17px;margin-bottom:8px;">${ronda.titulo}</h2>
+    <p style="font-size:13.5px;line-height:1.6;color:var(--t2);margin-bottom:16px;">${ronda.contexto}</p>
+    <div id="sim-opciones">${ronda.opciones.map((o,i)=>`<div class="q-opt" onclick="elegirOpcionSimulacion(${i})"><span class="dot"></span>${o.texto}</div>`).join('')}</div>
+    <div id="sim-resultado" class="hidden" style="margin-top:14px;"></div>
+  </div>`;
+}
+async function elegirOpcionSimulacion(indice){
+  const st = simulacionState;
+  const ronda = st.sim.rondas[st.rondaActual];
+  const opcion = ronda.opciones[indice];
+  Object.entries(opcion.efectos||{}).forEach(([clave,delta]) => { st.kpis[clave] = (st.kpis[clave]||0) + delta; });
+  st.decisiones.push({ ronda: st.rondaActual, texto: opcion.texto });
+  document.querySelectorAll('#sim-opciones .q-opt').forEach(el=>el.style.pointerEvents='none');
+  const cont = $('sim-resultado');
+  cont.classList.remove('hidden');
+  cont.innerHTML = `<div class="q-feedback show ${Object.values(opcion.efectos||{}).reduce((a,b)=>a+b,0)>=0?'ok':'bad'}">${opcion.resultado}</div>
+    <button class="btn" style="margin-top:10px;width:100%;" onclick="avanzarRondaSimulacion()">${st.rondaActual<st.sim.rondas.length-1?'Siguiente ronda':'Ver el resultado final'} <i class="ti ti-arrow-right"></i></button>`;
+  guardarProgresoSimulacion();
+}
+async function guardarProgresoSimulacion(){
+  const st = simulacionState;
+  try {
+    await sb.from('academy_simulacion_progreso').upsert({
+      simulacion_id: st.sim.id, usuario_id: currentUser.usuario_id, ronda_actual: st.rondaActual,
+      estado_actual: st.kpis, decisiones_tomadas: st.decisiones, completada: st.completada,
+    }, { onConflict:'simulacion_id,usuario_id' });
+  } catch(e){ /* no interrumpir la simulación por un fallo de guardado */ }
+}
+function avanzarRondaSimulacion(){
+  const st = simulacionState;
+  if(st.rondaActual < st.sim.rondas.length-1){
+    st.rondaActual++;
+    dibujarRondaSimulacion();
+  } else {
+    st.completada = true;
+    guardarProgresoSimulacion();
+    dibujarResultadoFinalSimulacion();
+  }
+}
+function dibujarResultadoFinalSimulacion(){
+  const st = simulacionState;
+  const cont = $('view-simulacion');
+  cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
+    <i class="ti ti-confetti" style="font-size:36px;color:var(--gold);"></i>
+    <h1 style="margin-top:8px;">Terminaste como ${st.sim.rolJugador}</h1>
+    <p>Así quedó el banco después de tus ${st.sim.rondas.length} decisiones.</p>
+  </div>
+  ${dibujarBarraKpis()}
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list-details"></i> Tus decisiones</div>
+    ${st.decisiones.map((d,i)=>`<div class="preg"><b>Ronda ${d.ronda+1}:</b> ${d.texto}</div>`).join('')}
+    <button class="btn" style="width:100%;justify-content:center;margin-top:14px;" onclick="navSubject('${st.subjectId}')">Volver a la materia</button>
+  </div>`;
+}
+function salirDeSimulacion(subjectId){
+  if(confirm('¿Salir de la simulación? Tu progreso en esta ronda actual (sin guardar aún) se perderá — lo ya avanzado en rondas anteriores queda guardado.')){
+    simulacionState = null;
     navSubject(subjectId);
   }
 }
@@ -3852,18 +4049,17 @@ function renderSubjectView(subjectId){
       <div id="examen-asignado-banner"></div>
       <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
       <button class="btn btn-ghost" onclick="iniciarModoLibro('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-book"></i> Modo libro — leer por capítulos con autoevaluación</button>
+      ${SUBJECT_DATA[subjectId].simulaciones?.length ? SUBJECT_DATA[subjectId].simulaciones.map(s=>`<button class="btn" onclick="abrirSimulacion('${subjectId}','${s.id}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--rose),#a855f7);border:none;"><i class="ti ti-building-bank"></i> Simulación: ${s.titulo}</button>`).join('') : ''}
       <div class="tool-tabs">
         <button class="tool-tab active" id="subj-tab-summary" onclick="showSubjTool('summary')"><i class="ti ti-file-description"></i> Resumen</button>
         <button class="tool-tab" id="subj-tab-flash" onclick="showSubjTool('flash')"><i class="ti ti-cards"></i> Tarjetas didácticas</button>
         <button class="tool-tab" id="subj-tab-gloss" onclick="showSubjTool('gloss')"><i class="ti ti-book"></i> Glosario</button>
         <button class="tool-tab" id="subj-tab-quiz" onclick="showSubjTool('quiz')"><i class="ti ti-bolt"></i> Quiz rápido</button>
-        <button class="tool-tab" id="subj-tab-notas" onclick="showSubjTool('notas')"><i class="ti ti-notes"></i> Mis apuntes</button>
       </div>
       <div id="subj-tool-summary"><div class="summary-box">${obtenerResumenEfectivo(subjectId)}</div></div>
       <div id="subj-tool-flash" class="hidden"></div>
       <div id="subj-tool-gloss" class="hidden"></div>
       <div id="subj-tool-quiz" class="hidden"></div>
-      <div id="subj-tool-notas" class="hidden"></div>
     </div>
 
     <div class="section-label"><i class="ti ti-briefcase"></i> Casos de la materia</div>
@@ -3875,11 +4071,10 @@ function renderSubjectView(subjectId){
 }
 
 function showSubjTool(which){
-  ['summary','flash','gloss','quiz','notas'].forEach(t=>{
+  ['summary','flash','gloss','quiz'].forEach(t=>{
     $('subj-tab-'+t).classList.toggle('active', t===which);
     $('subj-tool-'+t).classList.toggle('hidden', t!==which);
   });
-  if(which==='notas') renderApuntesMateria(currentSubjectId);
 }
 
 // ───── Utilidades de respuestas ─────
@@ -4276,67 +4471,6 @@ function drawSubjQuiz(){
 // siquiera el docente. Se guardan en Supabase para no perderlos si
 // cambia de dispositivo.
 // ═══════════════════════════════════════════════════════
-let apuntesCache = {};
-async function renderApuntesMateria(subjectId){
-  const cont = $('subj-tool-notas');
-  if(!currentUser || !sb){ cont.innerHTML = '<div class="auth-hint">Inicia sesión para llevar tus propios apuntes.</div>'; return; }
-  cont.innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <input type="text" id="apunte-titulo-nuevo" placeholder="Título del apunte nuevo" style="flex:1;padding:9px 12px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;">
-      <button class="btn btn-sm" onclick="crearApunte('${subjectId}')"><i class="ti ti-plus"></i> Nuevo</button>
-    </div>
-    <div id="apuntes-lista"><div class="auth-hint">Cargando tus apuntes…</div></div>`;
-  try {
-    const { data, error } = await sb.from('academy_apuntes').select('id,titulo,contenido,actualizado_en').eq('usuario_id', currentUser.usuario_id).eq('materia_id', subjectId).order('actualizado_en',{ascending:false});
-    if(error) throw error;
-    apuntesCache[subjectId] = data || [];
-    dibujarListaApuntes(subjectId);
-  } catch(e){
-    $('apuntes-lista').innerHTML = `<div class="auth-msg show error">No se pudieron cargar tus apuntes: ${e.message||e}</div>`;
-  }
-}
-function dibujarListaApuntes(subjectId){
-  const lista = apuntesCache[subjectId] || [];
-  $('apuntes-lista').innerHTML = lista.length ? lista.map(n => `
-    <div class="export-opt" style="cursor:default;align-items:flex-start;margin-bottom:8px;">
-      <i class="ti ti-notes"></i>
-      <div style="flex:1;">
-        <input type="text" value="${(n.titulo||'').replace(/"/g,'&quot;')}" oninput="apunteEditadoLocal('${n.id}','titulo',this.value)" onblur="guardarApunte('${n.id}','${subjectId}')" style="width:100%;background:transparent;border:none;color:var(--t1);font-weight:700;font-size:13.5px;padding:0;margin-bottom:6px;">
-        <textarea rows="3" oninput="apunteEditadoLocal('${n.id}','contenido',this.value)" onblur="guardarApunte('${n.id}','${subjectId}')" placeholder="Escribe aquí…" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;">${n.contenido||''}</textarea>
-        <div style="font-size:10.5px;color:var(--t3);margin-top:4px;">Actualizado ${new Date(n.actualizado_en).toLocaleDateString('es-PA')}</div>
-      </div>
-      <i class="ti ti-trash" style="cursor:pointer;color:var(--red);font-size:15px;margin-top:2px;" onclick="borrarApunte('${n.id}','${subjectId}')"></i>
-    </div>`).join('') : '<div class="auth-hint">Todavía no tienes apuntes en esta materia — crea el primero arriba.</div>';
-}
-function apunteEditadoLocal(id, campo, valor){
-  const n = (apuntesCache[currentSubjectId]||[]).find(x=>x.id===id);
-  if(n) n[campo] = valor;
-}
-async function crearApunte(subjectId){
-  const input = $('apunte-titulo-nuevo');
-  const titulo = input.value.trim() || 'Sin título';
-  try {
-    const { data, error } = await sb.from('academy_apuntes').insert({ usuario_id: currentUser.usuario_id, materia_id: subjectId, titulo, contenido:'' }).select().single();
-    if(error) throw error;
-    apuntesCache[subjectId] = [data, ...(apuntesCache[subjectId]||[])];
-    input.value = '';
-    dibujarListaApuntes(subjectId);
-  } catch(e){
-    toast('No se pudo crear el apunte: ' + (e.message||e));
-  }
-}
-let guardarApunteTimeout = null;
-function guardarApunte(id, subjectId){
-  clearTimeout(guardarApunteTimeout);
-  guardarApunteTimeout = setTimeout(async () => {
-    const n = (apuntesCache[subjectId]||[]).find(x=>x.id===id);
-    if(!n) return;
-    try {
-      await sb.from('academy_apuntes').update({ titulo:n.titulo, contenido:n.contenido, actualizado_en:new Date().toISOString() }).eq('id', id);
-      notificarSeguidoresDeApunteNuevo(subjectId, n.titulo);
-    } catch(e){ /* se reintentará la próxima vez que edite */ }
-  }, 500);
-}
 // Avisa a quien me sigue que escribí o actualicé un apunte — se
 // consulta quién me sigue A MÍ (no a quién sigo yo), y se les notifica.
 async function notificarSeguidoresDeApunteNuevo(subjectId, tituloApunte){
@@ -4349,17 +4483,6 @@ async function notificarSeguidoresDeApunteNuevo(subjectId, tituloApunte){
     }));
     if(notifs.length) await sb.from('academy_notificaciones').insert(notifs);
   } catch(e){ /* silencioso */ }
-}
-async function borrarApunte(id, subjectId){
-  if(!confirm('¿Eliminar este apunte? No se puede deshacer.')) return;
-  try {
-    const { error } = await sb.from('academy_apuntes').delete().eq('id', id);
-    if(error) throw error;
-    apuntesCache[subjectId] = (apuntesCache[subjectId]||[]).filter(x=>x.id!==id);
-    dibujarListaApuntes(subjectId);
-  } catch(e){
-    toast('No se pudo eliminar: ' + (e.message||e));
-  }
 }
 function answerSubjQuiz(oi){
   if(subjQuizState.answered) return;
@@ -6934,7 +7057,7 @@ async function abrirApuntesCentralizados(){
     }
     $('apuntes-central-contenido').innerHTML = apuntes.map(a => {
       const s = SUBJECTS.find(x=>x.id===a.materia_id);
-      return `<div class="export-opt" style="cursor:pointer;align-items:flex-start;" onclick="$('apuntes-central-overlay').remove();navSubject('${a.materia_id}');setTimeout(()=>showSubjTool('notas'),300);">
+      return `<div class="export-opt" style="cursor:pointer;align-items:flex-start;" onclick="$('apuntes-central-overlay').remove();navApuntes();setTimeout(()=>abrirApunteEstructurado('${a.id}'),300);">
         <i class="ti ti-notebook" style="color:${s?.color||'var(--gold)'};"></i>
         <div style="flex:1;min-width:0;">
           <b>${a.titulo||'(sin título)'}</b>
