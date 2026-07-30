@@ -3564,7 +3564,7 @@ function dibujarRondaSimulacion(){
     <button class="btn btn-ghost btn-sm" onclick="salirDeSimulacion('${st.subjectId}')" style="margin-bottom:14px;"><i class="ti ti-x"></i> Salir de la simulación</button>
     <div class="eyebrow" style="color:var(--rose);"><i class="ti ti-building-bank"></i> ${st.sim.titulo} · Ronda ${st.rondaActual+1} de ${st.sim.rondas.length}</div>
   </div>
-  ${dibujarBarraKpis()}
+  <div id="sim-barra-kpis">${dibujarBarraKpis()}</div>
   <div class="card">
     <h2 style="font-size:17px;margin-bottom:8px;">${ronda.titulo}</h2>
     <p style="font-size:13.5px;line-height:1.6;color:var(--t2);margin-bottom:16px;">${ronda.contexto}</p>
@@ -3578,6 +3578,7 @@ async function elegirOpcionSimulacion(indice){
   const opcion = ronda.opciones[indice];
   Object.entries(opcion.efectos||{}).forEach(([clave,delta]) => { st.kpis[clave] = (st.kpis[clave]||0) + delta; });
   st.decisiones.push({ ronda: st.rondaActual, texto: opcion.texto });
+  $('sim-barra-kpis').innerHTML = dibujarBarraKpis();
   document.querySelectorAll('#sim-opciones .q-opt').forEach(el=>el.style.pointerEvents='none');
   const cont = $('sim-resultado');
   cont.classList.remove('hidden');
