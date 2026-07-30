@@ -907,7 +907,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
     character:{name:'Roberto Saavedra', role:'Gerente General, Banco Itsmeño, S.A.', quote:'"Nuestros números son sólidos, pero entiendo que ustedes deben verificarlo con su propia lupa. Aquí tiene todo lo que necesita."'},
     facts:[['Activos totales','US$ 1,840 millones'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8%'],['Índice de morosidad (cartera vencida/cartera bruta)','3.8%'],['Cobertura de provisiones sobre cartera vencida','92%']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Indicadores prudenciales', icon:'ti-shield-check',
+      { id:'s1', title:'Etapa 1 · Indicadores prudenciales', icon:'ti-shield-check', competencia:'regulacion_bancaria',
         intro:'El primer filtro de cualquier supervisión es verificar que el banco cumpla los mínimos regulatorios de capital exigidos por la SBP.',
         databox:{title:'Indicadores de solvencia', rows:[['Activos totales','US$ 1,840,000,000'],['Patrimonio (fondos de capital)','US$ 243,000,000'],['Activos ponderados por riesgo','US$ 1,840,000,000 × factor promedio 0.66'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8.0%']]},
         chart:{type:'bar', title:'IAC del banco vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP','Promedio sistema'], data:[13.2,8.0,14.5], color:'var(--accent)'},
@@ -916,7 +916,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
           {type:'mc', q:'Comparado con el promedio del sistema bancario panameño (14.5%), ¿cómo se posiciona este banco?', opts:['Por encima del sistema','Ligeramente por debajo del promedio del sistema, aunque sobre el mínimo','Igual al sistema','No es comparable'], correct:1, explain:'13.2% está por debajo del promedio del sistema (14.5%), aunque sigue siendo holgadamente superior al mínimo regulatorio. Esto no es una alerta por sí sola, pero merece seguimiento.', explicacionAlterna:'Hay dos comparaciones distintas aquí, y es fácil mezclarlas: contra el mínimo legal (8%) el banco va muy bien. Pero contra sus competidores (14.5% de promedio) va un poco por debajo. Ninguna de las dos comparaciones invalida a la otra — cumplir la ley y ser competitivo frente al resto del sistema son dos preguntas distintas.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · Calidad de cartera', icon:'ti-file-search',
+      { id:'s2', title:'Etapa 2 · Calidad de cartera', icon:'ti-file-search', competencia:'credito_riesgo',
         intro:'La solvencia no basta: hay que revisar qué tan sana está la cartera de préstamos que sostiene esos activos.',
         databox:{title:'Indicadores de cartera', rows:[['Cartera bruta de préstamos','US$ 1,120,000,000'],['Cartera vencida (mora > 90 días)','US$ 42,560,000'],['Índice de morosidad','3.8%'],['Provisiones constituidas','US$ 39,160,000'],['Cobertura de provisiones sobre cartera vencida','92%']]},
         questions:[
@@ -924,7 +924,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
           {type:'mc', q:'Con una cobertura de provisiones de 92% sobre la cartera vencida, ¿qué significa esto para el banco?', opts:['El banco ha provisionado más del 100% de su riesgo de mora','El banco tiene reservas para cubrir el 92% de su cartera vencida en caso de pérdida total','El 92% de los clientes morosos pagarán','La cobertura no tiene relación con el riesgo de crédito'], correct:1, explain:'Una cobertura del 92% significa que, si toda la cartera vencida se perdiera, el banco ya tiene provisionado el 92% de esa pérdida potencial; queda un 8% sin cubrir, una brecha menor pero a vigilar.', patronConfusion:'morosidad_vs_cobertura'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · Liquidez y calce de plazos', icon:'ti-droplet-half-2',
+      { id:'s3', title:'Etapa 3 · Liquidez y calce de plazos', icon:'ti-droplet-half-2', competencia:'liquidez_gestion',
         intro:'Un banco solvente puede igual enfrentar problemas si no tiene liquidez suficiente para cubrir sus obligaciones de corto plazo.',
         databox:{title:'Indicadores de liquidez', rows:[['Activos líquidos disponibles','US$ 276,000,000'],['Depósitos a la vista y ahorro (exigibles)','US$ 920,000,000'],['Razón de liquidez legal (activos líquidos/depósitos exigibles)','30%'],['Mínimo regulatorio SBP de liquidez','30%']]},
         chart:{type:'bar', title:'Razón de liquidez vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP'], data:[30,30], color:'var(--accent2)'},
@@ -932,7 +932,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
           {type:'mc', q:'La razón de liquidez del banco es exactamente igual al mínimo regulatorio (30%). ¿Qué implica esto para el analista de supervisión?', opts:['No hay ningún motivo de atención, está en cumplimiento', 'Aunque cumple, está en el límite exacto, sin margen ante una salida inesperada de depósitos','El banco está en incumplimiento','El dato es insuficiente para opinar'], correct:1, explain:'Cumplir exactamente el mínimo regulatorio, sin margen adicional, es una señal de atención: cualquier salida de depósitos mayor a la esperada podría llevar al banco a un incumplimiento técnico de liquidez.', patronConfusion:'solvencia_vs_liquidez'},
         ],
       },
-      { id:'s4', title:'Etapa 4 · Prueba de estrés de liquidez', icon:'ti-test-pipe',
+      { id:'s4', title:'Etapa 4 · Prueba de estrés de liquidez', icon:'ti-test-pipe', competencia:'liquidez_gestion',
         intro:'El comité de supervisión pide simular un escenario de salida acelerada de depósitos, como ocurriría ante un rumor de mercado.',
         databox:{title:'Escenario de estrés', rows:[['Salida simulada de depósitos a la vista','12% en 5 días hábiles'],['Activos líquidos disponibles para cubrir la salida','US$ 276,000,000'],['Monto estimado de la salida (12% de US$ 920,000,000)','US$ 110,400,000'],['Activos líquidos remanentes tras el escenario','US$ 165,600,000']]},
         questions:[
@@ -986,14 +986,14 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
     character:{name:'Yariela Ng', role:'Gerente General, Cooperativa Ahorro Seguro, R.L.', quote:'"El rumor es falso, pero la gente igual está retirando su dinero. Necesito saber si aguantamos esto o si tenemos un problema real."'},
     facts:[['Depósitos totales antes de la corrida','US$ 85,000,000'],['Depósitos retirados en dos semanas','US$ 10,200,000 (12%)'],['Activos líquidos disponibles (caja + inversiones de corto plazo)','US$ 14,000,000'],['Cartera de préstamos (no líquida en el corto plazo)','US$ 68,000,000']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Tamaño real del retiro', icon:'ti-trending-down',
+      { id:'s1', title:'Etapa 1 · Tamaño real del retiro', icon:'ti-trending-down', competencia:'liquidez_gestion',
         intro:'Antes de reaccionar, hay que confirmar exactamente cuánto se ha retirado y qué tan rápido, para saber si esto ya se está desacelerando o sigue en marcha.',
         databox:{title:'Retiro de depósitos', rows:[['Depósitos antes de la corrida','US$ 85,000,000'],['Depósitos retirados','US$ 10,200,000'],['% retirado','12.0%'],['Depósitos restantes','US$ 74,800,000']]},
         questions:[
           {type:'num', q:'¿Qué porcentaje de los depósitos totales representa un retiro de US$ 10,200,000 sobre una base de US$ 85,000,000?', placeholder:'En %', correct:12, tolerance:0.5, explain:'10,200,000 / 85,000,000 = 12.0%.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · ¿Alcanza la liquidez disponible?', icon:'ti-droplet',
+      { id:'s2', title:'Etapa 2 · ¿Alcanza la liquidez disponible?', icon:'ti-droplet', competencia:'liquidez_gestion',
         intro:'La pregunta central: ¿la cooperativa puede cubrir este retiro con lo que ya tiene disponible, sin tener que vender préstamos o activos a la fuerza?',
         databox:{title:'Cobertura con activos líquidos', rows:[['Activos líquidos disponibles','US$ 14,000,000'],['Retiro ya ocurrido','US$ 10,200,000'],['Liquidez restante después de cubrir el retiro','US$ 3,800,000'],['Liquidez restante como % de los depósitos que quedan','5.1%']]},
         chart:{type:'bar', title:'Liquidez disponible vs. retiro', labels:['Liquidez disponible','Retiro ocurrido','Liquidez restante'], data:[14,10.2,3.8], color:'var(--teal)'},
@@ -1002,7 +1002,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Por qué es relevante que el colchón de liquidez restante (5.1%) sea mucho más bajo que antes de la corrida?', opts:['No es relevante, ya se resolvió el problema','Porque si el retiro continúa a un ritmo similar, la cooperativa se quedaría sin liquidez disponible en poco tiempo','Porque significa que la cooperativa ya es insolvente','Porque los depositantes reciben menos intereses'], correct:1, explain:'Un colchón de liquidez mucho más delgado significa mucho menos margen de maniobra si el retiro no se detiene — la cooperativa pasó de una posición cómoda a una vulnerable, incluso sin haber incumplido nada todavía.'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · ¿Por qué importa el origen del rumor?', icon:'ti-message-circle',
+      { id:'s3', title:'Etapa 3 · ¿Por qué importa el origen del rumor?', icon:'ti-message-circle', competencia:'credito_riesgo',
         intro:'A diferencia de un problema real de solvencia, una corrida basada en un rumor falso se puede frenar con comunicación clara — pero solo si se actúa rápido.',
         databox:{title:'Naturaleza del problema', rows:[['Origen del retiro','Rumor infundado en redes sociales'],['Indicadores de solvencia de la cooperativa','Sin cambios, dentro de los parámetros normales'],['Riesgo real','De liquidez (por el retiro), no de solvencia']]},
         questions:[
@@ -1041,14 +1041,14 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
     character:{name:'Andrés Bethancourt', role:'Director de Desarrollo Corporativo, Banco Comercial del Istmo', quote:'"El banco que queremos comprar dice que su cartera está limpia. Antes de firmar nada, necesito que alguien lo verifique con números, no con lo que ellos dicen."'},
     facts:[['Precio de compra ofrecido','US$ 42,000,000'],['Patrimonio contable del banco a comprar (valor en libros)','US$ 38,000,000'],['Cartera de préstamos total','US$ 210,000,000'],['Cartera vencida reportada por el banco','4.1%'],['Cartera vencida tras revisión independiente de la muestra','7.8%']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Precio vs. valor en libros', icon:'ti-scale',
+      { id:'s1', title:'Etapa 1 · Precio vs. valor en libros', icon:'ti-scale', competencia:'valoracion',
         intro:'Un primer punto de referencia rápido: ¿cuánto se está pagando en relación con lo que el banco vale según su propia contabilidad?',
         databox:{title:'Precio vs. valor en libros', rows:[['Precio de compra ofrecido','US$ 42,000,000'],['Patrimonio contable (valor en libros)','US$ 38,000,000'],['Múltiplo precio/valor en libros','1.11x']]},
         questions:[
           {type:'num', q:'¿Cuál es el múltiplo de precio sobre valor en libros, si se ofrecen US$ 42,000,000 por un patrimonio contable de US$ 38,000,000? (dos decimales)', placeholder:'Ej: 1.11', correct:1.11, tolerance:0.02, explain:'42,000,000 / 38,000,000 = 1.11x — se está pagando un 11% por encima del valor contable.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · La cartera vencida no cuadra', icon:'ti-alert-triangle',
+      { id:'s2', title:'Etapa 2 · La cartera vencida no cuadra', icon:'ti-alert-triangle', competencia:'credito_riesgo',
         intro:'El hallazgo más importante de cualquier debida diligencia bancaria: comparar lo que la institución REPORTA contra lo que una revisión independiente encuentra.',
         databox:{title:'Discrepancia en la cartera vencida', rows:[['Cartera vencida reportada por el banco','4.1% (US$ 8,610,000)'],['Cartera vencida tras revisión independiente de una muestra','7.8% (US$ 16,380,000)'],['Diferencia','US$ 7,770,000 en cartera vencida no reconocida']]},
         chart:{type:'bar', title:'Cartera vencida: reportada vs. revisada', labels:['Reportada por el banco','Tras revisión independiente'], data:[4.1,7.8], color:'var(--rose)'},
@@ -1056,7 +1056,7 @@ SUBJECT_DATA.banmer = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Qué implica que la revisión independiente encuentre casi el doble de cartera vencida que la reportada por el propio banco?', opts:['Es un error sin importancia, ambos números son parecidos','El banco puede estar subestimando su cartera vencida, lo cual afecta directamente cuánto vale realmente su patrimonio','La revisión independiente seguramente está equivocada','Esto no afecta el precio de la operación'], correct:1, explain:'Una diferencia de casi el doble es una señal seria — si la cartera vencida real es mayor a la reportada, el patrimonio real del banco (después de provisionar esas pérdidas potenciales) es menor al que aparece en los libros, lo cual afecta directamente si el precio ofrecido sigue teniendo sentido.'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · Ajustando el valor real', icon:'ti-calculator',
+      { id:'s3', title:'Etapa 3 · Ajustando el valor real', icon:'ti-calculator', competencia:'valoracion',
         intro:'Si la cartera vencida real es mayor, hay que estimar cuánto de esa diferencia debería provisionarse, y cómo eso reduce el patrimonio real del banco.',
         databox:{title:'Ajuste estimado al patrimonio', rows:[['Cartera vencida adicional no reconocida','US$ 7,770,000'],['Provisión estimada necesaria (60% de cobertura sobre lo adicional)','US$ 4,662,000'],['Patrimonio contable original','US$ 38,000,000'],['Patrimonio ajustado estimado','US$ 33,338,000']]},
         questions:[
@@ -6116,6 +6116,7 @@ async function cargarDashboardEstudiante(){
       });
     });
     const temasDebiles = Object.entries(debilesPorTema).sort((a,b)=>b[1].cuenta-a[1].cuenta).slice(0,5);
+    const mapaCompetencias = calcularMapaCompetencias();
 
     // Fortalezas y debilidades por materia — promedio de examen por
     // cada materia que haya tocado, para ver dónde va mejor y peor.
@@ -6143,6 +6144,17 @@ async function cargarDashboardEstudiante(){
       ${promediosPorMateria.length ? `<div class="card" style="margin-bottom:16px;">
         <div class="card-title"><i class="ti ti-chart-bar"></i> Tu promedio por materia</div>
         <div style="height:${Math.max(140, promediosPorMateria.length*36)}px;margin-top:10px;"><canvas id="chart-dashboard-materias"></canvas></div>
+      </div>` : ''}
+      ${mapaCompetencias.length ? `<div class="card" style="margin-bottom:16px;">
+        <div class="card-title"><i class="ti ti-award"></i> Mapa de competencias</div>
+        <div class="sub" style="margin-bottom:10px;">No por materia — por habilidad, como evalúan muchas empresas al contratar.</div>
+        ${mapaCompetencias.map(c => {
+          const color = c.porcentaje>=75?'var(--green)':c.porcentaje>=50?'var(--amber)':'var(--red)';
+          return `<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;"><span><i class="ti ${c.icono}" style="color:${color};"></i> ${c.nombre}</span><span style="font-weight:700;color:${color};">${c.porcentaje}%</span></div>
+            <div style="background:var(--c3);border-radius:6px;height:9px;overflow:hidden;"><div style="background:${color};height:100%;width:${c.porcentaje}%;"></div></div>
+          </div>`;
+        }).join('')}
       </div>` : ''}
       ${(fortalezas.length || debilidades.length) ? `<div class="card" style="margin-bottom:16px;">
         <div class="card-title"><i class="ti ti-analyze"></i> Cómo vas por materia</div>
@@ -7004,6 +7016,43 @@ async function iniciarRepasoProgramado(repasoId, subjectId, conceptos){
 // confusión, y solo lo señala cuando el estudiante falló DOS O MÁS
 // preguntas de ese mismo patrón — una sola vez no es un patrón real.
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// MAPA DE COMPETENCIAS — en vez de organizar el desempeño solo por
+// materia, lo organiza por HABILIDAD, que es como evalúan muchas
+// empresas al contratar. Cada etapa de cada caso está etiquetada con
+// la competencia que desarrolla, sin importar en qué materia esté.
+// ═══════════════════════════════════════════════════════
+const COMPETENCIAS = {
+  regulacion_bancaria: { nombre:'Regulación bancaria', icono:'ti-gavel' },
+  credito_riesgo: { nombre:'Crédito y riesgo', icono:'ti-alert-triangle' },
+  liquidez_gestion: { nombre:'Gestión de liquidez', icono:'ti-droplet' },
+  valoracion: { nombre:'Valoración de empresas', icono:'ti-scale' },
+};
+function calcularMapaCompetencias(){
+  const notasPorCompetencia = {};
+  SUBJECTS.filter(s=>s.kind==='academic').forEach(s => {
+    const data = SUBJECT_DATA[s.id];
+    if(!data) return;
+    data.cases.forEach(c => {
+      const ans = studentAnswers[c.id];
+      if(!ans || !ans.stages) return;
+      c.stages.forEach(st => {
+        if(!st.competencia || !st.questions) return;
+        const stAns = ans.stages[st.id];
+        if(!stAns) return;
+        st.questions.forEach((q,i) => {
+          if(stAns[i]===undefined) return;
+          const correcta = esRespuestaCorrecta(q, stAns[i]);
+          (notasPorCompetencia[st.competencia] = notasPorCompetencia[st.competencia]||[]).push(correcta?100:0);
+        });
+      });
+    });
+  });
+  return Object.entries(notasPorCompetencia).map(([clave, notas]) => ({
+    clave, ...COMPETENCIAS[clave],
+    porcentaje: Math.round(notas.reduce((a,b)=>a+b,0)/notas.length),
+  })).sort((a,b)=>b.porcentaje-a.porcentaje);
+}
 const PATRONES_CONFUSION = {
   solvencia_vs_liquidez: {
     titulo: 'Confundes solvencia con liquidez',
