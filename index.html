@@ -1273,7 +1273,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
     character:{name:'Yariela Botello', role:'Propietaria y Gerente General, Distribuidora del Caribe, S.A.', quote:'"Llevamos doce años en Colón, nunca hemos atrasado un pago a nuestros proveedores. Necesitamos esta línea para aprovechar un contrato grande que se nos presentó."'},
     facts:[['Años de operación de la empresa','12 años'],['Ventas anuales','US$ 3,200,000'],['Utilidad neta anual','US$ 184,000'],['Línea de crédito solicitada','US$ 350,000'],['Historial crediticio (buró)','Sin atrasos reportados en 5 años']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Carácter y capacidad de pago', icon:'ti-user-check',
+      { id:'s1', title:'Etapa 1 · Carácter y capacidad de pago', icon:'ti-user-check', competencia:'credito_riesgo',
         intro:'El carácter evalúa el historial y la reputación de pago del solicitante; la capacidad evalúa si el flujo de caja del negocio puede sostener la nueva deuda.',
         databox:{title:'Historial y flujo de caja', rows:[['Años de relación con proveedores actuales','12 años, sin atrasos reportados'],['Historial en buró de crédito','Sin atrasos en 5 años'],['Flujo de caja operativo mensual promedio','US$ 38,500'],['Cuota mensual estimada del crédito solicitado','US$ 9,800'],['Cobertura del flujo sobre la cuota (flujo/cuota)','3.9x']]},
         questions:[
@@ -1281,7 +1281,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Qué evalúa específicamente el componente de "Carácter" en las 5 C del crédito?', opts:['La capacidad de generar ingresos futuros','La disposición histórica del solicitante a cumplir sus obligaciones de pago','El valor de los activos en garantía','Las condiciones macroeconómicas del sector'], correct:1, explain:'El Carácter evalúa la reputación y el historial de pago del solicitante: su disposición demostrada a cumplir compromisos financieros, más allá de su capacidad numérica de pago.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · Capital y colateral', icon:'ti-building-warehouse',
+      { id:'s2', title:'Etapa 2 · Capital y colateral', icon:'ti-building-warehouse', competencia:'credito_riesgo',
         intro:'El Capital mide cuánto tiene invertido el propio dueño en el negocio; el Colateral evalúa qué garantías respaldan el crédito en caso de incumplimiento.',
         databox:{title:'Estructura de capital y garantías', rows:[['Patrimonio de la empresa','US$ 890,000'],['Pasivo total actual','US$ 540,000'],['Razón Deuda/Patrimonio actual','0.61x'],['Garantía ofrecida','Inventario y cuentas por cobrar, valor estimado US$ 410,000'],['Relación garantía/crédito solicitado','1.17x']]},
         questions:[
@@ -1289,7 +1289,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
           {type:'mc', q:'La garantía ofrecida cubre 1.17 veces el crédito solicitado. ¿Cómo se interpreta esto desde la perspectiva del banco?', opts:['Es insuficiente, se requiere al menos 2x de cobertura','Ofrece un margen razonable de cobertura sobre el monto solicitado','La garantía no tiene relación con la decisión de crédito','Es excesiva y debería reducirse'], correct:1, explain:'Una cobertura de 1.17x significa que el valor de la garantía supera ligeramente el monto del crédito, ofreciendo al banco un margen de protección razonable si tuviera que ejecutar la garantía.'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · Razones financieras y condiciones del sector', icon:'ti-calculator',
+      { id:'s3', title:'Etapa 3 · Razones financieras y condiciones del sector', icon:'ti-calculator', competencia:'credito_riesgo',
         intro:'Se completa el análisis con razones financieras clave y las condiciones actuales del sector de distribución en Panamá.',
         databox:{title:'Razones financieras e indicadores sectoriales', rows:[['Margen neto de la empresa','5.75%'],['Margen neto promedio del sector distribución','4.9%'],['Razón corriente (activo circulante/pasivo circulante)','1.8x'],['Crecimiento estimado del sector logístico-comercial en Colón','4.2% anual']]},
         chart:{type:'bar', title:'Margen neto: empresa vs. sector', labels:['Distribuidora del Caribe','Promedio sector'], data:[5.75,4.9], color:'var(--amber)'},
@@ -1298,7 +1298,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
           {type:'mc', q:'El margen neto de la empresa (5.75%) supera al promedio del sector (4.9%). ¿Qué relevancia tiene esto para la decisión de crédito?', opts:['Ninguna, el margen neto no se usa en análisis de crédito','Es una señal positiva: la empresa es más rentable que sus pares del sector','Es una señal negativa de riesgo','Solo aplica para créditos hipotecarios'], correct:1, explain:'Un margen neto superior al promedio sectorial es una señal positiva de eficiencia operativa y competitividad relativa, que respalda la capacidad de la empresa de generar utilidades para honrar sus compromisos.'},
         ],
       },
-      { id:'s4', title:'Etapa 4 · Estructuración de la propuesta', icon:'ti-file-pencil',
+      { id:'s4', title:'Etapa 4 · Estructuración de la propuesta', icon:'ti-file-pencil', competencia:'credito_riesgo',
         intro:'Con el análisis completo, debes proponer condiciones específicas para la línea de crédito antes de llevarla al comité.',
         databox:{title:'Propuesta preliminar', rows:[['Monto solicitado','US$ 350,000'],['Plazo propuesto','18 meses, revisable'],['Tasa de referencia sugerida','Tasa activa comercial + 2.5 puntos'],['Garantía requerida','Inventario y cuentas por cobrar, cobertura mínima 1.15x'],['Condición adicional propuesta','Reporte trimestral de estados financieros al banco']]},
         questions:[
@@ -1345,14 +1345,14 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
         intro:'Antes de revisar la proyección del cuarto local, hay que entender la salud financiera actual de los tres locales existentes.',
         databox:{title:'Estado financiero actual', rows:[['Activo circulante','US$ 95,000'],['Pasivo circulante','US$ 168,000'],['Ventas anuales','US$ 1,850,000'],['Utilidad neta anual','US$ 42,000']]},
         questions:[
-          {type:'num', q:'¿Cuál es la razón corriente actual del negocio? (dos decimales)', placeholder:'Ej: 0.57', correct:0.57, tolerance:0.02, explain:'Razón corriente = Activo circulante / Pasivo circulante = 95,000 / 168,000 = 0.57 — por debajo de 1.0, lo que significa que el negocio no tiene suficiente activo circulante para cubrir sus obligaciones de corto plazo con lo que tiene disponible hoy.'},
+          {type:'num', q:'¿Cuál es la razón corriente actual del negocio? (dos decimales)', placeholder:'Ej: 0.57', correct:0.57, tolerance:0.02, explain:'Razón corriente = Activo circulante / Pasivo circulante = 95,000 / 168,000 = 0.57 — por debajo de 1.0, lo que significa que el negocio no tiene suficiente activo circulante para cubrir sus obligaciones de corto plazo con lo que tiene disponible hoy.', patronConfusion:'liquidez_vs_rentabilidad'},
           {type:'mc', q:'Una razón corriente de 0.57 en un negocio que pide crédito para expandirse, ¿qué debería generar en el analista?', opts:['Ninguna preocupación, es un dato irrelevante','Una señal de alerta — el negocio actual ya tiene tensión de liquidez de corto plazo, antes de sumarle una obligación nueva','Confirma que el crédito debe aprobarse de inmediato','Solo importa si la razón corriente es exactamente 1.0'], correct:1, explain:'Una razón corriente por debajo de 1.0 indica que el negocio actual, sin siquiera el crédito nuevo, ya tiene dificultad para cubrir sus obligaciones de corto plazo con sus activos líquidos — una señal que contradice el optimismo de la solicitud y merece investigarse antes de aprobar más deuda.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · El margen neto real', icon:'ti-percentage', competencia:'credito_riesgo',
         intro:'Las ventas suenan grandes, pero lo que importa para pagar una deuda es cuánto queda realmente de utilidad.',
         questions:[
-          {type:'num', q:'¿Cuál es el margen neto del negocio (Utilidad neta / Ventas)? (en %, un decimal)', placeholder:'Ej: 2.3', correct:2.3, tolerance:0.1, explain:'Margen neto = 42,000 / 1,850,000 × 100 = 2.3% — un margen muy delgado para la industria de restaurantes, que deja poco colchón ante cualquier imprevisto.'},
+          {type:'num', q:'¿Cuál es el margen neto del negocio (Utilidad neta / Ventas)? (en %, un decimal)', placeholder:'Ej: 2.3', correct:2.3, tolerance:0.1, explain:'Margen neto = 42,000 / 1,850,000 × 100 = 2.3% — un margen muy delgado para la industria de restaurantes, que deja poco colchón ante cualquier imprevisto.', patronConfusion:'liquidez_vs_rentabilidad'},
           {type:'mc', q:'Con un margen neto de apenas 2.3%, ¿qué implica esto para la capacidad de absorber un cuarto local que no funcione como lo proyectado?', opts:['No tiene ninguna implicación','El negocio tiene muy poco margen de error — un local nuevo con desempeño débil podría comprometer la operación completa','Un margen bajo siempre es mejor que uno alto','El margen neto no se relaciona con el riesgo de crédito'], correct:1, explain:'Con un margen tan delgado, el negocio combinado tiene poco colchón: si el cuarto local no alcanza las proyecciones de ventas rápidamente, la presión sobre el flujo de caja del negocio completo puede ser severa, justo cuando ya existe tensión de liquidez de corto plazo (etapa 1).'},
         ],
       },
@@ -1495,14 +1495,14 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
     character:{name:'Tomás Quintero', role:'Director Financiero, Industrias del Istmo, S.A.', quote:'"Nuestra utilidad neta ha crecido tres años seguidos. Sé que van a revisar el flujo de caja también, así que aquí tiene el detalle completo."'},
     facts:[['Ventas anuales','US$ 18,400,000'],['Utilidad neta reportada','US$ 1,380,000'],['UAII (Utilidad antes de intereses e impuestos)','US$ 2,150,000'],['Inversión en activos fijos del año','US$ 1,640,000'],['Deuda de largo plazo actual','US$ 6,200,000']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Estructura del estado de resultados', icon:'ti-file-invoice',
+      { id:'s1', title:'Etapa 1 · Estructura del estado de resultados', icon:'ti-file-invoice', competencia:'analisis_financiero',
         intro:'Antes de calcular indicadores, hay que entender cómo se construye la utilidad: desde las ventas hasta la utilidad neta, pasando por cada nivel de gasto.',
         databox:{title:'Estado de resultados resumido', rows:[['Ventas netas','US$ 18,400,000'],['Costo de ventas','US$ 11,960,000'],['Utilidad bruta','US$ 6,440,000'],['Gastos operativos','US$ 4,290,000'],['UAII (Utilidad operativa)','US$ 2,150,000'],['Gastos financieros (intereses)','US$ 520,000'],['Impuesto sobre la renta','US$ 250,000'],['Utilidad neta','US$ 1,380,000']]},
         questions:[
           {type:'mc', q:'¿Qué representa la UAII (Utilidad antes de intereses e impuestos) dentro del estado de resultados?', opts:['La utilidad que queda después de pagar la deuda','La utilidad generada por las operaciones del negocio, antes del efecto de cómo se financia y de los impuestos','El mismo concepto que la utilidad neta','Las ventas totales del período'], correct:1, explain:'La UAII (también llamada utilidad operativa) mide el desempeño del negocio en sí, aislado de decisiones de financiamiento (intereses) y del régimen fiscal (impuestos), lo que la hace comparable entre empresas con distinta estructura de capital.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · UAII y UONDI', icon:'ti-calculator',
+      { id:'s2', title:'Etapa 2 · UAII y UONDI', icon:'ti-calculator', competencia:'analisis_financiero',
         intro:'El siguiente paso es calcular la Utilidad Operativa Neta Después de Impuestos (UONDI), que aísla el desempeño operativo del efecto fiscal sin mezclarlo con la estructura de deuda.',
         databox:{title:'Cálculo de UONDI', rows:[['UAII','US$ 2,150,000'],['Tasa efectiva de impuesto sobre la renta','25%'],['UONDI = UAII × (1 − Tasa de impuesto)','US$ 1,612,500']]},
         questions:[
@@ -1510,7 +1510,7 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Por qué la UONDI es distinta a la utilidad neta reportada (US$ 1,380,000)?', opts:['Por un error de cálculo','Porque la UONDI no descuenta los gastos financieros (intereses), a diferencia de la utilidad neta','Porque usan tasas de impuesto diferentes sin razón','No deberían ser diferentes'], correct:1, explain:'La utilidad neta sí descuenta los intereses de la deuda; la UONDI los excluye deliberadamente, para evaluar el negocio como si no tuviera deuda, aislando el desempeño puramente operativo.'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · Flujo de Efectivo Operativo (FEO)', icon:'ti-cash',
+      { id:'s3', title:'Etapa 3 · Flujo de Efectivo Operativo (FEO)', icon:'ti-cash', competencia:'analisis_financiero',
         intro:'La utilidad contable no es lo mismo que el efectivo real generado. El FEO ajusta la UONDI por partidas que no implican movimiento de caja, como la depreciación.',
         databox:{title:'Cálculo del FEO', rows:[['UONDI','US$ 1,612,500'],['Depreciación y amortización del período','US$ 780,000'],['FEO = UONDI + Depreciación','US$ 2,392,500']]},
         chart:{type:'bar', title:'Utilidad neta vs. FEO', labels:['Utilidad neta','UONDI','FEO'], data:[1380000,1612500,2392500], color:'var(--green)'},
@@ -1519,7 +1519,7 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Por qué el FEO (US$ 2,392,500) es considerablemente mayor a la utilidad neta reportada (US$ 1,380,000)?', opts:['Porque la empresa está ocultando ingresos','Principalmente porque el FEO suma de vuelta la depreciación y excluye el efecto de los intereses, partidas que no representan salida de efectivo operativo o no son parte del negocio en sí','Es un error de cálculo','Porque las ventas aumentaron en el período'], correct:1, explain:'La diferencia se explica por dos ajustes: la depreciación (gasto contable sin salida de caja) se suma de vuelta, y los intereses (relacionados con financiamiento, no operación) no se restan en el FEO.'},
         ],
       },
-      { id:'s4', title:'Etapa 4 · Inversión en activos y FEL', icon:'ti-building',
+      { id:'s4', title:'Etapa 4 · Inversión en activos y FEL', icon:'ti-building', competencia:'analisis_financiero',
         intro:'Para llegar al Flujo de Efectivo Libre (FEL), hay que restar al FEO la inversión necesaria para sostener y hacer crecer la operación: el Incremento de Activos Fijos Netos (IAFN) y el Incremento de Activos Corrientes Netos (IACN).',
         databox:{title:'Cálculo del FEL', rows:[['FEO','US$ 2,392,500'],['Incremento de Activos Fijos Netos (IAFN)','US$ 1,640,000'],['Incremento de Activos Corrientes Netos (IACN)','US$ 310,000'],['FEL = FEO − IAFN − IACN','US$ 442,500']]},
         questions:[
@@ -1632,13 +1632,13 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
         databox:{title:'Cuentas por cobrar', rows:[['Año anterior','US$ 680,000'],['Año actual','US$ 1,190,000']]},
         questions:[
           {type:'num', q:'¿Cuál fue el crecimiento porcentual de las cuentas por cobrar? (en %, un decimal)', placeholder:'Ej: 75.0', correct:75.0, tolerance:1, explain:'Crecimiento = (1,190,000 - 680,000) / 680,000 × 100 = 75.0% — más de cuatro veces el ritmo de crecimiento de las ventas (18%).'},
-          {type:'mc', q:'¿Qué significa que las cuentas por cobrar crezcan a 75% mientras las ventas solo crecen 18%?', opts:['No significa nada relevante, es una coincidencia','La empresa está tardando considerablemente más en cobrar sus ventas — el crecimiento de ingresos no se está convirtiendo en efectivo al mismo ritmo','Significa que la empresa está vendiendo menos','Es una señal positiva sin excepción'], correct:1, explain:'Cuando las cuentas por cobrar crecen mucho más rápido que las ventas, generalmente indica que la empresa está flexibilizando sus términos de cobro (o que sus clientes están tardando más en pagar) para sostener el crecimiento de ventas — un riesgo real de calidad de esas ventas, que la utilidad neta reportada no muestra.'},
+          {type:'mc', q:'¿Qué significa que las cuentas por cobrar crezcan a 75% mientras las ventas solo crecen 18%?', opts:['No significa nada relevante, es una coincidencia','La empresa está tardando considerablemente más en cobrar sus ventas — el crecimiento de ingresos no se está convirtiendo en efectivo al mismo ritmo','Significa que la empresa está vendiendo menos','Es una señal positiva sin excepción'], correct:1, explain:'Cuando las cuentas por cobrar crecen mucho más rápido que las ventas, generalmente indica que la empresa está flexibilizando sus términos de cobro (o que sus clientes están tardando más en pagar) para sostener el crecimiento de ventas — un riesgo real de calidad de esas ventas, que la utilidad neta reportada no muestra.', patronConfusion:'utilidad_vs_efectivo'},
         ],
       },
       { id:'s3', title:'Etapa 3 · ¿Por qué esto no se ve en la utilidad neta?', icon:'ti-eye-off', competencia:'analisis_financiero',
         intro:'La utilidad neta creció 12% — un número saludable en apariencia. Pero la utilidad neta se calcula por el principio de devengado, no por efectivo realmente cobrado.',
         questions:[
-          {type:'mc', q:'¿Por qué la utilidad neta puede crecer de forma saludable (12%) aunque la calidad del cobro se esté deteriorando?', opts:['Es imposible, si la utilidad crece todo está bien','Porque la utilidad neta se registra cuando se realiza la venta, no cuando se cobra en efectivo — una venta a crédito que tarda más en cobrarse igual cuenta como utilidad del período','La utilidad neta y las cuentas por cobrar nunca están relacionadas','El crecimiento de la utilidad siempre refleja el crecimiento del efectivo'], correct:1, explain:'Bajo el principio de devengado (el estándar contable), una venta se reconoce como ingreso cuando ocurre, no cuando se cobra. Por eso una empresa puede mostrar utilidad neta creciendo de forma saludable mientras la calidad real de esas ventas — qué tan rápido se convierten en efectivo — se deteriora, algo que solo el análisis horizontal de las cuentas por cobrar (o el estado de flujo de efectivo) revela.'},
+          {type:'mc', q:'¿Por qué la utilidad neta puede crecer de forma saludable (12%) aunque la calidad del cobro se esté deteriorando?', opts:['Es imposible, si la utilidad crece todo está bien','Porque la utilidad neta se registra cuando se realiza la venta, no cuando se cobra en efectivo — una venta a crédito que tarda más en cobrarse igual cuenta como utilidad del período','La utilidad neta y las cuentas por cobrar nunca están relacionadas','El crecimiento de la utilidad siempre refleja el crecimiento del efectivo'], correct:1, explain:'Bajo el principio de devengado (el estándar contable), una venta se reconoce como ingreso cuando ocurre, no cuando se cobra. Por eso una empresa puede mostrar utilidad neta creciendo de forma saludable mientras la calidad real de esas ventas — qué tan rápido se convierten en efectivo — se deteriora, algo que solo el análisis horizontal de las cuentas por cobrar (o el estado de flujo de efectivo) revela.', patronConfusion:'utilidad_vs_efectivo'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Recomendación sobre la línea de crédito', icon:'ti-gavel',
@@ -1791,7 +1791,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
     character:{name:'Ileana Bósquez', role:'Directora de Finanzas, Terminal Portuaria del Istmo, S.A.', quote:'"Esta emisión financia la expansión que nos permitirá duplicar capacidad de atraque. El prospecto tiene todo lo que su comité necesita revisar."'},
     facts:[['Sector','Logística y operación portuaria'],['Monto de la emisión','US$ 40,000,000'],['Plazo','10 años'],['Cupón ofrecido','6.75% anual, pago semestral'],['Precio de colocación','98.5% del valor nominal'],['Calificación de riesgo','BBB (grado de inversión)'],['Garantía','Fideicomiso de flujos de la operación portuaria']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Lectura del prospecto', icon:'ti-file-text',
+      { id:'s1', title:'Etapa 1 · Lectura del prospecto', icon:'ti-file-text', competencia:'valoracion',
         intro:'El prospecto de emisión es el primer documento que revisa un analista. Contiene los términos legales y financieros de la oferta.',
         databox:{title:'Términos de la emisión', rows:[['Monto total','US$ 40,000,000'],['Plazo','10 años'],['Cupón nominal','6.75% anual'],['Frecuencia de pago','Semestral'],['Precio de colocación','98.5% del nominal'],['Uso de fondos','Expansión de infraestructura portuaria'],['Garantía','Fideicomiso de flujos de operación']]},
         questions:[
@@ -1799,7 +1799,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
           {type:'mc', q:'¿Qué función cumple el fideicomiso de flujos como garantía?', opts:['Elimina por completo el riesgo de la emisión','Da a los tenedores del bono una fuente identificada y separada de repago, reduciendo el riesgo relativo','Es solo un requisito administrativo sin efecto financiero','Aumenta automáticamente la calificación a AAA'], correct:1, explain:'Un fideicomiso de flujos aísla los ingresos de la operación portuaria para el pago del bono, dando a los inversionistas una fuente de repago más predecible y reduciendo (sin eliminar) el riesgo de crédito.'},
         ],
       },
-      { id:'s2', title:'Etapa 2 · Evaluación del riesgo crediticio', icon:'ti-shield-half',
+      { id:'s2', title:'Etapa 2 · Evaluación del riesgo crediticio', icon:'ti-shield-half', competencia:'credito_riesgo',
         intro:'Con calificación BBB, el bono está en el último escalón del grado de inversión. El analista debe identificar qué factores sostienen o amenazan esa calificación.',
         databox:{title:'Indicadores del emisor', rows:[['Calificación de riesgo','BBB'],['Razón Deuda/EBITDA','3.1x'],['Cobertura de intereses (EBITDA/Intereses)','4.2x'],['Concentración de ingresos','62% proviene de 3 clientes navieros'],['Sector','Cíclico, sensible al comercio internacional']]},
         chart:{type:'bar', title:'Cobertura de intereses vs. umbral de riesgo', labels:['Cobertura actual','Umbral de alerta'], data:[4.2,2.5], color:'var(--gold)'},
@@ -1808,7 +1808,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
           {type:'mc', q:'Una cobertura de intereses de 4.2x (EBITDA/Intereses) indica que la empresa genera utilidad operativa equivalente a:', opts:['4.2 veces sus intereses por pagar','El 42% de sus intereses por pagar','4.2 veces su deuda total','42% de su deuda total'], correct:0, explain:'Cobertura de intereses = EBITDA / Gasto en intereses. Un valor de 4.2x significa que el EBITDA cubre 4.2 veces el gasto en intereses, lo cual es un colchón razonable para un emisor BBB.'},
         ],
       },
-      { id:'s3', title:'Etapa 3 · Cálculo del rendimiento', icon:'ti-calculator',
+      { id:'s3', title:'Etapa 3 · Cálculo del rendimiento', icon:'ti-calculator', competencia:'valoracion',
         intro:'Con el precio de colocación y el cupón, el analista debe estimar el rendimiento al vencimiento aproximado que recibirá el inversionista.',
         databox:{title:'Datos para el cálculo', rows:[['Valor nominal','US$ 1,000 (por unidad)'],['Precio de colocación','US$ 985 (98.5%)'],['Cupón anual','6.75% → US$ 67.50'],['Plazo','10 años']]},
         questions:[
@@ -1816,7 +1816,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
           {type:'num', q:'Usando YTM ≈ [Cupón + (Nominal − Precio)/Plazo] / [(Nominal + Precio)/2], ¿cuál es el YTM aproximado en %? (Cupón=67.5, Nominal=1000, Precio=985, Plazo=10)', placeholder:'En %, ej: 6.90', correct:6.94, tolerance:0.15, explain:'YTM ≈ [67.5 + 1.5] / 992.5 ≈ 6.95%. El rendimiento efectivo supera ligeramente al cupón nominal (6.75%) por el descuento de colocación.'},
         ],
       },
-      { id:'s4', title:'Etapa 4 · Pruebas de estrés', icon:'ti-test-pipe',
+      { id:'s4', title:'Etapa 4 · Pruebas de estrés', icon:'ti-test-pipe', competencia:'credito_riesgo',
         intro:'Antes de recomendar, el analista debe considerar cómo se comportaría la inversión bajo un escenario adverso para el sector.',
         databox:{title:'Escenario adverso planteado', rows:[['Caída de tráfico portuario estimada','15%'],['Impacto estimado en EBITDA','-22%'],['Cobertura de intereses resultante','≈3.3x (desde 4.2x)'],['Cláusula de protección al inversionista','Restricción de nuevo endeudamiento si cobertura < 2.5x']]},
         questions:[
@@ -1862,7 +1862,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
         databox:{title:'Datos de la oferta', rows:[['Utilidad neta anual','US$ 12,000,000'],['Acciones totales en circulación tras la OPI','8,000,000'],['Precio de salida propuesto','US$ 18.50'],['P/E promedio del sector','13.5x']]},
         questions:[
           {type:'num', q:'¿Cuál es la utilidad por acción (UPA)? (US$, dos decimales)', placeholder:'Ej: 1.50', correct:1.50, tolerance:0.02, explain:'UPA = Utilidad neta / Acciones en circulación = 12,000,000 / 8,000,000 = US$1.50 por acción.'},
-          {type:'num', q:'Con esa UPA y el precio de salida de US$18.50, ¿cuál es el P/E implícito de la oferta? (un decimal)', placeholder:'Ej: 12.3', correct:12.3, tolerance:0.2, explain:'P/E = Precio / UPA = 18.50 / 1.50 = 12.3x.'},
+          {type:'num', q:'Con esa UPA y el precio de salida de US$18.50, ¿cuál es el P/E implícito de la oferta? (un decimal)', placeholder:'Ej: 12.3', correct:12.3, tolerance:0.2, explain:'P/E = Precio / UPA = 18.50 / 1.50 = 12.3x.', patronConfusion:'pe_vs_rendimiento_dividendo'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Comparación contra el sector', icon:'ti-scale', competencia:'valoracion',
@@ -1876,7 +1876,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
         intro:'Además de la utilidad, muchos inversionistas de renta variable en Panamá valoran el flujo de dividendos que reciben cada año.',
         databox:{title:'Datos de dividendo', rows:[['Dividendo anual proyectado por acción','US$ 0.74'],['Precio de salida','US$ 18.50']]},
         questions:[
-          {type:'num', q:'¿Cuál es el rendimiento por dividendo (dividend yield) de la oferta? (en %, un decimal)', placeholder:'Ej: 4.0', correct:4.0, tolerance:0.1, explain:'Rendimiento por dividendo = Dividendo por acción / Precio = 0.74 / 18.50 = 4.0%.'},
+          {type:'num', q:'¿Cuál es el rendimiento por dividendo (dividend yield) de la oferta? (en %, un decimal)', placeholder:'Ej: 4.0', correct:4.0, tolerance:0.1, explain:'Rendimiento por dividendo = Dividendo por acción / Precio = 0.74 / 18.50 = 4.0%.', patronConfusion:'pe_vs_rendimiento_dividendo'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Recomendación a los clientes', icon:'ti-gavel',
@@ -6704,10 +6704,11 @@ async function navDashboardEstudiante(){
 }
 async function cargarDashboardEstudiante(){
   try {
-    const [{ data: perfil }, { data: examenes }, { data: tareasCalif }] = await Promise.all([
+    const [{ data: perfil }, { data: examenes }, { data: tareasCalif }, { data: simulacionesTocadas }] = await Promise.all([
       sb.from('academy_usuarios').select('minutos_estudiados').eq('id', currentUser.usuario_id).single(),
       sb.from('academy_examenes_resultados').select('correctas,total,academy_examenes_asignados!inner(materia_id)').eq('usuario_id', currentUser.usuario_id),
       sb.from('academy_entregas_tareas').select('calificacion').eq('usuario_id', currentUser.usuario_id).not('calificacion','is',null),
+      sb.from('academy_simulacion_progreso').select('simulacion_id').eq('usuario_id', currentUser.usuario_id),
     ]);
     // Promedio general — exámenes y tareas calificadas juntos, cada
     // uno expresado como porcentaje para poder promediarlos igual.
@@ -6756,6 +6757,48 @@ async function cargarDashboardEstudiante(){
     const temasDebiles = Object.entries(debilesPorTema).sort((a,b)=>b[1].cuenta-a[1].cuenta).slice(0,5);
     const mapaCompetencias = calcularMapaCompetencias();
 
+    // Recomendaciones contextuales — con tantas funciones construidas,
+    // el riesgo real ya no es que falte algo, es que el estudiante
+    // nunca descubra la mitad de lo que existe. Esto usa datos reales
+    // (competencias, qué simulaciones ha probado) para sugerir un
+    // siguiente paso concreto, no un genérico "explora la app".
+    const recomendaciones = [];
+    const idsSimuladas = new Set((simulacionesTocadas||[]).map(s=>s.simulacion_id));
+    if(!idsSimuladas.size){
+      // Nunca ha probado ninguna simulación — es la función más nueva
+      // y más fácil de pasar por alto entre tantas secciones.
+      for(const s of SUBJECTS.filter(x=>x.kind==='academic')){
+        const sims = SUBJECT_DATA[s.id]?.simulaciones;
+        if(sims?.length){ recomendaciones.push({ icono:'ti-player-play', texto:`Todavía no has probado ninguna simulación — en ${s.title} puedes ser ${sims[0].rolJugador} por un momento.`, accion:`navSubject('${s.id}')` }); break; }
+      }
+    }
+    if(mapaCompetencias.length){
+      const fuerte = mapaCompetencias[0];
+      let seRecomendoFuerte = false;
+      if(fuerte.porcentaje>=75){
+        // Va fuerte en una competencia — sugerirle un caso en OTRA
+        // materia que también la trabaje, para que vea la conexión
+        // entre materias, no solo quedarse en la que ya domina.
+        for(const s of SUBJECTS.filter(x=>x.kind==='academic')){
+          const data = SUBJECT_DATA[s.id];
+          if(!data) continue;
+          const casoConEsaCompetencia = data.cases.find(c => c.stages.some(st=>st.competencia===fuerte.clave) && !studentAnswers[c.id]?.score);
+          if(casoConEsaCompetencia){ recomendaciones.push({ icono:'ti-trending-up', texto:`Vas muy bien en ${fuerte.nombre} (${fuerte.porcentaje}%) — "${casoConEsaCompetencia.title}" en ${s.title} sigue esa misma línea.`, accion:`navSubject('${s.id}');setTimeout(()=>openCase('${casoConEsaCompetencia.id}'),300);` }); seRecomendoFuerte = true; break; }
+        }
+      }
+      const debil = mapaCompetencias[mapaCompetencias.length-1];
+      // Solo se omite si la recomendación de "vas fuerte" ya se dio
+      // sobre esta misma competencia — si esa competencia nunca llegó
+      // a fuerte (por ejemplo, es la única que existe y está débil),
+      // sí debe recomendarse el tutor de errores igual.
+      if(debil.porcentaje<60 && !(seRecomendoFuerte && debil.clave===fuerte.clave)){
+        recomendaciones.push({ icono:'ti-brain', texto:`${debil.nombre} está en ${debil.porcentaje}% — el Tutor de errores puede mostrarte si hay un patrón específico que se repite ahí.`, accion:`abrirTutorDeErrores()` });
+      }
+    }
+    if(!recomendaciones.length && casosCompletados>0){
+      recomendaciones.push({ icono:'ti-file-certificate', texto:`Ya tienes ${casosCompletados} caso${casosCompletados===1?'':'s'} resuelto${casosCompletados===1?'':'s'} — descarga tu portafolio académico para ver todo reunido.`, accion:`generarPortafolio()` });
+    }
+
     // Fortalezas y debilidades por materia — promedio de examen por
     // cada materia que haya tocado, para ver dónde va mejor y peor.
     const notasPorMateria = {};
@@ -6779,6 +6822,10 @@ async function cargarDashboardEstudiante(){
         <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-clock" style="font-size:22px;color:var(--teal);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${horas}h ${minutosRestantes}m</div><div style="font-size:10.5px;color:var(--t3);">tiempo activo en Academy</div></div>
         <div class="card" style="text-align:center;padding:16px;"><i class="ti ti-books" style="font-size:22px;color:var(--rose);"></i><div style="font-size:22px;font-weight:800;margin-top:4px;">${materiasConProgreso.length}</div><div style="font-size:10.5px;color:var(--t3);">materia${materiasConProgreso.length===1?'':'s'} pendiente${materiasConProgreso.length===1?'':'s'}</div></div>
       </div>
+      ${recomendaciones.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--gold);">
+        <div class="card-title"><i class="ti ti-sparkles" style="color:var(--gold);"></i> Para ti</div>
+        ${recomendaciones.slice(0,2).map(r => `<div class="export-opt" style="cursor:pointer;" onclick="${r.accion}"><i class="ti ${r.icono}" style="color:var(--gold);"></i><div><span style="font-size:12.5px;color:var(--t1);line-height:1.5;">${r.texto}</span></div></div>`).join('')}
+      </div>` : ''}
       ${promediosPorMateria.length ? `<div class="card" style="margin-bottom:16px;">
         <div class="card-title"><i class="ti ti-chart-bar"></i> Tu promedio por materia</div>
         <div style="height:${Math.max(140, promediosPorMateria.length*36)}px;margin-top:10px;"><canvas id="chart-dashboard-materias"></canvas></div>
@@ -7666,6 +7713,7 @@ const COMPETENCIAS = {
   credito_riesgo: { nombre:'Crédito y riesgo', icono:'ti-alert-triangle' },
   liquidez_gestion: { nombre:'Gestión de liquidez', icono:'ti-droplet' },
   valoracion: { nombre:'Valoración de empresas', icono:'ti-scale' },
+  analisis_financiero: { nombre:'Análisis financiero', icono:'ti-chart-bar' },
 };
 function calcularMapaCompetencias(){
   const notasPorCompetencia = {};
@@ -7700,6 +7748,18 @@ const PATRONES_CONFUSION = {
   morosidad_vs_cobertura: {
     titulo: 'Confundes morosidad con cobertura de provisiones',
     explicacion: 'La morosidad mide qué porcentaje de la cartera de préstamos ya está en problemas de pago. La cobertura mide qué tanto de esa cartera problemática ya tiene reservas separadas para cubrir la pérdida si no se recupera. Son dos preguntas distintas: "¿cuánto está mal?" no es lo mismo que "¿cuánto de eso ya está cubierto?".',
+  },
+  pe_vs_rendimiento_dividendo: {
+    titulo: 'Confundes el P/E con el rendimiento por dividendo',
+    explicacion: 'El P/E compara el precio de una acción con la utilidad total que genera la empresa — cuántos años de utilidad "cuesta" comprarla. El rendimiento por dividendo mide algo distinto: cuánto efectivo real le reparte la empresa al accionista cada año, sin importar si esa utilidad se reinvierte o no. Una empresa puede tener un P/E bajo y un dividendo alto, o al revés — no van necesariamente de la mano.',
+  },
+  liquidez_vs_rentabilidad: {
+    titulo: 'Confundes liquidez con rentabilidad',
+    explicacion: 'La razón corriente mide si un negocio tiene con qué pagar sus obligaciones de corto plazo hoy. El margen neto mide si ese negocio gana dinero de verdad por cada venta. Un negocio puede ser rentable en el papel (vender con buen margen) y aun así tener problemas de liquidez si su efectivo está atrapado en inventario o cuentas por cobrar — son dos preguntas distintas sobre la salud del mismo negocio.',
+  },
+  utilidad_vs_efectivo: {
+    titulo: 'Confundes utilidad neta con efectivo real',
+    explicacion: 'La utilidad neta se registra cuando ocurre la venta, no cuando se cobra — es un principio contable, no una promesa de efectivo. Una empresa puede mostrar utilidad creciendo de forma saludable mientras el efectivo que realmente entra a caja crece mucho más lento, si sus clientes están tardando más en pagar. "Ganar más en el papel" y "tener más efectivo disponible" no son lo mismo.',
   },
 };
 function analizarPatronesDeError(){
