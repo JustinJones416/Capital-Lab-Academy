@@ -3949,14 +3949,21 @@ function navGlosarioGeneral(){
   setActiveNav('nav-glosario'); setActiveSubjectPill(null);
   afterNav();
   const cont = $('view-glosario');
+  window.__glosarioGeneralCache = recopilarGlosarioGeneral();
+  const materiasConTerminos = [...new Map(window.__glosarioGeneralCache.map(x=>[x.materiaId, x.materia])).entries()];
   cont.innerHTML = `<div class="hero" style="padding-top:18px;">
     <div class="eyebrow"><i class="ti ti-alphabet-latin"></i> Glosario general</div>
     <h1>Todos los términos, de todas las materias</h1>
     <p>Se arma solo con el contenido real — si algo cambia en una materia, aparece aquí sin tener que actualizar nada aparte.</p>
   </div>
-  <input type="text" id="glosario-buscador" placeholder="Buscar un término…" oninput="filtrarGlosarioGeneral()" style="width:100%;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;margin-bottom:16px;box-sizing:border-box;">
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <input type="text" id="glosario-buscador" placeholder="Buscar un término…" oninput="filtrarGlosarioGeneral()" style="flex:2;min-width:150px;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:14px;box-sizing:border-box;">
+    <select id="glosario-filtro-materia" onchange="filtrarGlosarioGeneral()" style="flex:1;min-width:140px;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;box-sizing:border-box;">
+      <option value="">Todas las materias</option>
+      ${materiasConTerminos.map(([id,titulo])=>`<option value="${id}">${titulo}</option>`).join('')}
+    </select>
+  </div>
   <div id="glosario-contenido"></div>`;
-  window.__glosarioGeneralCache = recopilarGlosarioGeneral();
   dibujarGlosarioGeneral(window.__glosarioGeneralCache);
 }
 function dibujarGlosarioGeneral(terminos){
@@ -3973,7 +3980,10 @@ function dibujarGlosarioGeneral(terminos){
 }
 function filtrarGlosarioGeneral(){
   const q = $('glosario-buscador').value.toLowerCase().trim();
-  const filtrados = !q ? window.__glosarioGeneralCache : window.__glosarioGeneralCache.filter(x => x.termino.toLowerCase().includes(q) || x.definicion.toLowerCase().includes(q) || x.materia.toLowerCase().includes(q));
+  const materiaId = $('glosario-filtro-materia').value;
+  let filtrados = window.__glosarioGeneralCache;
+  if(materiaId) filtrados = filtrados.filter(x => x.materiaId === materiaId);
+  if(q) filtrados = filtrados.filter(x => x.termino.toLowerCase().includes(q) || x.definicion.toLowerCase().includes(q) || x.materia.toLowerCase().includes(q));
   dibujarGlosarioGeneral(filtrados);
 }
 function abrirGestionRubricas(){
@@ -5005,14 +5015,20 @@ async function navDocumentos(){
   if(!currentUser.grupo_id){ $('documentos-contenido').innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
   try {
     await cargarCasosPersonalizados(currentUser.materia_id);
-    const data = SUBJECT_DATA[currentUser.materia_id];
-    const s = SUBJECTS.find(x=>x.id===currentUser.materia_id);
-    let html = `<div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-briefcase"></i> Casos de ${s?.title||''}</div>`;
-    html += data.cases.map(c => `<div class="export-opt" style="align-items:center;">
-      <i class="ti ti-file-text" style="color:${s?.color||'var(--gold)'};cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);"></i>
-      <div style="flex:1;cursor:pointer;" onclick="navSubject('${currentUser.materia_id}');setTimeout(()=>openCase('${c.id}'),300);"><b>${c.title}</b><span>Expediente ${c.expediente} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}${c.personalizado?' · creado por tu profesor':''}</span></div>
-      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();descargarCasoEnPDF('${c.id}')" title="Descargar en PDF"><i class="ti ti-download"></i></button>
-    </div>`).join('');
+    // Antes esto solo mostraba los casos de la materia de la sesión
+    // activa — ahora reúne los casos de TODAS las materias con
+    // contenido real, con un filtro para ordenarlos por materia,
+    // igual que el glosario general.
+    const materiasConCasos = SUBJECTS.filter(s => s.kind==='academic' && SUBJECT_DATA[s.id]?.cases?.length);
+    window.__documentosCasosCache = materiasConCasos.flatMap(s => SUBJECT_DATA[s.id].cases.map(c => ({ caso:c, materia:s })));
+    let html = `<div style="display:flex;gap:8px;margin-bottom:16px;">
+      <select id="documentos-filtro-materia" onchange="filtrarDocumentosPorMateria()" style="width:100%;padding:9px 11px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13px;">
+        <option value="">Todas las materias</option>
+        ${materiasConCasos.map(s=>`<option value="${s.id}" ${s.id===currentUser.materia_id?'selected':''}>${s.title}</option>`).join('')}
+      </select>
+    </div>
+    <div class="card-title" style="margin:6px 0 10px;"><i class="ti ti-briefcase"></i> Casos</div>
+    <div id="documentos-casos-lista"></div>`;
 
     // Materiales que el docente haya adjuntado al crear tareas —
     // instrucciones, lecturas, lo que haga falta para resolverlas.
@@ -5040,9 +5056,19 @@ async function navDocumentos(){
       }).join('') : '<div class="auth-hint">Todavía no has entregado ninguna tarea.</div>';
     }
     $('documentos-contenido').innerHTML = html;
+    filtrarDocumentosPorMateria();
   } catch(e){
     $('documentos-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
+}
+function filtrarDocumentosPorMateria(){
+  const materiaId = $('documentos-filtro-materia')?.value || '';
+  const lista = materiaId ? window.__documentosCasosCache.filter(x=>x.materia.id===materiaId) : window.__documentosCasosCache;
+  $('documentos-casos-lista').innerHTML = lista.length ? lista.map(({caso:c, materia:s}) => `<div class="export-opt" style="align-items:center;">
+      <i class="ti ti-file-text" style="color:${s?.color||'var(--gold)'};cursor:pointer;" onclick="navSubject('${s.id}');setTimeout(()=>openCase('${c.id}'),300);"></i>
+      <div style="flex:1;cursor:pointer;" onclick="navSubject('${s.id}');setTimeout(()=>openCase('${c.id}'),300);"><b>${c.title}</b><span>${s.title} · Expediente ${c.expediente} · ${c.stages.length} etapa${c.stages.length===1?'':'s'}${c.personalizado?' · creado por tu profesor':''}</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();descargarCasoEnPDF('${c.id}')" title="Descargar en PDF"><i class="ti ti-download"></i></button>
+    </div>`).join('') : '<div class="auth-hint">No hay casos para esta materia todavía.</div>';
 }
 
 // ───── Sidebar: listado de materias y roles ─────
