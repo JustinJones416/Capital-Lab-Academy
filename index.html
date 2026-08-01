@@ -2500,15 +2500,119 @@ SUBJECT_DATA.macro = { casesPlanned:3, cases:[
       {q:'¿Por qué Panamá no tiene política monetaria propia?', opts:['Por decisión política reciente','Porque está dolarizada y no tiene banco central emisor','Porque su PIB es muy pequeño','No es cierto, sí la tiene'], correct:1},
     ],
   },
+  {
+    id:'macro-c2', expediente:'ECO305-2026-518', role:'Economista de Política Fiscal',
+    title:'¿Cuánto impacto real tiene un programa de inversión pública en el PIB?',
+    brief:'El Ministerio de Economía y Finanzas evalúa un programa de inversión pública en infraestructura por US$800 millones, y te pide estimar cuánto impacto tendría sobre el PIB total de la economía, no solo el monto directo invertido.',
+    character:{name:'Ricardo Aizpurúa', role:'Director de Política Fiscal, Ministerio de Economía y Finanzas', quote:'"US$800 millones es el gasto directo. Pero necesito que el comité entienda que el efecto real sobre la economía es mayor que esa cifra — necesito el número completo, no solo el gasto inicial."'},
+    facts:[['Monto del programa de inversión pública','US$ 800,000,000'],['Propensión Marginal a Consumir (PMgC) estimada para Panamá','0.75'],['PIB actual de Panamá (aproximado)','US$ 82,000,000,000'],['Plazo de ejecución del programa','18 meses']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Calculando el multiplicador del gasto', icon:'ti-calculator', competencia:'analisis_financiero',
+        intro:'El multiplicador del gasto mide cuánto se amplifica el efecto de un gasto inicial sobre el ingreso total de la economía, porque ese gasto se convierte en ingreso para otros, que a su vez gastan parte de ese ingreso nuevo, y así sucesivamente.',
+        databox:{title:'Datos para el cálculo', rows:[['Monto del programa','US$800,000,000'],['PMgC estimada','0.75']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el multiplicador del gasto, con una PMgC de 0.75? (un decimal)', placeholder:'Ej: 4.0', correct:4.0, tolerance:0.1, explain:'Multiplicador = 1 / (1 − PMgC) = 1 / (1 − 0.75) = 1 / 0.25 = 4.0 — cada dólar de gasto público inicial genera, en teoría, cuatro dólares de impacto total sobre el ingreso de la economía.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · El impacto total sobre el PIB', icon:'ti-trending-up', competencia:'analisis_financiero',
+        intro:'Con el multiplicador calculado, se puede estimar el impacto total del programa sobre el PIB, no solo el monto directo invertido.',
+        questions:[
+          {type:'num', q:'Con un multiplicador de 4.0 y un gasto inicial de US$800,000,000, ¿cuál es el impacto total estimado sobre el ingreso de la economía? (en millones de US$)', placeholder:'Ej: 3200', correct:3200, tolerance:50, explain:'Impacto total = Gasto inicial × Multiplicador = 800,000,000 × 4.0 = US$3,200,000,000 — cuatro veces el monto directo invertido, por el efecto de que cada dólar gastado se convierte en ingreso para alguien más, que a su vez gasta parte de ese ingreso.'},
+          {type:'mc', q:'¿Por qué el impacto total estimado (US$3,200 millones) es mucho mayor que el gasto directo (US$800 millones)?', opts:['Es un error de cálculo, deberían ser iguales','Porque cada dólar de gasto público se convierte en ingreso para trabajadores y empresas, que a su vez gastan una parte de ese ingreso nuevo, generando rondas sucesivas de gasto adicional en la economía','El multiplicador no tiene ninguna base económica real','Porque el gobierno gastará más de lo presupuestado'], correct:1, explain:'El efecto multiplicador captura las rondas sucesivas de gasto: el dinero que el gobierno paga a una constructora se convierte en salarios para sus trabajadores, quienes gastan parte de ese ingreso en otros negocios, que a su vez pagan a sus propios empleados — cada ronda es más pequeña que la anterior (por la PMgC menor a 1), pero la suma de todas las rondas es varias veces el gasto inicial.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Qué tan realista es este número en la práctica?', icon:'ti-alert-triangle', competencia:'analisis_financiero',
+        intro:'El modelo del multiplicador simple asume ciertas condiciones que no siempre se cumplen exactamente en una economía real, especialmente una tan abierta y dolarizada como la panameña.',
+        questions:[
+          {type:'mc', q:'¿Qué factor podría hacer que el impacto real sobre el PIB panameño sea menor al estimado por el multiplicador simple?', opts:['Ningún factor lo reduciría, el cálculo siempre es exacto','Que parte del gasto se "fugue" hacia importaciones (comprando insumos o bienes del extranjero en vez de producidos localmente), lo cual reduce el efecto multiplicador dentro de la economía panameña','El multiplicador siempre subestima el impacto real','La PMgC no tiene ninguna relación con este efecto'], correct:1, explain:'El modelo simple del multiplicador asume una economía cerrada, sin fugas hacia el exterior. En una economía abierta y pequeña como Panamá, con alta dependencia de importaciones, parte del gasto en cada ronda "se fuga" hacia el exterior en vez de generar otra ronda de gasto local, lo cual reduce el multiplicador efectivo por debajo del valor teórico simple.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al comité económico', icon:'ti-gavel',
+        intro:'Con el multiplicador calculado (etapa 1), el impacto total teórico (etapa 2), y la limitación real de ese modelo (etapa 3), debes presentar tu recomendación de cómo comunicar este número al comité.',
+        verdictOptions:[
+          {v:'presentar_ajustado', label:'Presentar el número teórico junto con una advertencia clara sobre la fuga hacia importaciones', desc:'Da al comité el cálculo completo, pero con el contexto necesario para no sobreestimar el impacto real esperado.'},
+          {v:'presentar_teorico', label:'Presentar solo el número teórico de US$3,200 millones, sin matices adicionales', desc:'Un número más simple e impactante de comunicar, aunque podría generar expectativas superiores a lo que realmente ocurrirá.'},
+          {v:'estimar_rango', label:'Presentar un rango, reconociendo la incertidumbre del multiplicador efectivo real', desc:'La opción más honesta técnicamente, aunque menos contundente que dar una sola cifra al comité.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando por qué el multiplicador teórico (4.0) probablemente sobreestima el impacto real en una economía abierta como Panamá, y cómo comunicarías esa limitación sin restarle valor al análisis.',
+      },
+    ],
+    summary:'Este caso trabaja el <b>multiplicador keynesiano del gasto</b>, la herramienta central para estimar el impacto total de una política fiscal expansiva sobre la economía. Con una PMgC de 0.75, el multiplicador es 4.0 — cada dólar de gasto público inicial genera, en teoría, cuatro dólares de impacto total sobre el ingreso nacional. Pero el caso también entrena una disciplina importante: reconocer que el modelo simple asume una economía cerrada, y que en una economía abierta y dolarizada como Panamá, con alta dependencia de importaciones, parte de ese efecto se "fuga" hacia el exterior, reduciendo el impacto real por debajo del valor teórico.',
+    flashcards:[
+      {q:'¿Cómo se calcula el multiplicador del gasto?', a:'Multiplicador = 1 / (1 − PMgC), donde PMgC es la Propensión Marginal a Consumir.'},
+      {q:'¿Por qué el impacto total de un gasto público suele ser mayor al monto directo invertido?', a:'Porque cada dólar gastado se convierte en ingreso para alguien más, que a su vez gasta una parte de ese ingreso nuevo, generando rondas sucesivas de gasto adicional en la economía.'},
+      {q:'¿Qué factor reduce el multiplicador efectivo en una economía abierta como Panamá?', a:'La fuga de parte del gasto hacia importaciones, ya que ese dinero sale de la economía local en vez de generar otra ronda de gasto interno.'},
+    ],
+    glossary:[
+      {t:'Multiplicador keynesiano', d:'Factor que estima cuánto se amplifica el efecto de un gasto inicial (público o privado) sobre el ingreso total de la economía, calculado como 1/(1−PMgC).'},
+      {t:'Fuga hacia importaciones', d:'La parte del gasto en cada ronda del efecto multiplicador que sale de la economía local al comprar bienes o servicios del extranjero, reduciendo el multiplicador efectivo.'},
+    ],
+    quiz:[
+      {q:'¿Cómo se calcula el multiplicador del gasto?', opts:['PMgC × Gasto inicial','1 / (1 − PMgC)','PMgC − 1','Gasto inicial / PMgC'], correct:1},
+      {q:'¿Qué reduce el multiplicador efectivo en una economía abierta como Panamá?', opts:['Nada, siempre es exacto','La fuga de parte del gasto hacia importaciones','El tamaño del PIB','La inflación'], correct:1},
+    ],
+  },
+  {
+    id:'macro-c3', expediente:'ECO305-2026-534', role:'Economista de Coyuntura', materiasConectadas:['bancint'],
+    title:'La Reserva Federal sube las tasas — ¿qué le pasa a una economía dolarizada como Panamá?',
+    brief:'La Reserva Federal de Estados Unidos anuncia un aumento de 0.50 puntos porcentuales en su tasa de referencia. Como Panamá usa el dólar como moneda de curso legal y no tiene banco central emisor propio, te piden analizar cómo se transmite esa decisión, tomada en otro país, a la economía panameña.',
+    character:{name:'Valentina Rojas', role:'Economista de Coyuntura, Departamento de Estudios Económicos', quote:'"La Fed no toma esta decisión pensando en Panamá. Pero nosotros sí sentimos el efecto, aunque no tengamos voto ni voz en esa decisión."'},
+    facts:[['Aumento de la tasa de referencia de la Fed','0.50 puntos porcentuales'],['Tasa promedio de préstamos comerciales en Panamá antes del aumento','8.2%'],['Transmisión histórica estimada hacia tasas locales','Entre 60% y 80% del movimiento de la Fed'],['Sector más sensible a tasas más altas','Construcción e hipotecas']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · ¿Por qué le afecta a Panamá una decisión de otro país?', icon:'ti-world', competencia:'regulacion_bancaria',
+        intro:'Al no tener moneda propia ni banco central emisor, Panamá no puede fijar su propia tasa de interés de referencia — las tasas locales tienden a moverse en la misma dirección que las tasas de Estados Unidos, aunque no exactamente en la misma magnitud.',
+        databox:{title:'Datos de la transmisión de tasas', rows:[['Aumento de la Fed','0.50 puntos porcentuales'],['Transmisión histórica estimada','Entre 60% y 80%'],['Tasa de préstamos comerciales actual en Panamá','8.2%']]},
+        questions:[
+          {type:'mc', q:'¿Por qué las tasas de interés en Panamá tienden a moverse en la misma dirección que las de Estados Unidos?', opts:['Por una decisión política panameña independiente cada vez que la Fed se mueve','Porque al usar el dólar como moneda de curso legal, sin banco central propio que fije una tasa distinta, los bancos panameños fondean y compiten en un entorno donde el costo del dinero en dólares está influenciado por la tasa de referencia de Estados Unidos','No existe ninguna relación real entre ambas tasas','Porque el gobierno panameño se lo pide directamente a los bancos'], correct:1, explain:'Al no tener banco central emisor ni moneda propia, Panamá no puede fijar una tasa de referencia independiente — el costo del dinero en dólares en la economía panameña está naturalmente influenciado por las condiciones del mercado de dólares en general, del cual la tasa de la Fed es el ancla principal.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · Estimando el impacto en las tasas locales', icon:'ti-calculator', competencia:'regulacion_bancaria',
+        intro:'Con la tasa de transmisión histórica estimada, se puede calcular un rango probable de cuánto subirían las tasas de préstamos comerciales en Panamá.',
+        questions:[
+          {type:'num', q:'Si la transmisión es del 70% (punto medio del rango estimado) sobre un aumento de 0.50 puntos de la Fed, ¿cuántos puntos porcentuales subiría, en promedio, la tasa de préstamos comerciales en Panamá? (dos decimales)', placeholder:'Ej: 0.35', correct:0.35, tolerance:0.02, explain:'0.50 × 70% = 0.35 puntos porcentuales — la tasa de préstamos comerciales pasaría de 8.2% a aproximadamente 8.55%, no el aumento completo de 0.50 puntos que tuvo la Fed.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Quién siente más este cambio?', icon:'ti-home', competencia:'credito_riesgo',
+        intro:'No todos los sectores de la economía sienten un aumento de tasas de la misma forma — algunos son considerablemente más sensibles que otros.',
+        questions:[
+          {type:'mc', q:'¿Por qué el sector de construcción e hipotecas suele ser el más sensible a un aumento de tasas de interés?', opts:['No hay ninguna razón particular, todos los sectores son igual de sensibles','Porque las hipotecas son préstamos de plazo muy largo, y un aumento de tasas encarece considerablemente la cuota mensual de nuevos préstamos, reduciendo la capacidad de compra de vivienda de las familias','El sector de construcción no usa financiamiento bancario','Las tasas de interés no afectan al sector inmobiliario'], correct:1, explain:'Las hipotecas son préstamos de plazo muy largo (15 a 30 años), lo que hace que pequeños cambios en la tasa de interés tengan un efecto acumulado grande sobre la cuota mensual total durante todo el plazo, encareciendo el acceso a vivienda nueva y reduciendo la demanda del sector de construcción de forma más directa que en otros sectores con financiamiento de plazos más cortos.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación del informe de coyuntura', icon:'ti-gavel',
+        intro:'Con el mecanismo de transmisión entendido (etapa 1), el impacto estimado en tasas locales (etapa 2), y el sector más sensible identificado (etapa 3), debes concluir el informe de coyuntura.',
+        verdictOptions:[
+          {v:'alertar_construccion', label:'Señalar al sector de construcción e hipotecas como el de mayor atención en el informe', desc:'Enfoca el análisis en el sector más directamente afectado, dando información accionable para los bancos y desarrolladores del sector.'},
+          {v:'analisis_general', label:'Presentar un análisis general del impacto sobre toda la economía, sin destacar un sector particular', desc:'Ofrece una visión más amplia, aunque menos específica sobre dónde concentrar la atención inmediata.'},
+          {v:'esperar_mas_datos', label:'Esperar más datos antes de estimar un impacto específico', desc:'Una postura más cautelosa, aunque el comité de crédito probablemente necesita una estimación ahora, no después de que el impacto ya se haya materializado.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando por qué una decisión tomada en otro país afecta directamente a Panamá (etapa 1), cuánto impacto estimado tendría sobre las tasas locales (etapa 2), y por qué el sector de construcción e hipotecas merece atención particular (etapa 3).',
+      },
+    ],
+    summary:'Este caso conecta con <b>Banca Internacional</b> y trabaja una de las particularidades más importantes de la economía panameña: al no tener moneda propia ni banco central emisor, Panamá no controla su propia política monetaria — las decisiones de la Reserva Federal de Estados Unidos se transmiten, con cierto rezago y magnitud parcial (entre 60% y 80% históricamente), hacia las tasas de interés locales. Un aumento de 0.50 puntos de la Fed se traduce en un aumento estimado de 0.35 puntos en las tasas de préstamos comerciales panameñas, con el sector de construcción e hipotecas como el más sensible, por la naturaleza de plazo largo de esos préstamos.',
+    flashcards:[
+      {q:'¿Por qué las tasas de interés en Panamá tienden a moverse en la misma dirección que las de Estados Unidos?', a:'Porque al usar el dólar sin banco central emisor propio, Panamá no puede fijar una tasa de referencia independiente — el costo del dinero en dólares está influenciado por las condiciones del mercado de dólares, ancladas en la tasa de la Fed.'},
+      {q:'¿Por qué el sector de construcción e hipotecas es especialmente sensible a cambios en tasas de interés?', a:'Porque las hipotecas son préstamos de plazo muy largo, y pequeños cambios en la tasa tienen un efecto acumulado grande sobre la cuota mensual durante todo el plazo del préstamo.'},
+    ],
+    glossary:[
+      {t:'Transmisión de tasas de interés', d:'El proceso por el cual un cambio en la tasa de referencia de un país (como la Fed en Estados Unidos) se traslada, parcial y gradualmente, hacia las tasas de interés de otras economías relacionadas, como la dolarizada economía panameña.'},
+      {t:'Economía dolarizada', d:'Economía que usa como moneda de curso legal la de otro país (en el caso de Panamá, el dólar estadounidense), sin banco central emisor propio ni política monetaria independiente.'},
+    ],
+    quiz:[
+      {q:'¿Por qué Panamá siente el efecto de las decisiones de tasas de la Reserva Federal?', opts:['No las siente, son economías completamente independientes','Porque al usar el dólar sin banco central emisor propio, el costo del dinero está influenciado por la tasa de la Fed','Solo por acuerdo político voluntario','Porque el gobierno panameño fija la tasa igual a la de la Fed por ley'], correct:1},
+      {q:'¿Qué sector suele ser más sensible a un aumento de tasas de interés?', opts:['Alimentos','Construcción e hipotecas, por ser préstamos de plazo muy largo','Tecnología','Ninguno, todos son igual de sensibles'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.macro.studyMaterial = {
-  summary:'<b>Macroeconomía I</b> desarrolla la capacidad de leer el estado de la economía panameña usando indicadores agregados, y de anticipar cómo esas condiciones afectan las decisiones financieras de empresas, bancos e individuos.<br><br>El análisis parte de descomponer el <b>Producto Interno Bruto (PIB)</b> en sus componentes de demanda: consumo privado, inversión, gasto público y exportaciones netas. Identificar cuál componente está creciendo más rápido que los demás permite diagnosticar el motor del ciclo actual: un consumo que crece más que el PIB sugiere una economía impulsada por el gasto de los hogares; una inversión débil anticipa limitaciones futuras de capacidad productiva. El concepto de <b>Propensión Marginal a Consumir (PMgC)</b> cuantifica qué fracción de cada dólar adicional de ingreso se destina al consumo, y el <b>multiplicador del gasto</b> (1 / 1−PMgC) estima cuánto se amplifica un estímulo inicial sobre el ingreso nacional total a través de sucesivas rondas de gasto.<br><br>Una característica estructural que atraviesa toda la materia aplicada a Panamá es la <b>dolarización</b>: al no tener banco central emisor, el país no puede usar política monetaria propia para moderar el ciclo económico. Las tasas de interés panameñas se mueven en línea con las decisiones de la Reserva Federal de EE.UU., y el tipo de cambio no existe como mecanismo de ajuste. Esto hace que la <b>política fiscal</b> sea el único instrumento macroeconómico interno disponible, y que la lectura del ciclo externo (especialmente EE.UU.) sea indispensable para proyectar el entorno doméstico. El <b>modelo de la línea de 45 grados</b> formaliza el equilibrio entre el gasto agregado planeado y el ingreso, y permite calcular el ingreso de equilibrio ante distintos supuestos de gasto autónomo.',
+  summary:'<b>Macroeconomía I</b> desarrolla la capacidad de leer el estado de la economía panameña usando indicadores agregados, y de anticipar cómo esas condiciones afectan las decisiones financieras de empresas, bancos e individuos.<br><br>El análisis parte de descomponer el <b>Producto Interno Bruto (PIB)</b> en sus componentes de demanda: consumo privado, inversión, gasto público y exportaciones netas. Identificar cuál componente está creciendo más rápido que los demás permite diagnosticar el motor del ciclo actual. El concepto de <b>Propensión Marginal a Consumir (PMgC)</b> cuantifica qué fracción de cada dólar adicional de ingreso se destina al consumo, y el <b>multiplicador del gasto</b> (1 / 1−PMgC) estima cuánto se amplifica un estímulo inicial sobre el ingreso nacional total a través de sucesivas rondas de gasto — aunque en una economía abierta y pequeña como Panamá, con alta dependencia de importaciones, parte de ese efecto se "fuga" hacia el exterior, reduciendo el multiplicador efectivo por debajo del valor teórico simple.<br><br>Una característica estructural que atraviesa toda la materia aplicada a Panamá es la <b>dolarización</b>: al no tener banco central emisor, el país no puede usar política monetaria propia para moderar el ciclo económico. Las tasas de interés panameñas se mueven en línea con las decisiones de la Reserva Federal de EE.UU. — históricamente, entre 60% y 80% de un movimiento de la Fed se transmite hacia las tasas locales, con sectores de plazo largo como la construcción e hipotecas siendo los más sensibles a ese efecto. Esto hace que la <b>política fiscal</b> sea el único instrumento macroeconómico interno disponible, y que la lectura del ciclo externo (especialmente EE.UU.) sea indispensable para proyectar el entorno doméstico. El <b>modelo de la línea de 45 grados</b> formaliza el equilibrio entre el gasto agregado planeado y el ingreso, y permite calcular el ingreso de equilibrio ante distintos supuestos de gasto autónomo.',
   flashcards:[
     {q:'¿Qué es la Propensión Marginal a Consumir (PMgC)?', a:'La proporción de cada dólar adicional de ingreso que los hogares destinan a consumo, en lugar de ahorro.'},
     {q:'¿Cómo se calcula el multiplicador del gasto?', a:'Multiplicador = 1 / (1 − PMgC). Indica cuánto se amplifica un cambio en el gasto autónomo sobre el ingreso nacional total.'},
     {q:'¿Qué representa la línea de 45 grados en el modelo keynesiano simple?', a:'El conjunto de puntos donde el gasto agregado planeado es exactamente igual al ingreso nacional; su intersección con la curva de gasto define el equilibrio.'},
     {q:'¿Por qué Panamá no puede usar política monetaria propia para influir en el ciclo económico?', a:'Porque al estar dolarizada, no cuenta con un banco central emisor que fije tasas de referencia o controle la oferta monetaria de forma independiente.'},
+    {q:'¿Qué reduce el multiplicador efectivo del gasto en una economía abierta como Panamá?', a:'La fuga de parte del gasto hacia importaciones en cada ronda, ya que ese dinero sale de la economía local en vez de generar otra ronda de gasto interno.'},
+    {q:'¿Por qué las tasas de interés en Panamá tienden a moverse junto con las de la Reserva Federal?', a:'Porque al usar el dólar sin banco central emisor propio, el costo del dinero en la economía panameña está naturalmente influenciado por las condiciones del mercado de dólares, ancladas en la tasa de la Fed.'},
   ],
   glossary:[
     {t:'PIB (Producto Interno Bruto)', d:'Valor de todos los bienes y servicios finales producidos en una economía durante un período determinado.'},
@@ -2516,13 +2620,89 @@ SUBJECT_DATA.macro.studyMaterial = {
     {t:'Multiplicador del gasto', d:'Factor que indica cuánto se amplifica el efecto de un cambio en el gasto autónomo sobre el ingreso nacional total.'},
     {t:'Gasto autónomo', d:'Componente del gasto agregado que no depende del nivel de ingreso de la economía.'},
     {t:'Salario real', d:'Salario nominal ajustado por inflación; mide el verdadero poder adquisitivo del ingreso laboral.'},
+    {t:'Fuga hacia importaciones', d:'La parte del gasto en cada ronda del efecto multiplicador que sale de la economía local al comprar bienes o servicios del extranjero, reduciendo el multiplicador efectivo.'},
+    {t:'Transmisión de tasas de interés', d:'El proceso por el cual un cambio en la tasa de referencia de un país (como la Fed en Estados Unidos) se traslada, parcial y gradualmente, hacia las tasas de interés de otras economías relacionadas, como la dolarizada economía panameña.'},
   ],
   quiz:[
     {q:'Si la PMgC es 0.80, ¿cuál es el multiplicador del gasto?', opts:['1.25','5','4','0.20'], correct:1},
     {q:'¿Qué componente del PIB no depende directamente del nivel de ingreso, en el modelo simple?', opts:['El consumo inducido','El gasto autónomo','El ahorro','El salario real'], correct:1},
     {q:'¿Por qué Panamá no tiene política monetaria propia?', opts:['Por decisión política reciente','Porque está dolarizada y no tiene banco central emisor','Porque su PIB es muy pequeño','No es cierto, sí la tiene'], correct:1},
+    {q:'¿Cómo se calcula el multiplicador del gasto?', opts:['PMgC × Gasto inicial','1 / (1 − PMgC)','PMgC − 1','Gasto inicial / PMgC'], correct:1},
+    {q:'¿Qué reduce el multiplicador efectivo en una economía abierta como Panamá?', opts:['Nada, siempre es exacto','La fuga de parte del gasto hacia importaciones','El tamaño del PIB','La inflación'], correct:1},
+    {q:'¿Por qué Panamá siente el efecto de las decisiones de tasas de la Reserva Federal?', opts:['No las siente, son economías completamente independientes','Porque al usar el dólar sin banco central emisor propio, el costo del dinero está influenciado por la tasa de la Fed','Solo por acuerdo político voluntario','Porque el gobierno panameño fija la tasa igual a la de la Fed por ley'], correct:1},
+  ],
+  libro:[
+    { titulo:'Cómo un dólar de gasto se multiplica antes de desaparecer', texto:`Cuando el gobierno gasta US$800 millones en un programa de infraestructura, es tentador pensar que el impacto sobre la economía es, precisamente, US$800 millones. La realidad es más interesante que eso, y entenderla es el corazón del modelo keynesiano simple: ese gasto inicial se convierte en ingreso para alguien más — la constructora, sus proveedores, sus trabajadores — y esas personas, a su vez, gastan una parte de ese ingreso nuevo en sus propias compras, generando otra ronda de ingreso para otras personas, que también gastan una parte, y así sucesivamente.<br><br>La clave de cuánto se extiende ese efecto está en la Propensión Marginal a Consumir, o PMgC: qué fracción de cada dólar adicional de ingreso una persona destina a consumo, en vez de ahorro. Si la PMgC es 0.75, significa que de cada dólar nuevo de ingreso, 75 centavos se gastan de nuevo (generando otra ronda), y 25 centavos se ahorran (saliendo del ciclo de gasto). Sumando todas esas rondas sucesivas, cada vez más pequeñas, el efecto total termina siendo el gasto inicial multiplicado por 1/(1−PMgC) — con una PMgC de 0.75, eso es un multiplicador de 4.0: cada dólar de gasto público inicial genera, en teoría, cuatro dólares de impacto total sobre el ingreso de la economía.<br><br>Pero ese número teórico asume una economía cerrada, donde todo el gasto de cada ronda se queda dentro del país. En una economía pequeña y abierta como Panamá, con alta dependencia de importaciones, parte de cada ronda de gasto se "fuga" hacia el exterior — cuando alguien gasta su ingreso nuevo comprando algo importado, ese dinero sale de la economía local en vez de generar otra ronda de gasto interno. El multiplicador teórico de 4.0 es el punto de partida del análisis, no la respuesta final; un economista riguroso siempre pregunta cuánto de ese efecto realmente se queda circulando dentro del país.` },
+    { titulo:'Vivir con las decisiones de un banco central que no es el tuyo', texto:`Panamá tiene una particularidad que la distingue de casi cualquier otro país que se estudia en un curso típico de macroeconomía: no tiene banco central emisor propio, ni moneda propia con la cual ejercer política monetaria. El dólar estadounidense circula como moneda de curso legal, lo cual trae ventajas reales — estabilidad de precios, ausencia de riesgo cambiario en las transacciones domésticas — pero también una consecuencia que se siente en cada decisión de crédito del país: las tasas de interés en Panamá no las decide nadie en Panamá.<br><br>Cuando la Reserva Federal de Estados Unidos sube su tasa de referencia, no lo hace pensando en la economía panameña — su mandato es exclusivamente sobre la economía estadounidense. Pero como los bancos panameños operan fondeándose y compitiendo en un entorno de tasas en dólares, ese movimiento se transmite, con cierto rezago y de forma parcial, hacia las tasas locales. Históricamente, entre 60% y 80% de un movimiento de la Fed termina reflejándose en las tasas de préstamos comerciales panameños — no el 100%, porque hay factores locales (competencia bancaria, liquidez del sistema, apetito de riesgo) que también influyen, pero tampoco 0%, porque la conexión con el costo del dólar es real y directa.<br><br>Esto no es solo un dato técnico interesante — tiene consecuencias prácticas concretas. El sector más sensible a este efecto suele ser la construcción y las hipotecas, precisamente porque son préstamos de plazo muy largo: un aumento de apenas 0.35 puntos porcentuales en la tasa de una hipoteca a 20 años tiene un efecto acumulado considerable sobre la cuota mensual total durante todo ese plazo, algo que un préstamo de corto plazo no siente con la misma intensidad. Entender esta transmisión no es un ejercicio académico abstracto — es la diferencia entre anticipar el próximo ciclo de crédito en Panamá, o que le tome a uno por sorpresa una decisión tomada en Washington.` },
   ],
 };
+SUBJECT_DATA.macro.formulas = [
+  { nombre:'Multiplicador del gasto', formula:'Multiplicador = 1 ÷ (1 − PMgC)',
+    variables:'PMgC: Propensión Marginal a Consumir, la fracción de cada dólar adicional de ingreso que se destina a consumo.',
+    ejemplo:'Con una PMgC de 0.75, el multiplicador es 1/(1−0.75) = 1/0.25 = 4.0.' },
+  { nombre:'Impacto total estimado de un gasto', formula:'Impacto total = Gasto inicial × Multiplicador',
+    variables:'Gasto inicial: el monto directo del programa de gasto público o privado.',
+    ejemplo:'Con un gasto inicial de US$800,000,000 y un multiplicador de 4.0, el impacto total estimado es 800,000,000 × 4.0 = US$3,200,000,000.' },
+  { nombre:'Transmisión estimada de tasas de interés', formula:'Cambio en tasa local = Cambio en tasa de referencia externa × Tasa de transmisión',
+    variables:'Tasa de transmisión: el porcentaje histórico estimado de cuánto de un movimiento externo se refleja en las tasas locales.',
+    ejemplo:'Con un aumento de la Fed de 0.50 puntos y una transmisión del 70%, el cambio estimado en la tasa local es 0.50 × 70% = 0.35 puntos porcentuales.' },
+];
+SUBJECT_DATA.macro.leyes = [
+  { nombre:'Ley Monetaria de Panamá', numero:'Ley 34 de 1941 y sus modificaciones',
+    resumen:'Establece el marco legal de la dolarización panameña: el dólar estadounidense circula con curso legal en el país, junto al balboa (que existe solo como moneda fraccionaria, sin billetes propios). Esta ley es la base jurídica de por qué Panamá no emite su propia moneda ni ejerce política monetaria independiente.',
+    temasClave:['El dólar como moneda de curso legal en Panamá', 'El balboa como moneda fraccionaria sin billetes propios', 'Ausencia de banco central emisor en Panamá'] },
+];
+SUBJECT_DATA.macro.simulaciones = [
+  {
+    id: 'sim-macro-economista-coyuntura',
+    titulo: 'Economista de Coyuntura — Departamento de Estudios Económicos',
+    rolJugador: 'Economista de Coyuntura',
+    descripcion: 'No vas a responder preguntas sobre indicadores — vas a asesorar al comité económico de un banco durante varias rondas de decisiones de política y coyuntura, con el mismo tipo de análisis que se trabajó en los casos de esta materia.',
+    kpisIniciales: { precisionPronosticos: 60, confianzaComite: 65, impactoEconomiaReal: 0, credibilidadInforme: 65, anticipacionCiclo: 50 },
+    rondas: [
+      { titulo:'Ronda 1 — El gobierno anuncia un programa de estímulo fiscal',
+        contexto:'El gobierno anuncia un programa de gasto público de US$500 millones. El comité pregunta cuál será el impacto real esperado sobre la economía.',
+        opciones: [
+          { texto:'Presentar el multiplicador teórico junto con el ajuste por fuga hacia importaciones', efectos:{precisionPronosticos:12, credibilidadInforme:10},
+            resultado:'Diste al comité una estimación más realista, reconociendo que el multiplicador teórico simple sobreestima el impacto en una economía abierta como Panamá.'},
+          { texto:'Presentar solo el multiplicador teórico simple, sin ajustes', efectos:{precisionPronosticos:-8, credibilidadInforme:-5, impactoEconomiaReal:5},
+            resultado:'Un número más simple e impactante de comunicar, pero que probablemente sobreestima el efecto real esperado sobre la economía panameña.'},
+        ]},
+      { titulo:'Ronda 2 — La Fed anuncia un cambio de tasas',
+        contexto:'La Reserva Federal anuncia un movimiento en su tasa de referencia. El comité de crédito del banco pregunta qué esperar sobre las tasas locales.',
+        opciones: [
+          { texto:'Estimar el impacto usando la tasa de transmisión histórica, con un rango, no un número único', efectos:{precisionPronosticos:10, anticipacionCiclo:12, credibilidadInforme:8},
+            resultado:'Diste al comité una estimación honesta con su rango de incertidumbre, en vez de una falsa precisión de un solo número exacto.'},
+          { texto:'Asumir que la transmisión será del 100%, igual al movimiento de la Fed', efectos:{precisionPronosticos:-10, credibilidadInforme:-8},
+            resultado:'Una simplificación que ignora la evidencia histórica real de que la transmisión hacia las tasas panameñas es parcial, no total — un error que se notará cuando las tasas reales no se muevan tanto como se proyectó.'},
+        ]},
+      { titulo:'Ronda 3 — El comité pide identificar el sector más vulnerable ante el nuevo entorno de tasas',
+        contexto:'Con el nuevo escenario de tasas más altas, el comité pide identificar qué sector de la cartera de crédito del banco merece mayor atención.',
+        opciones: [
+          { texto:'Señalar construcción e hipotecas como el sector de mayor sensibilidad, con datos de plazo y elasticidad', efectos:{anticipacionCiclo:15, credibilidadInforme:10},
+            resultado:'Identificaste correctamente el sector estructuralmente más sensible a cambios de tasas, dando al banco tiempo de anticiparse antes de que el impacto se materialice en la cartera.'},
+          { texto:'No destacar ningún sector en particular en el informe', efectos:{anticipacionCiclo:-10},
+            resultado:'El comité pierde la oportunidad de anticiparse a dónde es más probable que el nuevo entorno de tasas genere mayor deterioro en la cartera de crédito.'},
+        ]},
+      { titulo:'Ronda 4 — Los datos de PIB del trimestre llegan mixtos',
+        contexto:'El PIB creció, pero la inversión se contrajo mientras el consumo se aceleró — una señal mixta sobre la salud real del ciclo económico.',
+        opciones: [
+          { texto:'Explicar la señal mixta con matices, en vez de dar una lectura simplista de "todo bien" o "todo mal"', efectos:{credibilidadInforme:12, precisionPronosticos:8},
+            resultado:'Un análisis honesto de una señal genuinamente mixta, que le da al comité el contexto real para tomar decisiones informadas, no una narrativa simplificada.'},
+          { texto:'Reportar solo el crecimiento del PIB como una buena noticia, sin mencionar la contracción de inversión', efectos:{credibilidadInforme:-10, precisionPronosticos:-5},
+            resultado:'Un informe incompleto que oculta una señal de alerta real (la inversión débil) detrás de un titular positivo simple, dejando al comité con una imagen menos completa de la que necesitaba.'},
+        ]},
+      { titulo:'Ronda 5 — Cierre del informe trimestral de coyuntura',
+        contexto:'Termina el trimestre. Debes cerrar el informe con una lectura general del momento del ciclo económico panameño.',
+        opciones: [
+          { texto:'Presentar una lectura integrada, conectando el multiplicador fiscal, la transmisión de tasas, y las señales mixtas del PIB', efectos:{credibilidadInforme:15, precisionPronosticos:10, anticipacionCiclo:8},
+            resultado:'Un informe que conecta todas las piezas del análisis del trimestre en una lectura coherente, exactamente lo que un comité de crédito necesita para tomar decisiones bien informadas.'},
+          { texto:'Presentar cada indicador por separado, sin conectarlos en una narrativa coherente', efectos:{credibilidadInforme:-5},
+            resultado:'Una serie de datos correctos mostrados sin conexión, que le exige al comité hacer su propia interpretación en vez de recibir el análisis completo que un economista de coyuntura debería entregar.'},
+        ]},
+    ],
+  },
+];
 
 SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
   {
@@ -5031,10 +5211,11 @@ function avanzarDespuesDeCapitulo(){
 // números de la ronda siguiente — no hay una sola respuesta correcta,
 // hay compromisos, y cada uno tiene un costo real.
 // ═══════════════════════════════════════════════════════
-const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'], confianzaInforme:['Confianza del informe','ti-shield-check'], horasInvertidas:['Horas invertidas','ti-clock'], hallazgosGraves:['Hallazgos graves','ti-alert-octagon'], relacionCliente:['Relación con el cliente','ti-users'], precisionAnalisis:['Precisión del análisis','ti-target'], carteraTotal:['Cartera total','ti-briefcase'], tasaMorosidad:['Tasa de morosidad','ti-alert-triangle'], utilidadCartera:['Utilidad de la cartera','ti-cash'], relacionesCliente:['Relaciones con clientes','ti-users'], calidadCartera:['Calidad de la cartera','ti-shield-check'], exposicionCubierta:['Exposición cubierta','ti-shield'], costoCoberturas:['Costo de coberturas','ti-cash'], perdidaEvitada:['Pérdida evitada','ti-shield-check'], flexibilidad:['Flexibilidad','ti-arrows-shuffle'], confianzaComite:['Confianza del comité','ti-users'], capitalDisponible:['Capital disponible','ti-wallet'], vanAcumulado:['VAN acumulado','ti-trending-up'], proyectosAprobados:['Proyectos aprobados','ti-checklist'], capitalComprometido:['Capital comprometido','ti-briefcase'], volumenProcesado:['Volumen procesado','ti-world'], exposicionTotal:['Exposición total','ti-alert-triangle'], ingresosComisiones:['Ingresos por comisiones','ti-cash'], relacionCorresponsal:['Relación con el corresponsal','ti-building-bank'], valorPortafolioCliente:['Valor del portafolio del cliente','ti-briefcase'], desviacionDelObjetivo:['Desviación del objetivo','ti-target-arrow'], satisfaccionCliente:['Satisfacción del cliente','ti-mood-smile'], riesgoRealAsumido:['Riesgo real asumido','ti-alert-triangle'], confianzaAsesor:['Confianza en el asesor','ti-users'] };
+const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'], confianzaInforme:['Confianza del informe','ti-shield-check'], horasInvertidas:['Horas invertidas','ti-clock'], hallazgosGraves:['Hallazgos graves','ti-alert-octagon'], relacionCliente:['Relación con el cliente','ti-users'], precisionAnalisis:['Precisión del análisis','ti-target'], carteraTotal:['Cartera total','ti-briefcase'], tasaMorosidad:['Tasa de morosidad','ti-alert-triangle'], utilidadCartera:['Utilidad de la cartera','ti-cash'], relacionesCliente:['Relaciones con clientes','ti-users'], calidadCartera:['Calidad de la cartera','ti-shield-check'], exposicionCubierta:['Exposición cubierta','ti-shield'], costoCoberturas:['Costo de coberturas','ti-cash'], perdidaEvitada:['Pérdida evitada','ti-shield-check'], flexibilidad:['Flexibilidad','ti-arrows-shuffle'], confianzaComite:['Confianza del comité','ti-users'], capitalDisponible:['Capital disponible','ti-wallet'], vanAcumulado:['VAN acumulado','ti-trending-up'], proyectosAprobados:['Proyectos aprobados','ti-checklist'], capitalComprometido:['Capital comprometido','ti-briefcase'], volumenProcesado:['Volumen procesado','ti-world'], exposicionTotal:['Exposición total','ti-alert-triangle'], ingresosComisiones:['Ingresos por comisiones','ti-cash'], relacionCorresponsal:['Relación con el corresponsal','ti-building-bank'], valorPortafolioCliente:['Valor del portafolio del cliente','ti-briefcase'], desviacionDelObjetivo:['Desviación del objetivo','ti-target-arrow'], satisfaccionCliente:['Satisfacción del cliente','ti-mood-smile'], riesgoRealAsumido:['Riesgo real asumido','ti-alert-triangle'], confianzaAsesor:['Confianza en el asesor','ti-users'], precisionPronosticos:['Precisión de pronósticos','ti-target'], impactoEconomiaReal:['Impacto en la economía real','ti-world'], credibilidadInforme:['Credibilidad del informe','ti-shield-check'], anticipacionCiclo:['Anticipación del ciclo','ti-clock'] };
 function formatearValorKpi(clave, valor){
-  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion' || clave==='confianzaInforme' || clave==='relacionCliente' || clave==='precisionAnalisis' || clave==='tasaMorosidad' || clave==='relacionesCliente' || clave==='calidadCartera' || clave==='exposicionCubierta' || clave==='flexibilidad' || clave==='confianzaComite' || clave==='relacionCorresponsal' || clave==='desviacionDelObjetivo' || clave==='satisfaccionCliente' || clave==='riesgoRealAsumido' || clave==='confianzaAsesor') return valor.toFixed(1)+'%';
+  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion' || clave==='confianzaInforme' || clave==='relacionCliente' || clave==='precisionAnalisis' || clave==='tasaMorosidad' || clave==='relacionesCliente' || clave==='calidadCartera' || clave==='exposicionCubierta' || clave==='flexibilidad' || clave==='confianzaComite' || clave==='relacionCorresponsal' || clave==='desviacionDelObjetivo' || clave==='satisfaccionCliente' || clave==='riesgoRealAsumido' || clave==='confianzaAsesor' || clave==='precisionPronosticos' || clave==='credibilidadInforme' || clave==='anticipacionCiclo') return valor.toFixed(1)+'%';
   if(clave==='horasInvertidas' || clave==='hallazgosGraves') return Math.round(valor).toLocaleString('es-PA');
+  if(clave==='impactoEconomiaReal') return 'US$ '+Math.round(valor).toLocaleString('es-PA')+'M';
   return 'US$ '+Math.round(valor).toLocaleString('es-PA');
 }
 async function abrirSimulacion(subjectId, simId){
