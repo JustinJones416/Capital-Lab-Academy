@@ -4103,13 +4103,13 @@ async function verEntregasTarea(tareaId, titulo){
   </div>`;
   document.body.appendChild(overlay);
   cargarContenidoEntregas(tareaId);
-}
-// Separado de verEntregasTarea para poder refrescar solo el contenido
+}// Separado de verEntregasTarea para poder refrescar solo el contenido
 // después de calificar, sin crear un segundo panel encima del que ya
 // está abierto — antes, guardar una calificación se quedaba tal cual
 // se veía hasta cerrar y volver a abrir el panel.
 async function cargarContenidoEntregas(tareaId){
   try {
+    const { data: tareaInfo } = await sb.from('academy_tareas').select('archivo_url,archivo_nombre').eq('id', tareaId).maybeSingle();
     const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,rubrica_id,usuario_id,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
     const { data: rubricas } = await sb.from('academy_rubricas').select('id,nombre,criterios').eq('grupo_id', currentUser.grupo_id);
@@ -4123,6 +4123,7 @@ async function cargarContenidoEntregas(tareaId){
     const idsConEntrega = new Set((entregas||[]).map(e=>e.usuario_id));
     const sinEntregar = (membresias||[]).filter(m=>!idsConEntrega.has(m.usuario_id));
     $('ver-entregas-contenido').innerHTML = `
+      ${tareaInfo?.archivo_nombre ? `<div class="card" style="margin-bottom:14px;border-color:var(--gold);"><div style="font-size:10.5px;color:var(--t3);margin-bottom:4px;">TU MATERIAL ADJUNTO A ESTA TAREA</div><button class="btn btn-ghost btn-sm" onclick="descargarEntregaArchivo('${tareaInfo.archivo_url}','${(tareaInfo.archivo_nombre||'').replace(/'/g,"\\'")}')"><i class="ti ti-paperclip"></i> ${tareaInfo.archivo_nombre}</button></div>` : ''}
       ${rubricas?.length ? `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-list-check"></i> Gestionar rúbricas</button>` : `<button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="abrirGestionRubricas()"><i class="ti ti-plus"></i> Crear una rúbrica de evaluación</button>`}
     ` + (entregas?.length ? entregas.map(e => `
       <div class="card" style="margin-bottom:10px;">
