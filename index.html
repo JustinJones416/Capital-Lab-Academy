@@ -637,6 +637,18 @@ let contenidoEditadoGrupo = null; // resumen/glosario editados por el docente pa
 
 const $=id=>document.getElementById(id);
 function toast(msg){const t=$('toast');t.innerHTML='<i class="ti ti-circle-check"></i> '+msg;t.className='toast show';clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
+// Supabase Storage rechaza rutas con espacios, tildes u otros
+// caracteres especiales ("Invalid key") — a veces incluso se
+// manifiesta como un falso error de seguridad en vez de uno claro.
+// Esta función deja el nombre del archivo seguro para usarlo en una
+// ruta, sin perder la extensión ni volverlo irreconocible.
+function limpiarNombreArchivo(nombre){
+  const puntoIdx = nombre.lastIndexOf('.');
+  const base = puntoIdx > 0 ? nombre.slice(0, puntoIdx) : nombre;
+  const ext = puntoIdx > 0 ? nombre.slice(puntoIdx) : '';
+  const baseLimpia = base.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/_+/g,'_').slice(0,80);
+  return (baseLimpia || 'archivo') + ext.replace(/[^a-zA-Z0-9.]/g,'');
+}
 function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');}
 setVH();window.addEventListener('resize',setVH);
 
@@ -3835,7 +3847,7 @@ async function crearTarea(){
   try {
     const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, descripcion, fecha_limite: fecha };
     if(archivo){
-      const ruta = `docente-${currentUser.usuario_id}/tarea_${Date.now()}_${archivo.name}`;
+      const ruta = `docente-${currentUser.usuario_id}/tarea_${Date.now()}_${limpiarNombreArchivo(archivo.name)}`;
       const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
       if(errSubida) throw errSubida;
       payload.archivo_url = ruta; payload.archivo_nombre = archivo.name;
@@ -3901,7 +3913,7 @@ async function guardarEntregaTarea(tareaId){
   try {
     let archivo_url = null, archivo_nombre = null;
     if(archivo){
-      const ruta = `${currentUser.usuario_id}/${tareaId}_${Date.now()}_${archivo.name}`;
+      const ruta = `${currentUser.usuario_id}/${tareaId}_${Date.now()}_${limpiarNombreArchivo(archivo.name)}`;
       const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
       if(errSubida) throw errSubida;
       archivo_url = ruta; archivo_nombre = archivo.name;
