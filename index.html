@@ -536,6 +536,7 @@ h1,h2,h3{font-family:var(--font-head);}
       <button class="nav-item hidden" id="nav-metricas" onclick="navMetricas()"><i class="ti ti-chart-histogram"></i> Métricas del salón</button>
       <button class="nav-item" id="nav-documentos" onclick="navDocumentos()"><i class="ti ti-folder"></i> Documentos</button>
       <button class="nav-item" id="nav-glosario" onclick="navGlosarioGeneral()"><i class="ti ti-alphabet-latin"></i> Glosario general</button>
+      <button class="nav-item" id="nav-mensajes" onclick="navMensajes()"><i class="ti ti-message-circle"></i> Mensajes<span id="mensajes-badge" class="hidden" style="background:var(--red);color:#fff;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:6px;"></span></button>
       <button class="nav-item" id="nav-foro" onclick="navForo()"><i class="ti ti-message-circle-2"></i> Foro de dudas</button>
     </div>
 
@@ -583,6 +584,7 @@ h1,h2,h3{font-family:var(--font-head);}
     <section id="view-metricas" class="hidden"></section>
     <section id="view-documentos" class="hidden"></section>
     <section id="view-glosario" class="hidden"></section>
+    <section id="view-mensajes" class="hidden"></section>
     <section id="view-foro" class="hidden"></section>
     <section id="view-dashboard" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
@@ -3240,7 +3242,7 @@ SUBJECT_DATA.bancint.simulaciones = [
     ],
   },
 ];
-SUBJECT_DATA.corredor = { casesPlanned:3, cases:[
+SUBJECT_DATA.corredor = { casesPlanned:4, cases:[
   {
     id:'corredor-c1', expediente:'BVP-ROL-2026-801', role:'Corredor de Valores',
     title:'Ejecución de una orden de compra en la Bolsa de Valores de Panamá',
@@ -3407,6 +3409,54 @@ SUBJECT_DATA.corredor = { casesPlanned:3, cases:[
       {q:'¿Qué debe hacer un corredor ante una instrucción muy alejada del perfil declarado del cliente?', opts:['Ejecutarla sin más preguntas','Documentar la advertencia y obtener confirmación explícita antes de proceder','Rechazarla siempre sin excepción','Ignorar la instrucción sin avisar'], correct:1},
     ],
   },
+  {
+    id:'corredor-c4', expediente:'BVP-ROL-2026-847', role:'Corredor de Valores',
+    title:'Conoces una orden institucional grande antes de que se ejecute — ¿qué haces con esa información?',
+    brief:'Tu casa de valores recibe una orden institucional grande para comprar una acción, que se ejecutará en las próximas horas y probablemente moverá el precio al alza. Tú tienes acceso a esa información antes de que se ejecute, y antes de que sea pública. Un cliente personal tuyo te llama, sin saber nada de esto, preguntando si deberías comprar esa misma acción para su cuenta.',
+    character:{name:'Tú mismo', role:'Corredor de Valores, con acceso anticipado a información de una orden institucional pendiente', quote:'"Sé algo que el mercado todavía no sabe. Un cliente me está preguntando justo sobre esa misma acción."'},
+    facts:[['Tamaño de la orden institucional pendiente','US$ 4,200,000'],['Momento de ejecución esperado','En las próximas 2 a 3 horas'],['Información pública sobre esta orden','Ninguna todavía'],['Cliente personal preguntando sobre la misma acción','Sin ningún conocimiento de la orden pendiente']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · ¿Qué es exactamente esta información?', icon:'ti-eye', competencia:'regulacion_bancaria',
+        intro:'Antes de decidir qué hacer, hay que nombrar con precisión qué tipo de información tienes y por qué es sensible.',
+        questions:[
+          {type:'mc', q:'¿Qué característica hace que esta información sea especialmente sensible desde el punto de vista regulatorio?', opts:['No es sensible, cualquier corredor puede usarla libremente','Es información material (que probablemente moverá el precio) y no pública, obtenida en el curso de tu trabajo — no por análisis propio ni por información disponible al mercado en general', 'Solo es sensible si el monto es mayor a $10 millones', 'Es sensible únicamente si el cliente es family directo tuyo'], correct:1, explain:'Lo que hace sensible a esta información es la combinación de dos factores: es material (razonablemente probable que mueva el precio) y no pública — la obtuviste por tu posición profesional, no por análisis de mercado disponible para cualquier otro participante. Actuar sobre información así, o compartirla, es la definición central de un problema de uso indebido de información privilegiada.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Por qué "solo es un cliente, no yo mismo" no resuelve el problema?', icon:'ti-users', competencia:'regulacion_bancaria',
+        intro:'Una idea errónea común es pensar que el problema de información privilegiada solo aplica si el corredor mismo se beneficia directamente.',
+        questions:[
+          {type:'mc', q:'¿Por qué recomendarle a un cliente comprar la acción, basado en esta información, es igual de problemático que comprarla para ti mismo?', opts:['No es problemático en absoluto, solo aplica a operaciones personales del corredor','Porque el uso indebido de información privilegiada incluye actuar sobre ella O compartirla para que alguien más actúe — el corredor se beneficiaría indirectamente (comisión, relación con el cliente) de una ventaja informativa injusta frente al resto del mercado','Solo es un problema si el cliente es un familiar directo','La normativa solo cubre transacciones superiores a cierto monto'], correct:1, explain:'El uso indebido de información privilegiada no se limita a operar directamente con esa información — también incluye compartirla para que otra persona actúe con esa ventaja injusta. El corredor se beneficiaría indirectamente (por comisión, por fortalecer la relación con el cliente) de una asimetría de información que el resto del mercado no tiene, lo cual es exactamente lo que la regulación busca prevenir.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Qué debe hacer el corredor en este momento exacto?', icon:'ti-shield-check', competencia:'regulacion_bancaria',
+        intro:'Con el problema identificado con claridad, hay una respuesta correcta concreta a la llamada del cliente.',
+        questions:[
+          {type:'mc', q:'¿Cómo debe responder el corredor a la pregunta del cliente sobre esa acción específica, en este momento?', opts:['Decirle que compre de inmediato, sin explicar por qué','Responder con la información y análisis que estarían disponibles para cualquier cliente en cualquier momento normal, sin mencionar ni insinuar la orden institucional pendiente — tratando esta consulta exactamente igual que cualquier otra, sin la ventaja informativa que tiene en este momento', 'Decirle que no puede atenderlo hasta después de que se ejecute la orden institucional', 'Explicarle abiertamente sobre la orden institucional pendiente'], correct:1, explain:'La respuesta correcta es tratar la consulta del cliente exactamente como se trataría en cualquier circunstancia normal, usando solo información pública y análisis regular disponible para cualquier corredor — sin usar, insinuar, ni actuar de forma distinta debido al conocimiento privilegiado que tiene en ese momento específico. La ventaja informativa no debe influir en absoluto la respuesta.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Reflexión sobre la integridad del mercado', icon:'ti-gavel',
+        intro:'Con la naturaleza de la información identificada (etapa 1), por qué compartirla es igual de problemático que usarla directamente (etapa 2), y la respuesta correcta a la consulta del cliente (etapa 3), reflexiona sobre por qué existe esta norma.',
+        verdictOptions:[
+          {v:'proteger_integridad', label:'La norma protege la integridad y confianza del mercado en su conjunto, no solo a las partes de una transacción específica', desc:'Si los participantes creen que el mercado está sesgado por accesos informativos desiguales, dejan de confiar en él, dañando a todos los participantes, no solo a los directamente involucrados en un caso específico.'},
+          {v:'norma_excesiva', label:'La norma es excesivamente estricta para casos donde el corredor no se beneficia directamente', desc:'Cuestiona si la aplicación tan amplia del principio, incluyendo terceros no beneficiados directamente, es proporcional al riesgo real que representa.'},
+        ],
+        openPrompt:'Justifica tu postura sobre por qué existe esta norma, considerando la naturaleza de la información (etapa 1), el problema de compartirla con terceros (etapa 2), y la respuesta profesional correcta ante la tentación de usarla (etapa 3).',
+      },
+    ],
+    summary:'Este caso trabaja el <b>uso indebido de información privilegiada (insider trading)</b> desde la perspectiva cotidiana de un corredor, no desde un escenario extremo de película. La información sobre una orden institucional grande pendiente de ejecutar es <b>material y no pública</b> — actuar sobre ella, o compartirla con un cliente para que actúe, representa exactamente el tipo de ventaja injusta que la regulación del mercado de valores busca prevenir, incluso cuando el corredor no se beneficia de forma directa y evidente. La integridad del mercado depende de que todos los participantes operen con la misma información disponible — la respuesta profesional correcta es simplemente tratar cualquier consulta relacionada exactamente igual que se trataría sin ese conocimiento privilegiado.',
+    flashcards:[
+      {q:'¿Qué hace que una información sea "privilegiada" en el sentido regulatorio?', a:'Que sea material (razonablemente probable que mueva el precio) y no pública, obtenida por la posición profesional de quien la posee, no por análisis disponible al mercado en general.'},
+      {q:'¿Por qué compartir información privilegiada con un cliente es igual de problemático que usarla directamente?', a:'Porque el corredor se beneficiaría indirectamente (comisión, relación con el cliente) de una ventaja informativa injusta, exactamente el tipo de asimetría que la regulación busca prevenir.'},
+    ],
+    glossary:[
+      {t:'Información privilegiada (insider information)', d:'Información material y no pública sobre un valor o su emisor, obtenida por una posición profesional o de acceso especial, cuyo uso para operar en el mercado está prohibido.'},
+      {t:'Información material', d:'Información que un inversionista razonable consideraría importante para su decisión de comprar, vender o mantener un valor, típicamente porque es probable que afecte su precio.'},
+    ],
+    quiz:[
+      {q:'¿Qué dos características hacen que una información sea "privilegiada" en sentido regulatorio?', opts:['Que sea pública y antigua','Que sea material y no pública','Que involucre montos grandes','Que la conozca más de una persona'], correct:1},
+      {q:'¿Es problemático que un corredor comparta información privilegiada con un cliente, sin operar él mismo?', opts:['No, solo es problemático si el corredor opera directamente','Sí, compartirla para que otro actúe es igual de problemático que actuar directamente','Solo si el cliente es un familiar','Depende del monto de la operación'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.corredor.studyMaterial = {
@@ -3417,6 +3467,7 @@ SUBJECT_DATA.corredor.studyMaterial = {
     {q:'¿Qué es el principio de mejor ejecución?', a:'La obligación del corredor de buscar las condiciones más favorables posibles para su cliente al ejecutar una orden, considerando precio, rapidez y probabilidad de ejecución.'},
     {q:'¿Qué revela un spread bid-ask inusualmente ancho?', a:'Incertidumbre real del mercado sobre el precio correcto del activo, generalmente durante eventos de alta volatilidad.'},
     {q:'¿Qué es el principio de idoneidad (suitability)?', a:'La obligación de que las operaciones ejecutadas sean coherentes con el perfil de riesgo, horizonte y objetivos declarados formalmente por el cliente.'},
+    {q:'¿Qué hace que una información sea "privilegiada" en el sentido regulatorio?', a:'Que sea material (razonablemente probable que mueva el precio) y no pública, obtenida por la posición profesional de quien la posee.'},
   ],
   glossary:[
     {t:'Libro de órdenes', d:'Registro en tiempo real de todas las órdenes de compra (bid) y venta (ask) pendientes para un valor en el mercado.'},
@@ -3425,8 +3476,10 @@ SUBJECT_DATA.corredor.studyMaterial = {
     {t:'Mejor ejecución', d:'Principio que obliga al corredor a buscar las condiciones más favorables posibles para el cliente al ejecutar una orden.'},
     {t:'Volatilidad de mercado', d:'La magnitud y frecuencia de los cambios de precio de un activo en un período determinado; mayor volatilidad generalmente amplía los spreads.'},
     {t:'Idoneidad (suitability)', d:'Principio regulatorio que exige que las recomendaciones y operaciones de un corredor sean apropiadas para el perfil de riesgo, horizonte y objetivos declarados de cada cliente específico.'},
+    {t:'Información privilegiada (insider information)', d:'Información material y no pública sobre un valor o su emisor, obtenida por una posición profesional o de acceso especial, cuyo uso para operar en el mercado está prohibido.'},
   ],
   quiz:[
+    {q:'¿Qué dos características hacen que una información sea "privilegiada" en sentido regulatorio?', opts:['Que sea pública y antigua','Que sea material y no pública','Que involucre montos grandes','Que la conozca más de una persona'], correct:1},
     {q:'¿Qué tipo de orden da control sobre el precio máximo a pagar?', opts:['Orden a mercado','Orden limitada','Ambas por igual','Ninguna'], correct:1},
     {q:'¿Qué mide el spread bid-ask?', opts:['La comisión del corredor','La diferencia entre la mejor compra y la mejor venta disponibles','El volumen total negociado','El precio de cierre del día anterior'], correct:1},
     {q:'¿Qué revela un spread bid-ask muy ancho?', opts:['Un mercado muy estable','Incertidumbre real del mercado sobre el precio correcto del activo','Que el corredor está cobrando de más','Nada relevante'], correct:1},
@@ -3502,7 +3555,7 @@ SUBJECT_DATA.corredor.simulaciones = [
   },
 ];
 
-SUBJECT_DATA.asesor = { casesPlanned:3, cases:[
+SUBJECT_DATA.asesor = { casesPlanned:4, cases:[
   {
     id:'asesor-c1', expediente:'AF-ROL-2026-901', role:'Asesor Financiero',
     title:'Plan financiero integral para una familia panameña',
@@ -3671,6 +3724,58 @@ SUBJECT_DATA.asesor = { casesPlanned:3, cases:[
       {q:'¿Qué se debe restar al calcular la necesidad neta real de seguro de vida?', opts:['Nada, no se resta nada','Los ahorros e inversiones ya disponibles de la familia','El ingreso anual','Los años de dependencia'], correct:1},
     ],
   },
+  {
+    id:'asesor-c4', expediente:'AF-ROL-2026-941', role:'Asesor Financiero',
+    title:'Un cliente se jubila — ¿cuánto puede retirar de sus ahorros cada año sin quedarse sin fondos?',
+    brief:'Un cliente que acaba de jubilarse te pregunta cuánto puede retirar anualmente de su portafolio de ahorros para vivir cómodamente, sin correr el riesgo de agotar sus fondos antes de lo esperado. Pasar de "acumular" a "retirar" es una etapa completamente distinta de la planificación financiera.',
+    character:{name:'Georgina Pinzón', role:'Cliente recién jubilada', quote:'"Pasé 30 años ahorrando para este momento. Ahora no sé cuánto puedo realmente gastar cada año sin quedarme sin nada a los 85 años."'},
+    facts:[['Portafolio total de ahorros al momento del retiro','US$ 620,000'],['Edad actual','65 años'],['Expectativa de vida planificada para el retiro','30 años (hasta los 95)'],['Regla de retiro sostenible de referencia','4% del portafolio inicial, ajustado por inflación cada año']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Calculando el retiro sostenible inicial', icon:'ti-calculator', competencia:'valoracion',
+        intro:'La "regla del 4%" es un punto de partida ampliamente citado para estimar cuánto se puede retirar anualmente de un portafolio de forma sostenible durante un retiro de varias décadas, basado en estudios históricos de mercados diversificados.',
+        databox:{title:'Datos del portafolio', rows:[['Portafolio total al retiro','US$620,000'],['Regla de referencia','4% del portafolio inicial']]},
+        questions:[
+          {type:'num', q:'¿Cuánto podría retirar Georgina en el primer año, según la regla del 4%? (en US$)', placeholder:'Ej: 24800', correct:24800, tolerance:500, explain:'620,000 × 4% = US$24,800 en el primer año — el punto de partida antes de ajustarlo por inflación en los años siguientes.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Por qué el retiro se ajusta cada año, no se queda fijo?', icon:'ti-trending-up', competencia:'valoracion',
+        intro:'La regla del 4% no significa retirar la misma cantidad de dólares cada año — significa ajustar ese monto inicial por inflación, para mantener el mismo poder adquisitivo real a lo largo de todo el retiro.',
+        questions:[
+          {type:'mc', q:'¿Por qué es importante ajustar el monto de retiro por inflación cada año, en vez de retirar siempre los mismos US$24,800?', opts:['No es importante, el monto debería quedarse fijo siempre','Porque el costo de vida sube con el tiempo, y si el monto de retiro se queda fijo en dólares nominales, el poder adquisitivo real de Georgina se reduciría progresivamente durante sus 30 años de retiro','El ajuste por inflación solo aplica a inversiones, no a retiros','La inflación no afecta a las personas jubiladas'], correct:1, explain:'Sin el ajuste por inflación, US$24,800 dentro de 20 años comprarían considerablemente menos de lo que compran hoy — el ajuste anual busca mantener el mismo poder adquisitivo real durante todo el retiro, no solo el mismo número nominal de dólares.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Qué pasa si el mercado cae fuerte justo al principio del retiro?', icon:'ti-alert-triangle', competencia:'valoracion',
+        intro:'Uno de los riesgos más importantes en la fase de retiro, distinto a la fase de acumulación, es el "riesgo de secuencia de rendimientos": una mala racha de mercado justo al inicio del retiro puede ser mucho más dañina que la misma mala racha años después.',
+        questions:[
+          {type:'mc', q:'¿Por qué una caída fuerte del mercado en los primeros años del retiro es más peligrosa que la misma caída ocurriendo, por ejemplo, en el año 20 del retiro?', opts:['No hay ninguna diferencia, el momento de la caída no importa','Porque los retiros continuos durante una caída de mercado temprana obligan a vender una porción mayor del portafolio a precios deprimidos, reduciendo permanentemente la base de capital disponible para generar el crecimiento de recuperación posterior — un daño que una caída tardía, con menos años de retiros restantes, no causa de la misma forma','Las caídas de mercado nunca afectan a un portafolio en fase de retiro','El riesgo es exactamente igual sin importar el momento'], correct:1, explain:'Este es el riesgo de secuencia de rendimientos: cuando el portafolio ya está en fase de retiro y hay retiros continuos, una caída de mercado temprana obliga a vender una porción proporcionalmente mayor del capital a precios bajos para cubrir esos retiros, reduciendo permanentemente el capital disponible para beneficiarse de la recuperación posterior — un daño mucho más severo que la misma caída ocurriendo más tarde, con menos años de retiros por delante.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación a la clienta', icon:'ti-gavel',
+        intro:'Con el retiro sostenible inicial calculado (etapa 1), la importancia del ajuste por inflación (etapa 2), y el riesgo de secuencia de rendimientos (etapa 3), debes presentar tu recomendación a Georgina.',
+        verdictOptions:[
+          {v:'regla_flexible', label:'Usar el 4% como punto de partida, pero con flexibilidad para reducir el retiro en años de mal desempeño del mercado', desc:'Reconoce que una regla fija y rígida no protege adecuadamente contra el riesgo de secuencia de rendimientos — la flexibilidad real mejora la sostenibilidad del plan.'},
+          {v:'regla_fija', label:'Aplicar estrictamente el 4% ajustado por inflación cada año, sin excepciones', desc:'Ofrece simplicidad y previsibilidad total para la clienta, aunque sin la protección adicional que da la flexibilidad ante años de mal mercado.'},
+          {v:'porcentaje_menor', label:'Recomendar una tasa de retiro inicial más conservadora, como 3.5%, dado que se está viviendo más tiempo que antes', desc:'Prioriza la seguridad de no agotar los fondos, a cambio de un menor gasto disponible desde el inicio del retiro.'},
+        ],
+        openPrompt:'Justifica tu recomendación considerando el cálculo inicial (etapa 1), la importancia del ajuste por inflación (etapa 2), y el riesgo real de secuencia de rendimientos que una regla rígida no protege adecuadamente (etapa 3).',
+      },
+    ],
+    summary:'Este caso trabaja la <b>fase de retiro de fondos</b> (decumulación), una etapa de la planificación financiera fundamentalmente distinta a la acumulación. La <b>regla del 4%</b> ofrece un punto de partida (US$24,800 anuales sobre un portafolio de US$620,000), ajustado por inflación cada año para mantener el poder adquisitivo real durante los 30 años de retiro planeados. Pero el caso también entrena un riesgo crítico que una regla fija no protege bien: el <b>riesgo de secuencia de rendimientos</b> — una caída de mercado temprana en el retiro es considerablemente más dañina que la misma caída años después, porque obliga a vender capital a precios deprimidos justo cuando ese capital tiene más años por delante para recuperarse.',
+    flashcards:[
+      {q:'¿Qué es la regla del 4% de retiro de fondos?', a:'Una guía que sugiere retirar 4% del valor inicial del portafolio en el primer año de retiro, ajustando ese monto por inflación cada año siguiente, como punto de partida para un retiro sostenible de varias décadas.'},
+      {q:'¿Qué es el riesgo de secuencia de rendimientos?', a:'El riesgo de que una caída de mercado ocurra en los primeros años del retiro, obligando a vender una porción mayor del capital a precios bajos para cubrir los retiros, dañando permanentemente la capacidad del portafolio de recuperarse.'},
+      {q:'¿Por qué el monto de retiro se ajusta por inflación cada año?', a:'Para mantener el mismo poder adquisitivo real durante todo el retiro, ya que el costo de vida sube con el tiempo.'},
+    ],
+    glossary:[
+      {t:'Regla del 4%', d:'Guía de referencia para estimar una tasa de retiro inicial sostenible de un portafolio de ahorros durante un retiro de varias décadas, basada en estudios históricos de mercados diversificados.'},
+      {t:'Riesgo de secuencia de rendimientos', d:'El riesgo de que el orden en que ocurren los rendimientos del mercado durante la fase de retiro (no solo su promedio) afecte significativamente la sostenibilidad del portafolio, siendo las caídas tempranas las más dañinas.'},
+      {t:'Fase de decumulación', d:'La etapa de la vida financiera de una persona en la que retira fondos de su portafolio de ahorros para vivir, en contraste con la fase de acumulación previa.'},
+    ],
+    quiz:[
+      {q:'¿Qué sugiere la regla del 4% de retiro de fondos?', opts:['Retirar el 4% de los ahorros cada mes','Retirar el 4% del portafolio inicial en el primer año, ajustado por inflación después','Nunca retirar más del 4% de las ganancias del año','Ahorrar el 4% del ingreso cada año'], correct:1},
+      {q:'¿Por qué una caída de mercado en los primeros años del retiro es más peligrosa que la misma caída años después?', opts:['No hay ninguna diferencia','Obliga a vender más capital a precios bajos, dañando permanentemente la capacidad de recuperación del portafolio','Las caídas tempranas siempre se recuperan más rápido','El momento de la caída no afecta el riesgo'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.asesor.studyMaterial = {
@@ -3681,6 +3786,7 @@ SUBJECT_DATA.asesor.studyMaterial = {
     {q:'¿Qué es un fondo de emergencia y cómo se dimensiona típicamente?', a:'Una reserva de liquidez para cubrir gastos imprevistos, generalmente dimensionada entre 3 y 6 meses de gastos mensuales del hogar.'},
     {q:'¿Cuál es la diferencia entre el método avalancha y bola de nieve de pago de deudas?', a:'Avalancha prioriza la tasa de interés más alta (matemáticamente óptimo); bola de nieve prioriza el saldo más pequeño (mejor para sostener la motivación de pago).'},
     {q:'¿Qué es el método del valor de vida humana?', a:'Un método para calcular la necesidad de seguro de vida, multiplicando el ingreso anual del sostén de la familia por los años restantes de dependencia, ajustado por deudas y recursos existentes.'},
+    {q:'¿Qué es el riesgo de secuencia de rendimientos?', a:'El riesgo de que una caída de mercado ocurra en los primeros años del retiro, dañando permanentemente la capacidad del portafolio de sostener los retiros planeados.'},
   ],
   glossary:[
     {t:'Planificación financiera por metas', d:'Metodología que organiza el ahorro y la inversión de una persona o familia alrededor de objetivos específicos, cada uno con su propio horizonte y estrategia.'},
@@ -3690,12 +3796,15 @@ SUBJECT_DATA.asesor.studyMaterial = {
     {t:'Método avalancha', d:'Estrategia de pago de deudas que prioriza liquidar primero la deuda con la tasa de interés más alta, minimizando el interés total pagado.'},
     {t:'Método bola de nieve', d:'Estrategia de pago de deudas que prioriza liquidar primero la deuda con el saldo más pequeño, generando victorias visibles rápido para sostener la motivación.'},
     {t:'Valor de vida humana', d:'Método de estimación de necesidad de seguro de vida basado en el ingreso futuro que dejaría de percibir una familia si el sostén principal faltara.'},
+    {t:'Regla del 4%', d:'Guía de referencia para estimar una tasa de retiro inicial sostenible de un portafolio de ahorros durante un retiro de varias décadas.'},
+    {t:'Riesgo de secuencia de rendimientos', d:'El riesgo de que el orden en que ocurren los rendimientos del mercado durante el retiro afecte significativamente la sostenibilidad del portafolio, siendo las caídas tempranas las más dañinas.'},
   ],
   quiz:[
     {q:'¿Qué determina principalmente la tolerancia al riesgo apropiada para una meta financiera específica?', opts:['La edad del asesor','El horizonte de tiempo de esa meta','El nombre del banco','El número de hijos de la familia'], correct:1},
     {q:'¿Cuántos meses de gastos suele cubrir un fondo de emergencia típico?', opts:['1 mes','3 a 6 meses','24 meses','No tiene un rango típico'], correct:1},
     {q:'¿Qué prioriza el método avalancha de pago de deudas?', opts:['El saldo más pequeño','La tasa de interés más alta','La deuda más antigua','El acreedor más grande'], correct:1},
     {q:'¿Cómo se calcula una versión simple del valor de vida humana?', opts:['Ingreso mensual × 12','Ingreso anual × años restantes de dependencia','Solo las deudas pendientes','El valor de los ahorros actuales'], correct:1},
+    {q:'¿Qué sugiere la regla del 4% de retiro de fondos?', opts:['Retirar el 4% de los ahorros cada mes','Retirar el 4% del portafolio inicial en el primer año, ajustado por inflación después','Nunca retirar más del 4% de las ganancias del año','Ahorrar el 4% del ingreso cada año'], correct:1},
   ],
   libro:[
     { titulo:'Un buen plan es el que el cliente realmente sigue', texto:`Existe una tentación técnica en la que caen muchos asesores nuevos: construir el plan financiero matemáticamente perfecto, optimizado hasta el último detalle, sin detenerse a pensar si esa es realmente la mejor forma de servir al cliente que tienen enfrente. Un plan que exige una disciplina de ahorro extrema, sin margen para ningún gusto ni flexibilidad, puede ser matemáticamente óptimo y aun así fracasar por completo — porque el cliente lo abandona a los pocos meses, frustrado o agotado, y termina peor que si hubiera empezado con un plan más modesto pero sostenible.<br><br>La planificación por metas resuelve esto organizando el dinero alrededor de objetivos concretos y con nombre propio, no de una cifra de ahorro abstracta. Una familia entiende mucho mejor "estamos ahorrando para la universidad de nuestros hijos, y vamos en el 60% de esa meta" que "estamos ahorrando el 22% de nuestro ingreso mensual". Cada meta, además, tiene su propio horizonte de tiempo, y ese horizonte determina qué tan agresiva o conservadora debe ser la estrategia de inversión para esos fondos específicos — el dinero para la universidad que empieza en dos años no debería estar en el mismo tipo de instrumento que el dinero para el retiro dentro de 18 años, aunque ambos sean, técnicamente, "ahorro" de la misma familia.<br><br>El verdadero valor de un asesor financiero no está solo en el cálculo — está en traducir ese cálculo en un plan que la persona real, con sus hábitos, su personalidad, y sus circunstancias de vida, pueda sostener de verdad. Eso significa, a veces, elegir deliberadamente la opción menos "óptima" en el papel, porque es la que el cliente específico realmente va a cumplir.` },
@@ -3710,6 +3819,9 @@ SUBJECT_DATA.asesor.formulas = [
   { nombre:'Necesidad neta de seguro de vida', formula:'Necesidad neta = Valor de vida humana + Deudas pendientes + Gastos finales − Ahorros disponibles',
     variables:'Ahorros disponibles: los recursos que la familia ya tiene, que reducen cuánto seguro adicional se necesita.',
     ejemplo:'Con un valor de vida humana de US$1,080,000, deudas de US$180,000, gastos finales de US$12,000, y ahorros de US$45,000, la necesidad neta es 1,080,000+180,000+12,000−45,000 = US$1,227,000.' },
+  { nombre:'Retiro sostenible inicial (regla del 4%)', formula:'Retiro anual = Portafolio total × 4%',
+    variables:'El monto resultante se ajusta por inflación cada año siguiente, no se mantiene fijo en dólares nominales.',
+    ejemplo:'Con un portafolio de US$620,000, el retiro sostenible inicial es 620,000 × 4% = US$24,800 en el primer año.' },
 ];
 SUBJECT_DATA.asesor.leyes = [
   { nombre:'Ley de Seguros de Panamá', numero:'Ley 12 de 2012',
@@ -4275,7 +4387,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion','view-glosario'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion','view-glosario','view-mensajes'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -4853,6 +4965,95 @@ function recopilarGlosarioGeneral(){
   });
   return terminos.sort((a,b)=>a.termino.localeCompare(b.termino,'es'));
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// MENSAJES — mensajería directa entre docente y estudiante. Un mensaje
+// puede opcionalmente referenciar una tarea (para servir también como
+// comentario privado sobre una entrega específica), reutilizando la
+// misma tabla en vez de construir un sistema aparte para eso.
+// ═══════════════════════════════════════════════════════
+async function navMensajes(){
+  showView('view-mensajes');
+  setActiveNav('nav-mensajes'); setActiveSubjectPill(null);
+  afterNav();
+  const cont = $('view-mensajes');
+  if(!currentUser.grupo_id){ cont.innerHTML = '<div class="auth-hint">Entra a una sesión de clase primero.</div>'; return; }
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;"><div class="eyebrow"><i class="ti ti-message-circle"></i> Mensajes</div><h1>${currentUser.rol==='docente'?'Tus estudiantes':'Tu profesor'}</h1></div><div id="mensajes-lista-contenido"><div class="auth-hint">Cargando…</div></div>`;
+  try {
+    if(currentUser.rol==='docente'){
+      const { data: membresias, error } = await sb.from('academy_membresias').select('usuario_id, academy_usuarios!inner(nombre,rol)').eq('grupo_id', currentUser.grupo_id).eq('academy_usuarios.rol','estudiante');
+      if(error) throw error;
+      const { data: mensajes } = await sb.from('academy_mensajes').select('remitente_id,destinatario_id,leido').eq('grupo_id', currentUser.grupo_id);
+      const sinLeerDe = new Set((mensajes||[]).filter(m=>!m.leido && m.destinatario_id===currentUser.usuario_id).map(m=>m.remitente_id));
+      $('mensajes-lista-contenido').innerHTML = membresias?.length ? membresias.map(m => `
+        <div class="export-opt" style="cursor:pointer;" onclick="abrirConversacion('${currentUser.grupo_id}','${m.usuario_id}','${m.academy_usuarios.nombre.replace(/'/g,"\\'")}')">
+          <i class="ti ti-user" style="color:${sinLeerDe.has(m.usuario_id)?'var(--red)':'var(--t3)'};"></i>
+          <div style="flex:1;"><b>${m.academy_usuarios.nombre}</b>${sinLeerDe.has(m.usuario_id)?'<span style="color:var(--red);font-weight:700;"> · mensaje nuevo</span>':''}</div>
+          <i class="ti ti-chevron-right" style="color:var(--t3);"></i>
+        </div>`).join('') : '<div class="auth-hint">Todavía no hay estudiantes en tu grupo.</div>';
+    } else {
+      const { data: grupo } = await sb.from('academy_grupos').select('docente_id').eq('id', currentUser.grupo_id).maybeSingle();
+      const { data: docentePerfil } = await sb.from('academy_usuarios').select('id,nombre').eq('auth_id', grupo?.docente_id).maybeSingle();
+      if(!docentePerfil){ $('mensajes-lista-contenido').innerHTML = '<div class="auth-hint">No se encontró a tu profesor.</div>'; return; }
+      abrirConversacion(currentUser.grupo_id, docentePerfil.id, docentePerfil.nombre);
+    }
+  } catch(e){
+    $('mensajes-lista-contenido').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function abrirConversacion(grupoId, otroUsuarioId, otroNombre, tareaTitulo){
+  const cont = $('view-mensajes');
+  cont.innerHTML = `<div class="hero" style="padding-top:18px;">
+    ${currentUser.rol==='docente' ? `<button class="btn btn-ghost btn-sm" onclick="navMensajes()" style="margin-bottom:10px;"><i class="ti ti-arrow-left"></i> Todos los estudiantes</button>` : ''}
+    <div class="eyebrow"><i class="ti ti-message-circle"></i> Conversación</div>
+    <h1>${otroNombre}</h1>
+    ${tareaTitulo ? `<p style="color:var(--teal);"><i class="ti ti-paperclip"></i> Sobre la tarea: ${tareaTitulo}</p>` : ''}
+  </div>
+  <div id="mensajes-hilo" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:50vh;overflow-y:auto;"><div class="auth-hint">Cargando…</div></div>
+  <div style="display:flex;gap:8px;">
+    <input type="text" id="mensaje-nuevo-texto" placeholder="Escribe un mensaje…" style="flex:1;padding:11px 13px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:13.5px;" onkeydown="if(event.key==='Enter')enviarMensaje('${grupoId}','${otroUsuarioId}')">
+    <button class="btn" onclick="enviarMensaje('${grupoId}','${otroUsuarioId}')"><i class="ti ti-send"></i></button>
+  </div>`;
+  await cargarHiloDeMensajes(grupoId, otroUsuarioId);
+}
+async function cargarHiloDeMensajes(grupoId, otroUsuarioId){
+  try {
+    const { data: mensajes, error } = await sb.from('academy_mensajes').select('id,remitente_id,contenido,leido,creado_en').eq('grupo_id', grupoId)
+      .or(`and(remitente_id.eq.${currentUser.usuario_id},destinatario_id.eq.${otroUsuarioId}),and(remitente_id.eq.${otroUsuarioId},destinatario_id.eq.${currentUser.usuario_id})`)
+      .order('creado_en',{ascending:true});
+    if(error) throw error;
+    $('mensajes-hilo').innerHTML = mensajes?.length ? mensajes.map(m => {
+      const esMio = m.remitente_id === currentUser.usuario_id;
+      return `<div style="align-self:${esMio?'flex-end':'flex-start'};max-width:80%;background:${esMio?'var(--accent2)':'var(--c2)'};color:${esMio?'#fff':'var(--t1)'};padding:9px 13px;border-radius:14px;font-size:13px;">${m.contenido}<div style="font-size:9.5px;opacity:0.7;margin-top:3px;">${new Date(m.creado_en).toLocaleString('es-PA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div></div>`;
+    }).join('') : '<div class="auth-hint">Todavía no hay mensajes — escribe el primero.</div>';
+    $('mensajes-hilo').scrollTop = $('mensajes-hilo').scrollHeight;
+    // Marcar como leídos los mensajes que me enviaron a mí en este hilo.
+    const sinLeerIds = (mensajes||[]).filter(m=>!m.leido && m.remitente_id===otroUsuarioId).map(m=>m.id);
+    if(sinLeerIds.length) await sb.from('academy_mensajes').update({leido:true}).in('id', sinLeerIds);
+    actualizarBadgeMensajes();
+  } catch(e){
+    $('mensajes-hilo').innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
+  }
+}
+async function enviarMensaje(grupoId, otroUsuarioId){
+  const input = $('mensaje-nuevo-texto');
+  const contenido = input.value.trim();
+  if(!contenido) return;
+  input.value = '';
+  try {
+    const { error } = await sb.from('academy_mensajes').insert({ grupo_id: grupoId, remitente_id: currentUser.usuario_id, destinatario_id: otroUsuarioId, contenido });
+    if(error) throw error;
+    await sb.from('academy_notificaciones').insert({ usuario_id: otroUsuarioId, tipo:'mensaje_directo', mensaje: `${currentUser.nombre} te envió un mensaje.`, referencia_materia: currentUser.materia_id });
+    cargarHiloDeMensajes(grupoId, otroUsuarioId);
+  } catch(e){ toast('No se pudo enviar: ' + (e.message||e)); input.value = contenido; }
+}
+async function actualizarBadgeMensajes(){
+  if(!currentUser?.usuario_id) return;
+  try {
+    const { count } = await sb.from('academy_mensajes').select('id',{count:'exact',head:true}).eq('destinatario_id', currentUser.usuario_id).eq('leido', false);
+    const badge = $('mensajes-badge');
+    if(badge){ badge.textContent = count||0; badge.classList.toggle('hidden', !count); }
+  } catch(e){ /* silencioso */ }
+}
 function navGlosarioGeneral(){
   showView('view-glosario');
   setActiveNav('nav-glosario'); setActiveSubjectPill(null);
@@ -5006,7 +5207,7 @@ async function verEntregasTarea(tareaId, titulo){
 // se veía hasta cerrar y volver a abrir el panel.
 async function cargarContenidoEntregas(tareaId){
   try {
-    const { data: tareaInfo } = await sb.from('academy_tareas').select('archivo_url,archivo_nombre').eq('id', tareaId).maybeSingle();
+    const { data: tareaInfo } = await sb.from('academy_tareas').select('titulo,archivo_url,archivo_nombre').eq('id', tareaId).maybeSingle();
     const { data: entregas, error } = await sb.from('academy_entregas_tareas').select('id,contenido,archivo_url,archivo_nombre,entregado_en,calificacion,comentario_docente,rubrica_id,usuario_id,academy_usuarios!inner(nombre)').eq('tarea_id', tareaId).order('entregado_en',{ascending:false});
     if(error) throw error;
     const { data: rubricas } = await sb.from('academy_rubricas').select('id,nombre,criterios').eq('grupo_id', currentUser.grupo_id);
@@ -5041,6 +5242,7 @@ async function cargarContenidoEntregas(tareaId){
           </div>
           <textarea id="coment-${e.id}" placeholder="Comentario para el estudiante (opcional)" rows="3" style="width:100%;padding:8px 10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);color:var(--t1);font-size:12.5px;resize:vertical;margin-top:8px;">${e.comentario_docente||''}</textarea>
           <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="guardarRetroalimentacionTarea('${e.id}','${tareaId}')"><i class="ti ti-check"></i> Guardar</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;margin-left:6px;" onclick="abrirConversacion('${currentUser.grupo_id}','${e.usuario_id}','${e.academy_usuarios.nombre.replace(/'/g,"\\'")}','${(tareaInfo?.titulo||'').replace(/'/g,"\\'")}')"><i class="ti ti-message"></i> Mensaje privado</button>
         </div>
         ${e.calificacion!==null ? `<div style="font-size:11px;color:var(--green);margin-top:6px;"><i class="ti ti-circle-check"></i> Ya calificada — ${e.calificacion}/100</div>` : ''}
       </div>`).join('') : '<div class="auth-hint">Todavía nadie ha entregado esta tarea.</div>')
@@ -6059,7 +6261,7 @@ function renderProgressView(){
       ${icon}
       <div style="flex:1;">
         <div style="font-weight:700;font-size:13.5px;">${s.title}</div>
-        <div style="font-size:11.5px;color:var(--t3);font-family:var(--font-mono);">${prog.done}/${prog.total} casos completados (de los disponibles en esta fase)</div>
+        <div style="font-size:11.5px;color:var(--t3);font-family:var(--font-mono);">${prog.done}/${prog.total} casos completados</div>
       </div>
       <i class="ti ti-chevron-right" style="color:var(--t3)"></i>
     </div>`;
@@ -8007,6 +8209,7 @@ async function entrarConSesion(membresia){
     navPortal();
   }
   cargarNotificaciones();
+  actualizarBadgeMensajes();
   actualizarRachaDeEstudio();
   verificarAnunciosDeClase();
   revisarRepasosProgramadosVencidos();
@@ -9777,21 +9980,39 @@ async function verEstudiantesDeGrupo(grupoId, nombreGrupo){
   cont.innerHTML = `<div class="auth-hint">Cargando estudiantes de ${nombreGrupo}…</div>`;
   try {
     const { data: membresias, error } = await sb.from('academy_membresias')
-      .select('progreso, academy_usuarios!inner(nombre,correo,rol)')
+      .select('id,usuario_id,progreso, academy_usuarios!inner(nombre,correo,rol)')
       .eq('grupo_id', grupoId).eq('academy_usuarios.rol','estudiante');
     if(error) throw error;
     cont.innerHTML = `<div style="font-size:11px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;">${nombreGrupo} — ${(membresias||[]).length} estudiante${(membresias||[]).length===1?'':'s'}</div>` +
       (membresias?.length ? membresias.map(m => {
         const casosCompletados = Object.keys(m.progreso||{}).length;
-        return `<div class="export-opt" style="cursor:default;">
-          <i class="ti ti-user"></i>
-          <div><b>${m.academy_usuarios.nombre}</b><span>${m.academy_usuarios.correo} · ${casosCompletados} caso${casosCompletados===1?'':'s'} completado${casosCompletados===1?'':'s'} en esta materia</span></div>
+        return `<div class="export-opt" style="cursor:default;align-items:flex-start;">
+          <i class="ti ti-user" style="margin-top:2px;"></i>
+          <div style="flex:1;">
+            <b>${m.academy_usuarios.nombre}</b><span>${m.academy_usuarios.correo} · ${casosCompletados} caso${casosCompletados===1?'':'s'} completado${casosCompletados===1?'':'s'} en esta materia</span>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="auth-submit" style="padding:7px;font-size:11px;min-height:32px;margin:0;flex:1;" onclick="abrirConversacion('${grupoId}','${m.usuario_id}','${m.academy_usuarios.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-message"></i> Mensaje</button>
+              <button class="auth-submit" style="padding:7px;font-size:11px;min-height:32px;margin:0;background:transparent;border:1px solid var(--red);color:var(--red);width:auto;" title="Eliminar de este grupo" onclick="confirmarEliminarEstudiante('${m.id}','${grupoId}','${nombreGrupo.replace(/'/g,"\\'")}','${m.academy_usuarios.nombre.replace(/'/g,"\\'")}')"><i class="ti ti-user-x"></i></button>
+            </div>
+          </div>
         </div>`;
       }).join('') : '<div class="auth-hint">Todavía no hay estudiantes en este grupo.</div>') +
       `<button class="auth-submit" style="background:var(--c3);color:var(--t2);margin-top:10px;" onclick="renderMisGrupos($('cuenta-contenido'))"><i class="ti ti-arrow-left"></i> Volver a mis grupos</button>`;
   } catch(e){
     cont.innerHTML = `<div class="auth-msg show error">No se pudo cargar: ${e.message||e}</div>`;
   }
+}
+// Elimina al estudiante de este grupo específico — no borra su cuenta,
+// solo su membresía aquí. Si el estudiante está en otras materias,
+// esas no se ven afectadas.
+async function confirmarEliminarEstudiante(membresiaId, grupoId, nombreGrupo, nombreEstudiante){
+  if(!confirm(`¿Eliminar a ${nombreEstudiante} de "${nombreGrupo}"? Perderá acceso a esta materia específica, incluyendo su progreso guardado aquí. Esto no se puede deshacer.`)) return;
+  try {
+    const { error } = await sb.from('academy_membresias').delete().eq('id', membresiaId);
+    if(error) throw error;
+    toast('Estudiante eliminado del grupo.');
+    verEstudiantesDeGrupo(grupoId, nombreGrupo);
+  } catch(e){ toast('No se pudo eliminar: ' + (e.message||e)); }
 }
 
 function authLogout(){
