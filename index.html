@@ -2589,26 +2589,202 @@ SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
       {q:'Para un inversionista conservador con horizonte largo, ¿qué señala una porción moderada de acciones?', opts:['Un error de diseño','Un intento de generar crecimiento real sin comprometer la estabilidad general del portafolio','Que el perfil de riesgo está mal definido','Que no hay diversificación'], correct:1},
     ],
   },
+  {
+    id:'inv1-c2', expediente:'FIN325-2026-618', role:'Analista de Portafolios',
+    title:'Dos portafolios con el mismo rendimiento esperado — pero uno reduce el riesgo real',
+    brief:'Un cliente te presenta dos propuestas de portafolio de otro asesor, ambas con el mismo rendimiento esperado del 8% anual, y te pide una segunda opinión sobre cuál recomendarías. La diferencia real entre ambas no está en el rendimiento — está en cómo se combinan los activos.',
+    character:{name:'Joaquín Herrera', role:'Inversionista independiente', quote:'"Las dos propuestas prometen el mismo 8% de rendimiento esperado. Si el rendimiento es igual, ¿realmente importa cuál elija?"'},
+    facts:[['Portafolio A — Activo 1 (peso 50%)','Rendimiento esperado 10%, volatilidad 18%'],['Portafolio A — Activo 2 (peso 50%)','Rendimiento esperado 6%, volatilidad 12%'],['Correlación entre los dos activos del Portafolio A','0.85 (alta)'],['Portafolio B — misma combinación de rendimientos y pesos'],['Correlación entre los dos activos del Portafolio B','0.15 (baja)']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Confirmando que el rendimiento esperado es idéntico', icon:'ti-calculator', competencia:'valoracion',
+        intro:'El rendimiento esperado de un portafolio es simplemente el promedio ponderado de los rendimientos de sus activos — no depende de la correlación entre ellos.',
+        databox:{title:'Composición de ambos portafolios', rows:[['Activo 1: peso 50%, rendimiento esperado','10%'],['Activo 2: peso 50%, rendimiento esperado','6%']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el rendimiento esperado del portafolio, con estos pesos y rendimientos? (en %, un decimal)', placeholder:'Ej: 8.0', correct:8.0, tolerance:0.1, explain:'Rendimiento esperado = (0.50 × 10%) + (0.50 × 6%) = 5% + 3% = 8.0% — igual en ambos portafolios, ya que tienen la misma composición de pesos y rendimientos individuales.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · La diferencia real: la correlación', icon:'ti-chart-dots', competencia:'valoracion',
+        intro:'Aunque el rendimiento esperado es idéntico, el riesgo total del portafolio depende también de qué tanto se mueven juntos sus activos — y ahí es donde los dos portafolios sí son diferentes.',
+        questions:[
+          {type:'mc', q:'El Portafolio A tiene una correlación de 0.85 entre sus dos activos (se mueven casi siempre juntos); el Portafolio B tiene una correlación de 0.15 (se mueven de forma mucho más independiente). ¿Qué portafolio tendrá, en principio, menor riesgo total, a pesar de tener el mismo rendimiento esperado?', opts:['El Portafolio A, por la correlación alta','El Portafolio B, porque la correlación baja entre sus activos reduce el riesgo total del portafolio — cuando uno cae, el otro no necesariamente cae con la misma fuerza','Ambos tienen exactamente el mismo riesgo, la correlación no importa','Es imposible saberlo sin más información'], correct:1, explain:'Este es el principio central de la diversificación: con el mismo rendimiento esperado, una correlación más baja entre los activos reduce el riesgo total del portafolio, porque cuando un activo tiene un mal desempeño, es menos probable que el otro también lo tenga al mismo tiempo — su comportamiento es más independiente.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · ¿Por qué esto no es obvio para todos los inversionistas?', icon:'ti-bulb', competencia:'valoracion',
+        intro:'Muchos inversionistas nuevos se enfocan únicamente en el rendimiento esperado, sin considerar cómo se combinan los activos entre sí.',
+        questions:[
+          {type:'mc', q:'¿Por qué un inversionista que solo mira el rendimiento esperado publicado de cada propuesta podría no notar esta diferencia?', opts:['Porque el rendimiento esperado siempre incluye el efecto de la correlación','Porque el rendimiento esperado es un promedio ponderado simple que no refleja cómo se combina el riesgo entre los activos — hace falta mirar la correlación por separado para verla','Porque no existe ninguna diferencia real entre ambos portafolios','Porque la correlación es igual de visible que el rendimiento en cualquier propuesta'], correct:1, explain:'El rendimiento esperado, al ser un simple promedio ponderado, no revela nada sobre cómo interactúan los activos entre sí — dos portafolios pueden tener el mismo rendimiento esperado y niveles de riesgo completamente distintos, y esa diferencia solo se ve analizando la correlación, un paso que muchos inversionistas nuevos omiten.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al cliente', icon:'ti-gavel',
+        intro:'Con el rendimiento esperado confirmado idéntico (etapa 1), la diferencia real de riesgo por la correlación (etapa 2), y por qué esto no es obvio a primera vista (etapa 3), debes dar tu recomendación.',
+        verdictOptions:[
+          {v:'portafolio_b', label:'Recomendar el Portafolio B', desc:'Con el mismo rendimiento esperado pero menor riesgo real gracias a la baja correlación entre sus activos, ofrece una mejor relación riesgo-rendimiento.'},
+          {v:'indiferente', label:'Indicar que son equivalentes, ya que el rendimiento esperado es igual', desc:'Si el cliente solo le da valor al rendimiento esperado, ambos portafolios cumplen igual esa expectativa específica.'},
+          {v:'depende_perfil', label:'Depende del perfil de riesgo específico del cliente', desc:'Un cliente con muy baja tolerancia al riesgo se beneficia más de la diferencia; uno indiferente al riesgo podría no valorar tanto esa distinción.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando por qué dos portafolios con el mismo rendimiento esperado pueden tener niveles de riesgo real muy distintos, y qué papel juega la correlación entre activos en esa diferencia.',
+      },
+    ],
+    summary:'Este caso trabaja un principio central de la <b>teoría moderna de portafolios</b>: el rendimiento esperado no cuenta toda la historia. Dos portafolios con exactamente el mismo 8% de rendimiento esperado pueden tener niveles de riesgo real muy distintos, dependiendo de la <b>correlación</b> entre sus activos — una correlación baja (0.15) reduce el riesgo total del portafolio frente a una correlación alta (0.85), aunque los pesos y rendimientos individuales sean idénticos. Es la razón matemática detrás de por qué "no poner todos los huevos en la misma canasta" funciona mejor cuando esas canastas realmente se comportan de forma distinta entre sí, no solo cuando hay muchas canastas.',
+    flashcards:[
+      {q:'¿Cómo se calcula el rendimiento esperado de un portafolio de dos activos?', a:'El promedio ponderado de los rendimientos esperados de cada activo, según su peso en el portafolio.'},
+      {q:'¿Por qué una correlación baja entre activos reduce el riesgo del portafolio, aunque el rendimiento esperado sea el mismo?', a:'Porque cuando los activos se mueven de forma más independiente, es menos probable que ambos tengan un mal desempeño al mismo tiempo, reduciendo la volatilidad combinada del portafolio.'},
+    ],
+    glossary:[
+      {t:'Rendimiento esperado de un portafolio', d:'El promedio ponderado de los rendimientos esperados de cada activo que lo compone, según su peso relativo.'},
+    ],
+    quiz:[
+      {q:'¿Cómo se calcula el rendimiento esperado de un portafolio de dos activos?', opts:['Sumando los rendimientos sin ponderar','El promedio ponderado de los rendimientos según el peso de cada activo','Solo el rendimiento del activo más grande','Restando el riesgo del rendimiento'], correct:1},
+      {q:'Con el mismo rendimiento esperado, ¿qué portafolio tiene menor riesgo: uno con correlación de 0.85 o uno con 0.15 entre sus activos?', opts:['El de 0.85','El de 0.15','Ambos tienen el mismo riesgo','No se puede saber sin más datos'], correct:1},
+    ],
+  },
+  {
+    id:'inv1-c3', expediente:'FIN325-2026-634', role:'Gestor de Portafolio',
+    title:'El portafolio se desvió de su plan original — ¿rebalancear o dejarlo correr?',
+    brief:'Hace un año, estructuraste un portafolio para un cliente con una asignación objetivo de 60% acciones y 40% bonos. Las acciones tuvieron un año excepcional, y ahora la asignación real se ha desviado considerablemente de ese plan original.',
+    character:{name:'Rebeca Solís', role:'Cliente, portafolio de inversión personal', quote:'"Mi portafolio ha crecido muchísimo este año. ¿Por qué tendría que cambiar algo si me está yendo tan bien?"'},
+    facts:[['Asignación objetivo original','60% acciones / 40% bonos'],['Valor del portafolio hace un año','US$ 500,000'],['Valor actual de la porción de acciones','US$ 372,000'],['Valor actual de la porción de bonos','US$ 208,000'],['Valor total actual del portafolio','US$ 580,000']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · ¿Cuál es la asignación real hoy?', icon:'ti-percentage', competencia:'valoracion',
+        intro:'Antes de decidir si rebalancear, hay que calcular exactamente cuánto se ha desviado el portafolio de su plan original.',
+        databox:{title:'Situación actual del portafolio', rows:[['Valor actual de acciones','US$372,000'],['Valor actual de bonos','US$208,000'],['Valor total actual','US$580,000'],['Asignación objetivo','60% / 40%']]},
+        questions:[
+          {type:'num', q:'¿Cuál es el porcentaje real actual en acciones? (en %, un decimal)', placeholder:'Ej: 64.1', correct:64.1, tolerance:0.3, explain:'372,000 / 580,000 × 100 = 64.1% — por encima del 60% objetivo original.'},
+          {type:'mc', q:'¿Por qué el portafolio se desvió de su asignación objetivo de 60/40, si nunca se hizo ningún retiro ni aporte adicional?', opts:['Es un error de cálculo, no debería haber pasado','Porque las acciones crecieron más rápido que los bonos durante el año, lo que hizo que su peso relativo dentro del portafolio total aumentara, sin que nadie moviera nada activamente','El portafolio no puede desviarse nunca sin una acción explícita','Los bonos perdieron todo su valor'], correct:1, explain:'Cuando una clase de activo (en este caso, acciones) crece más rápido que otra, su peso relativo dentro del portafolio total aumenta automáticamente, incluso sin que el inversionista haga nada — el portafolio "se desvía solo" del plan original simplemente por el desempeño diferenciado de sus componentes.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Qué significa esa desviación en términos de riesgo?', icon:'ti-alert-triangle', competencia:'valoracion',
+        intro:'Una asignación de 64% en acciones no es "mejor" solo porque generó más rendimiento este año — representa un perfil de riesgo distinto al que originalmente se acordó con el cliente.',
+        questions:[
+          {type:'mc', q:'¿Por qué esta desviación de 60% a 64.1% en acciones es relevante, más allá de que el portafolio haya crecido en valor total?', opts:['No es relevante, un portafolio que crece siempre es una buena noticia sin matices','El portafolio ahora tiene más riesgo del que originalmente se acordó con el cliente — si el mercado accionario cae, el impacto proporcional sobre el portafolio completo sería mayor al que el cliente aceptó inicialmente','La desviación no tiene ningún efecto sobre el riesgo del portafolio','Los bonos ahora tienen más riesgo que las acciones'], correct:1, explain:'Aunque el valor total del portafolio creció, su perfil de riesgo también cambió: con más peso en acciones del que originalmente se acordó, el portafolio es ahora más sensible a una caída del mercado accionario de lo que el cliente aceptó cuando se definió el plan de 60/40 — un riesgo real, no solo una cifra de crecimiento para celebrar sin matices.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · El costo de rebalancear vs. el costo de no hacerlo', icon:'ti-scale', competencia:'valoracion',
+        intro:'Rebalancear no es gratis — implica vender parte de lo que subió y comprar lo que se quedó atrás, lo cual puede generar costos de transacción e implicaciones fiscales.',
+        questions:[
+          {type:'mc', q:'¿Qué es rebalancear el portafolio, en términos concretos, en este caso?', opts:['Vender toda la posición en acciones','Vender una porción de las acciones (que crecieron de más) y usar ese dinero para comprar más bonos, hasta volver a acercarse al 60/40 original','Comprar más acciones para seguir la tendencia positiva','No hacer nada, dejar que el portafolio siga como está'], correct:1, explain:'Rebalancear significa, literalmente, vender parte de lo que creció por encima de su peso objetivo (acciones, en este caso) y usar ese dinero para comprar más de lo que quedó por debajo de su peso objetivo (bonos), devolviendo el portafolio a su asignación planeada original — una disciplina que, en efecto, es "vender caro y comprar barato" de forma sistemática, aunque contraintuitiva quand el activo que se vende viene de tener un buen año.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación al cliente', icon:'ti-gavel',
+        intro:'Con la desviación real cuantificada (etapa 1), el cambio de riesgo que implica (etapa 2), y en qué consiste rebalancear (etapa 3), debes recomendar qué hacer.',
+        verdictOptions:[
+          {v:'rebalancear', label:'Rebalancear de vuelta a 60/40', desc:'Restaura el perfil de riesgo que originalmente se acordó con el cliente, aunque implique vender parte de las acciones que tuvieron un buen desempeño.'},
+          {v:'dejar_correr', label:'Dejar el portafolio como está, aprovechando el buen momento de las acciones', desc:'Prioriza el crecimiento continuo mientras las acciones sigan teniendo un buen desempeño, aceptando el mayor riesgo implícito.'},
+          {v:'rebalanceo_parcial', label:'Rebalancear solo parcialmente, acercándose al objetivo sin llegar exactamente a él', desc:'Un punto intermedio que reduce algo del riesgo adicional sin renunciar del todo a la exposición extra a acciones que ha generado buenos resultados.'},
+        ],
+        openPrompt:'Justifica tu recomendación explicando cómo se desvió el portafolio sin ninguna acción activa (etapa 1), qué cambio real de riesgo implica esa desviación (etapa 2), y el costo de rebalancear frente al de no hacerlo (etapa 3) — y qué tan cómoda estaría la cliente con el perfil de riesgo actual, distinto al que originalmente aceptó.',
+      },
+    ],
+    summary:'Este caso trabaja el <b>rebalanceo de portafolio</b>, la disciplina de mantener la asignación de activos alineada con el perfil de riesgo acordado, incluso cuando el desempeño reciente hace tentador dejarlo como está. El portafolio se desvió de 60% a 64.1% en acciones sin ninguna acción activa del inversionista, simplemente porque las acciones crecieron más rápido que los bonos — un recordatorio de que un portafolio "se desvía solo" con el tiempo, y de que un buen desempeño reciente no significa que el nivel de riesgo actual siga siendo el que el cliente originalmente aceptó.',
+    flashcards:[
+      {q:'¿Por qué un portafolio se puede desviar de su asignación objetivo sin que el inversionista haga nada?', a:'Porque cuando una clase de activo crece más rápido que otra, su peso relativo dentro del portafolio total aumenta automáticamente, sin necesidad de ninguna acción activa.'},
+      {q:'¿En qué consiste rebalancear un portafolio?', a:'Vender parte del activo que creció por encima de su peso objetivo, y usar ese dinero para comprar más del activo que quedó por debajo, devolviendo el portafolio a su asignación planeada.'},
+    ],
+    glossary:[
+      {t:'Rebalanceo de portafolio', d:'El proceso de ajustar las posiciones de un portafolio para devolverlo a su asignación de activos objetivo original, generalmente vendiendo parte de lo que creció de más y comprando lo que quedó rezagado.'},
+      {t:'Deriva de asignación (allocation drift)', d:'El fenómeno por el cual la composición real de un portafolio se aleja de su asignación objetivo con el tiempo, debido al desempeño diferenciado de sus activos.'},
+    ],
+    quiz:[
+      {q:'¿Qué es rebalancear un portafolio?', opts:['Vender todo y empezar de nuevo','Vender parte de lo que creció de más y comprar lo que quedó rezagado, volviendo a la asignación objetivo','Comprar más de lo que ya subió','No hacer nada nunca'], correct:1},
+      {q:'¿Por qué un portafolio puede desviarse de su asignación objetivo sin ninguna acción del inversionista?', opts:['No puede desviarse nunca sin acción activa','Porque una clase de activo puede crecer más rápido que otra, cambiando su peso relativo automáticamente','Solo se desvía si hay un retiro','Es siempre un error de cálculo'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.inv1.studyMaterial = {
-  summary:'<b>Inversión I</b> enseña a construir portafolios que equilibren el retorno esperado con el nivel de riesgo que el inversionista puede y quiere asumir, aplicando los principios de la teoría moderna de portafolios a activos disponibles en el mercado panameño e internacional.<br><br>El proceso parte siempre del <b>perfilamiento del inversionista</b>: su horizonte de tiempo, su capacidad real de tolerar pérdidas temporales sin vender en pánico, su necesidad de liquidez y sus metas específicas. No existe el portafolio óptimo en abstracto; existe el portafolio óptimo para ese inversionista en esa etapa de su vida. Un inversionista a 20 años del retiro puede sostener mayor proporción de renta variable que uno a 3 años, porque tiene tiempo de recuperarse de una corrección.<br><br>El principio central de la materia es la <b>diversificación</b>: al combinar activos cuya correlación entre sí es menor que 1, el riesgo del portafolio combinado es menor a la suma ponderada de los riesgos individuales. Esto significa que se puede reducir el riesgo total sin sacrificar proporcionalmente el retorno esperado, simplemente eligiendo activos que no se mueven exactamente igual. El <b>retorno esperado ponderado</b> del portafolio se calcula sumando el retorno de cada activo multiplicado por su peso. La <b>volatilidad del portafolio</b> requiere considerar las correlaciones entre activos, no solo las volatilidades individuales. Las <b>pruebas de estrés</b> ante caídas de mercado permiten verificar si el diseño del portafolio es coherente con la tolerancia al riesgo declarada por el cliente, antes de comprometer el capital real.',
+  summary:'<b>Inversión I</b> enseña a construir portafolios que equilibren el retorno esperado con el nivel de riesgo que el inversionista puede y quiere asumir, aplicando los principios de la teoría moderna de portafolios a activos disponibles en el mercado panameño e internacional.<br><br>El proceso parte siempre del <b>perfilamiento del inversionista</b>: su horizonte de tiempo, su capacidad real de tolerar pérdidas temporales sin vender en pánico, su necesidad de liquidez y sus metas específicas. No existe el portafolio óptimo en abstracto; existe el portafolio óptimo para ese inversionista en esa etapa de su vida.<br><br>El principio central de la materia es la <b>diversificación</b>: al combinar activos cuya correlación entre sí es menor que 1, el riesgo del portafolio combinado es menor a la suma ponderada de los riesgos individuales. Esto significa que dos portafolios pueden tener exactamente el <b>mismo retorno esperado ponderado</b> — que se calcula sumando el retorno de cada activo multiplicado por su peso, sin que la correlación intervenga en ese cálculo — y aun así tener niveles de riesgo real muy distintos, dependiendo de qué tan correlacionados estén sus activos entre sí. Esa es una distinción que muchos inversionistas nuevos pasan por alto, al fijarse solo en el número de rendimiento esperado publicado.<br><br>Una vez construido el portafolio, el trabajo no termina — con el tiempo, el desempeño diferenciado de los activos hace que la composición real se aleje de la asignación objetivo original, un fenómeno llamado <b>deriva de asignación</b>. Si las acciones tienen un buen año, su peso dentro del portafolio crece automáticamente, sin que el inversionista haga nada, cambiando el perfil de riesgo real del portafolio respecto al que originalmente se acordó. El <b>rebalanceo</b> — vender parte de lo que creció de más y comprar lo que quedó rezagado — es la disciplina que devuelve el portafolio a su plan original, y suele ser contraintuitivo precisamente porque implica vender el activo que "va bien" en ese momento.',
   flashcards:[
     {q:'¿Qué es la diversificación de un portafolio?', a:'La estrategia de combinar activos con comportamientos distintos (baja correlación entre sí) para reducir el riesgo total sin sacrificar proporcionalmente el retorno esperado.'},
     {q:'¿Por qué la volatilidad de un portafolio combinado suele ser menor a la suma ponderada de sus partes?', a:'Porque los activos no están perfectamente correlacionados; cuando uno cae, otro puede mantenerse estable o subir, amortiguando el riesgo conjunto.'},
     {q:'¿Qué es el retorno esperado ponderado de un portafolio?', a:'La suma de los retornos esperados de cada activo, multiplicados por su peso (porcentaje) dentro del portafolio total.'},
+    {q:'¿Pueden dos portafolios con el mismo retorno esperado tener distinto riesgo?', a:'Sí — el retorno esperado no depende de la correlación entre activos, pero el riesgo del portafolio sí, así que una correlación más baja puede reducir el riesgo real sin cambiar el retorno esperado.'},
+    {q:'¿Qué es la deriva de asignación (allocation drift)?', a:'El fenómeno por el cual la composición real de un portafolio se aleja de su asignación objetivo con el tiempo, debido al desempeño diferenciado de sus activos, sin ninguna acción del inversionista.'},
+    {q:'¿En qué consiste rebalancear un portafolio?', a:'Vender parte del activo que creció por encima de su peso objetivo, y usar ese dinero para comprar más del activo que quedó rezagado, devolviendo el portafolio a su asignación planeada original.'},
   ],
   glossary:[
     {t:'Perfil de riesgo', d:'Clasificación de un inversionista según su tolerancia a pérdidas, horizonte de inversión y objetivos financieros.'},
     {t:'Diversificación', d:'Estrategia de inversión que combina activos de comportamiento distinto para reducir el riesgo total del portafolio.'},
     {t:'Correlación', d:'Medida estadística de cómo se mueven dos activos entre sí; una correlación baja o negativa potencia el efecto de la diversificación.'},
     {t:'Volatilidad', d:'Medida de la variabilidad del retorno de un activo o portafolio en el tiempo; un indicador común de riesgo.'},
+    {t:'Rebalanceo de portafolio', d:'El proceso de ajustar las posiciones de un portafolio para devolverlo a su asignación de activos objetivo original.'},
+    {t:'Deriva de asignación (allocation drift)', d:'El alejamiento de la composición real de un portafolio respecto a su asignación objetivo, causado por el desempeño diferenciado de sus activos con el tiempo.'},
   ],
   quiz:[
     {q:'¿Qué efecto tiene la diversificación sobre el riesgo de un portafolio?', opts:['Lo elimina por completo','Lo reduce, sin eliminarlo, si los activos no están perfectamente correlacionados','No tiene ningún efecto','Siempre lo aumenta'], correct:1},
     {q:'Para un inversionista conservador con horizonte largo, ¿qué señala una porción moderada de acciones?', opts:['Un error de diseño','Un intento de generar crecimiento real sin comprometer la estabilidad general del portafolio','Que el perfil de riesgo está mal definido','Que no hay diversificación'], correct:1},
+    {q:'Con el mismo rendimiento esperado, ¿qué portafolio tiene menor riesgo: uno con correlación de 0.85 o uno con 0.15 entre sus activos?', opts:['El de 0.85','El de 0.15','Ambos tienen el mismo riesgo','No se puede saber sin más datos'], correct:1},
+    {q:'¿Qué es rebalancear un portafolio?', opts:['Vender todo y empezar de nuevo','Vender parte de lo que creció de más y comprar lo que quedó rezagado, volviendo a la asignación objetivo','Comprar más de lo que ya subió','No hacer nada nunca'], correct:1},
+  ],
+  libro:[
+    { titulo:'No existe el portafolio perfecto, solo el correcto para cada persona', texto:`Uno de los errores más comunes al empezar en inversiones es buscar "el mejor portafolio" como si fuera una respuesta única y universal. No lo es. El portafolio correcto para una persona de 30 años, con ingresos estables y 35 años por delante hasta el retiro, puede ser exactamente el peor portafolio posible para alguien de 60 años que necesita ese dinero para vivir en cinco años. La primera pregunta que responde cualquier proceso de inversión serio no es "¿qué activo rinde más?", sino "¿quién es esta persona, y qué puede realmente asumir?"<br><br>El horizonte de tiempo cambia todo. Un inversionista joven puede sostener una proporción alta de acciones porque, si el mercado cae, tiene décadas para recuperarse antes de necesitar ese dinero — el tiempo actúa a su favor, amortiguando la volatilidad de corto plazo. Un inversionista a pocos años del retiro no tiene ese lujo: una caída fuerte justo antes de que necesite retirar el dinero puede ser irreversible para sus planes, sin importar qué tan buena sea la recuperación del mercado a largo plazo, porque simplemente no tendrá tiempo de esperarla.<br><br>Pero el horizonte no es lo único que importa — también está la tolerancia emocional real, no solo la declarada en un cuestionario. Alguien puede decir en papel que tolera caídas del 20%, pero vender en pánico apenas el mercado cae 8%, destruyendo cualquier plan bien diseñado. Un buen asesor no solo calcula números — entiende a la persona detrás de esos números, y diseña un portafolio que esa persona específica realmente pueda sostener quand el mercado, inevitablemente, tenga un mal momento.` },
+    { titulo:'Por qué el mismo rendimiento esperado puede esconder riesgos muy distintos', texto:`Imaginemos dos propuestas de portafolio, ambas prometiendo exactamente 8% de rendimiento esperado anual. A simple vista, parecen intercambiables — si el rendimiento es el mismo, ¿por qué elegir una sobre la otra? La respuesta está en un número que casi nunca aparece en el resumen ejecutivo de una propuesta de inversión: la correlación entre los activos que componen cada portafolio.<br><br>El rendimiento esperado de un portafolio es simple aritmética: se multiplica el peso de cada activo por su rendimiento esperado individual, y se suma. Ese cálculo nunca involucra la correlación — por eso dos portafolios pueden llegar exactamente al mismo número, aunque estén construidos con activos que se comportan de forma completamente distinta entre sí. Un portafolio con activos que tienen una correlación de 0.85 —que se mueven casi siempre en la misma dirección al mismo tiempo— tiene un riesgo real mayor que uno con activos de correlación 0.15, incluso con el mismo rendimiento esperado publicado, porque en el primero, cuando las cosas van mal, tienden a ir mal para todo el portafolio a la vez.<br><br>Esta es la esencia matemática detrás del consejo popular de "no poner todos los huevos en la misma canasta" — pero con un matiz importante que el refrán no captura: no basta con tener muchas canastas, esas canastas tienen que comportarse de forma realmente distinta entre sí. Diez activos altamente correlacionados entre ellos ofrecen mucha menos protección real que tres activos genuinamente independientes. La diversificación efectiva no se mide contando cuántos activos hay en el portafolio, se mide entendiendo qué tan poco se parecen entre sí en cómo reaccionan al mismo evento de mercado.` },
+    { titulo:'Cuando el éxito del portafolio se convierte en su propio riesgo', texto:`Hay una paradoja incómoda en la gestión de portafolios que muchos inversionistas descubren tarde: un buen desempeño puede, silenciosamente, aumentar el riesgo del portafolio, sin que nadie haya tomado ninguna decisión activa para que eso pasara. Si un portafolio empieza con 60% en acciones y 40% en bonos, y las acciones tienen un año excepcional mientras los bonos se mantienen estables, el peso de las acciones dentro del portafolio total crece automáticamente — no porque el inversionista haya comprado más acciones, sino simplemente porque esa parte del portafolio ahora vale más en términos absolutos.<br><br>Un año después, ese mismo portafolio puede tener 64% en acciones sin que nadie haya movido un dedo. En apariencia, es una buena noticia — el portafolio creció más de lo esperado. Pero en términos de riesgo, es una historia distinta: el portafolio ahora está más expuesto a una caída del mercado accionario de lo que el inversionista originalmente aceptó cuando definió su plan de 60/40. El riesgo que está asumiendo hoy ya no es exactamente el riesgo que decidió asumir cuando empezó.<br><br>El rebalanceo es la disciplina que corrige esa deriva silenciosa: vender parte de lo que creció por encima de su peso objetivo, y usar ese dinero para comprar más de lo que se quedó atrás, devolviendo el portafolio a su plan original. Es, en efecto, "vender caro y comprar barato" de forma sistemática — pero psicológicamente es difícil, porque implica vender precisamente el activo que "va bien" en ese momento. Los inversionistas más disciplinados son los que rebalancean según un plan predefinido, no según cómo se sienten sobre el mercado en ese momento específico — la disciplina, no la intuición, es lo que mantiene el portafolio alineado con el riesgo que la persona realmente puede sostener.` },
   ],
 };
+SUBJECT_DATA.inv1.formulas = [
+  { nombre:'Rendimiento esperado de un portafolio', formula:'Rendimiento esperado = Σ (Peso del activo × Rendimiento esperado del activo)',
+    variables:'Peso: el porcentaje del portafolio total invertido en ese activo. La suma de todos los pesos debe ser 100%.',
+    ejemplo:'Con 50% en un activo al 10% y 50% en otro al 6%, el rendimiento esperado es (0.50×10%) + (0.50×6%) = 8.0%.' },
+  { nombre:'Asignación real de un activo', formula:'Asignación real = (Valor actual del activo ÷ Valor total del portafolio) × 100',
+    variables:'Se recalcula periódicamente, ya que cambia con el desempeño relativo de cada activo, sin necesidad de ninguna transacción nueva.',
+    ejemplo:'Con US$372,000 en acciones sobre un portafolio total de US$580,000, la asignación real es 372,000/580,000 × 100 = 64.1%.' },
+];
+SUBJECT_DATA.inv1.leyes = [
+  { nombre:'Ley del Mercado de Valores', numero:'Ley 67 de 2011',
+    resumen:'Regula quiénes pueden ofrecer servicios de asesoría de inversión en Panamá, exigiendo licencia ante la Superintendencia del Mercado de Valores, y establece obligaciones de conducta hacia el cliente, incluyendo conocer su perfil antes de recomendar cualquier inversión.',
+    temasClave:['Licenciamiento de asesores y casas de valores', 'Obligación de conocer al cliente (suitability) antes de recomendar inversiones', 'Facultades de supervisión de la Superintendencia del Mercado de Valores'] },
+];
+SUBJECT_DATA.inv1.simulaciones = [
+  {
+    id: 'sim-inv1-asesor-inversiones',
+    titulo: 'Asesor de Inversiones — Casa de Valores del Istmo',
+    rolJugador: 'Asesor de Inversiones',
+    descripcion: 'No vas a construir un solo portafolio — vas a gestionar la relación con un cliente real a lo largo de varias rondas, tomando decisiones de asignación, diversificación y rebalanceo mientras el mercado se mueve.',
+    kpisIniciales: { valorPortafolioCliente: 420000, desviacionDelObjetivo: 0, satisfaccionCliente: 70, riesgoRealAsumido: 40, confianzaAsesor: 65 },
+    rondas: [
+      { titulo:'Ronda 1 — Definiendo la asignación inicial con la clienta',
+        contexto:'Marlene, próxima a jubilarse en 7 años, busca preservación de capital con crecimiento moderado. Debes proponer la asignación inicial entre acciones y bonos.',
+        opciones: [
+          { texto:'Proponer una asignación conservadora: 30% acciones, 70% bonos', efectos:{riesgoRealAsumido:-10, satisfaccionCliente:5, desviacionDelObjetivo:0},
+            resultado:'Priorizaste la estabilidad acorde al horizonte corto de la clienta — una decisión alineada con su perfil declarado, aunque con menor potencial de crecimiento.'},
+          { texto:'Proponer una asignación balanceada: 50% acciones, 50% bonos', efectos:{riesgoRealAsumido:5, satisfaccionCliente:8, valorPortafolioCliente:8000},
+            resultado:'Un punto intermedio que busca algo más de crecimiento sin comprometer excesivamente la estabilidad que la clienta pidió — razonable, aunque con más riesgo que el extremo conservador.'},
+        ]},
+      { titulo:'Ronda 2 — Las acciones tienen un año excepcional',
+        contexto:'Un año después, las acciones del portafolio subieron considerablemente más que los bonos, desviando la asignación real de la clienta por encima de su objetivo original.',
+        opciones: [
+          { texto:'Recomendar activamente rebalancear de vuelta al objetivo original', efectos:{desviacionDelObjetivo:-15, riesgoRealAsumido:-8, confianzaAsesor:10},
+            resultado:'Mantuviste la disciplina del plan original, explicándole a la clienta por qué el buen desempeño reciente cambió su nivel de riesgo real, no solo su valor total.'},
+          { texto:'Dejar el portafolio como está, aprovechando el buen momento', efectos:{valorPortafolioCliente:15000, desviacionDelObjetivo:12, riesgoRealAsumido:10, confianzaAsesor:-8},
+            resultado:'El portafolio siguió creciendo en el corto plazo, pero la clienta ahora tiene más riesgo del que originalmente aceptó, sin que nadie se lo haya explicado con claridad.'},
+        ]},
+      { titulo:'Ronda 3 — Un familiar le sugiere a la clienta invertir en un activo de moda con alta correlación con lo que ya tiene',
+        contexto:'Marlene pregunta si debería agregar un activo popular recientemente, sin saber que está altamente correlacionado con parte de lo que ya tiene en su portafolio.',
+        opciones: [
+          { texto:'Explicarle el concepto de correlación y por qué ese activo no añade diversificación real', efectos:{confianzaAsesor:12, satisfaccionCliente:5},
+            resultado:'Le diste a la clienta el contexto real que necesitaba para tomar una decisión informada, en vez de simplemente aprobar o rechazar la idea sin explicación.'},
+          { texto:'Aprobar la solicitud sin explicar el problema de correlación', efectos:{riesgoRealAsumido:12, confianzaAsesor:-10},
+            resultado:'La clienta terminó con un portafolio que parece más diversificado en el papel, pero que en realidad no reduce su riesgo tanto como ella cree, por la alta correlación entre ese activo nuevo y lo que ya tenía.'},
+        ]},
+      { titulo:'Ronda 4 — El mercado tiene una corrección fuerte',
+        contexto:'Después de una caída considerable en el mercado accionario, Marlene llama preocupada, preguntando si debería vender todo antes de perder más.',
+        opciones: [
+          { texto:'Recordarle el plan original y su horizonte de inversión, sin tomar decisiones por pánico', efectos:{satisfaccionCliente:10, confianzaAsesor:15},
+            resultado:'Ayudaste a la clienta a mantener la disciplina del plan de largo plazo en un momento emocionalmente difícil, en vez de dejar que el pánico de corto plazo destruyera una estrategia bien diseñada.'},
+          { texto:'Vender una parte importante de las acciones para calmar su preocupación inmediata', efectos:{valorPortafolioCliente:-12000, satisfaccionCliente:-5, confianzaAsesor:-5},
+            resultado:'Cediste a la presión emocional del momento, lo que probablemente signifique vender cerca de un mínimo del mercado — exactamente lo contrario de lo que un plan de inversión disciplinado busca evitar.'},
+        ]},
+      { titulo:'Ronda 5 — Revisión anual del portafolio con la clienta',
+        contexto:'Termina el año. Toca la revisión formal del portafolio con Marlene, evaluando si sigue alineado con su perfil y horizonte, que ahora es un año más corto.',
+        opciones: [
+          { texto:'Revisar y ajustar el perfil de riesgo considerando que el horizonte hasta el retiro ahora es más corto', efectos:{riesgoRealAsumido:-10, confianzaAsesor:8, satisfaccionCliente:8},
+            resultado:'Reconociste que el perfil de riesgo apropiado no es estático — con un año menos hasta el retiro, tiene sentido moverse gradualmente hacia una postura algo más conservadora.'},
+          { texto:'Mantener exactamente la misma asignación sin revisar el perfil', efectos:{confianzaAsesor:-5},
+            resultado:'Un enfoque menos personalizado, que no reconoce que el horizonte de inversión de la clienta cambia cada año que pasa, acercándose a su fecha de retiro.'},
+        ]},
+    ],
+  },
+];
 
 SUBJECT_DATA.bancint = { casesPlanned:3, cases:[
   {
@@ -4855,9 +5031,9 @@ function avanzarDespuesDeCapitulo(){
 // números de la ronda siguiente — no hay una sola respuesta correcta,
 // hay compromisos, y cada uno tiene un costo real.
 // ═══════════════════════════════════════════════════════
-const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'], confianzaInforme:['Confianza del informe','ti-shield-check'], horasInvertidas:['Horas invertidas','ti-clock'], hallazgosGraves:['Hallazgos graves','ti-alert-octagon'], relacionCliente:['Relación con el cliente','ti-users'], precisionAnalisis:['Precisión del análisis','ti-target'], carteraTotal:['Cartera total','ti-briefcase'], tasaMorosidad:['Tasa de morosidad','ti-alert-triangle'], utilidadCartera:['Utilidad de la cartera','ti-cash'], relacionesCliente:['Relaciones con clientes','ti-users'], calidadCartera:['Calidad de la cartera','ti-shield-check'], exposicionCubierta:['Exposición cubierta','ti-shield'], costoCoberturas:['Costo de coberturas','ti-cash'], perdidaEvitada:['Pérdida evitada','ti-shield-check'], flexibilidad:['Flexibilidad','ti-arrows-shuffle'], confianzaComite:['Confianza del comité','ti-users'], capitalDisponible:['Capital disponible','ti-wallet'], vanAcumulado:['VAN acumulado','ti-trending-up'], proyectosAprobados:['Proyectos aprobados','ti-checklist'], capitalComprometido:['Capital comprometido','ti-briefcase'], volumenProcesado:['Volumen procesado','ti-world'], exposicionTotal:['Exposición total','ti-alert-triangle'], ingresosComisiones:['Ingresos por comisiones','ti-cash'], relacionCorresponsal:['Relación con el corresponsal','ti-building-bank'] };
+const ETIQUETAS_KPI = { utilidad:['Utilidad','ti-trending-up'], liquidez:['Liquidez','ti-droplet'], roe:['ROE','ti-percentage'], flujoCaja:['Flujo de caja','ti-cash'], endeudamiento:['Endeudamiento','ti-scale'], participacionMercado:['Participación de mercado','ti-chart-pie'], valorPortafolio:['Valor del portafolio','ti-briefcase'], rendimientoAcumulado:['Rendimiento acumulado','ti-trending-up'], riesgoNivel:['Nivel de riesgo','ti-alert-triangle'], diversificacion:['Diversificación','ti-chart-pie'], confianzaInforme:['Confianza del informe','ti-shield-check'], horasInvertidas:['Horas invertidas','ti-clock'], hallazgosGraves:['Hallazgos graves','ti-alert-octagon'], relacionCliente:['Relación con el cliente','ti-users'], precisionAnalisis:['Precisión del análisis','ti-target'], carteraTotal:['Cartera total','ti-briefcase'], tasaMorosidad:['Tasa de morosidad','ti-alert-triangle'], utilidadCartera:['Utilidad de la cartera','ti-cash'], relacionesCliente:['Relaciones con clientes','ti-users'], calidadCartera:['Calidad de la cartera','ti-shield-check'], exposicionCubierta:['Exposición cubierta','ti-shield'], costoCoberturas:['Costo de coberturas','ti-cash'], perdidaEvitada:['Pérdida evitada','ti-shield-check'], flexibilidad:['Flexibilidad','ti-arrows-shuffle'], confianzaComite:['Confianza del comité','ti-users'], capitalDisponible:['Capital disponible','ti-wallet'], vanAcumulado:['VAN acumulado','ti-trending-up'], proyectosAprobados:['Proyectos aprobados','ti-checklist'], capitalComprometido:['Capital comprometido','ti-briefcase'], volumenProcesado:['Volumen procesado','ti-world'], exposicionTotal:['Exposición total','ti-alert-triangle'], ingresosComisiones:['Ingresos por comisiones','ti-cash'], relacionCorresponsal:['Relación con el corresponsal','ti-building-bank'], valorPortafolioCliente:['Valor del portafolio del cliente','ti-briefcase'], desviacionDelObjetivo:['Desviación del objetivo','ti-target-arrow'], satisfaccionCliente:['Satisfacción del cliente','ti-mood-smile'], riesgoRealAsumido:['Riesgo real asumido','ti-alert-triangle'], confianzaAsesor:['Confianza en el asesor','ti-users'] };
 function formatearValorKpi(clave, valor){
-  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion' || clave==='confianzaInforme' || clave==='relacionCliente' || clave==='precisionAnalisis' || clave==='tasaMorosidad' || clave==='relacionesCliente' || clave==='calidadCartera' || clave==='exposicionCubierta' || clave==='flexibilidad' || clave==='confianzaComite' || clave==='relacionCorresponsal') return valor.toFixed(1)+'%';
+  if(clave==='roe' || clave==='endeudamiento' || clave==='participacionMercado' || clave==='rendimientoAcumulado' || clave==='riesgoNivel' || clave==='diversificacion' || clave==='confianzaInforme' || clave==='relacionCliente' || clave==='precisionAnalisis' || clave==='tasaMorosidad' || clave==='relacionesCliente' || clave==='calidadCartera' || clave==='exposicionCubierta' || clave==='flexibilidad' || clave==='confianzaComite' || clave==='relacionCorresponsal' || clave==='desviacionDelObjetivo' || clave==='satisfaccionCliente' || clave==='riesgoRealAsumido' || clave==='confianzaAsesor') return valor.toFixed(1)+'%';
   if(clave==='horasInvertidas' || clave==='hallazgosGraves') return Math.round(valor).toLocaleString('es-PA');
   return 'US$ '+Math.round(valor).toLocaleString('es-PA');
 }
