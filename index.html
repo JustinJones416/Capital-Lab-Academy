@@ -3848,7 +3848,7 @@ async function crearTarea(){
     const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, descripcion, fecha_limite: fecha };
     if(archivo){
       const ruta = `docente-${currentUser.usuario_id}/tarea_${Date.now()}_${limpiarNombreArchivo(archivo.name)}`;
-      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
+      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo);
       if(errSubida) throw errSubida;
       payload.archivo_url = ruta; payload.archivo_nombre = archivo.name;
     }
@@ -3914,7 +3914,7 @@ async function guardarEntregaTarea(tareaId){
     let archivo_url = null, archivo_nombre = null;
     if(archivo){
       const ruta = `${currentUser.usuario_id}/${tareaId}_${Date.now()}_${limpiarNombreArchivo(archivo.name)}`;
-      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo, { upsert:true });
+      const { error: errSubida } = await sb.storage.from('academy-entregas').upload(ruta, archivo);
       if(errSubida) throw errSubida;
       archivo_url = ruta; archivo_nombre = archivo.name;
     }
