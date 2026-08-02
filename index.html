@@ -916,7 +916,7 @@ const MENTOR_QUOTES = {
 // Cada materia: { cases: [ {id, expediente, role, title, brief, character:{name,role,quote}, facts:[], stages:[...], summary, flashcards:[], glossary:[], quiz:[] } ], casesPlanned:3 }
 const SUBJECT_DATA = {};
 
-SUBJECT_DATA.banmer = { casesPlanned:4, cases:[
+SUBJECT_DATA.banmer = { casesPlanned:5, cases:[
   {
     id:'banmer-c1', expediente:'SBP-2026-101', role:'Analista de Supervisión Bancaria',
     title:'Diagnóstico prudencial de un banco de plaza panameño',
@@ -1156,6 +1156,70 @@ SUBJECT_DATA.banmer = { casesPlanned:4, cases:[
     quiz:[
       {q:'¿Qué tipo de instrumento puede reconocerse parcialmente como capital regulatorio bajo ciertas condiciones?', opts:['Un depósito a la vista','Un bono subordinado','Una cuenta de ahorros','Un préstamo hipotecario'], correct:1},
       {q:'¿Qué le pasa al costo efectivo de un bono si se coloca por debajo de su valor nominal?', opts:['Baja','Sube','No cambia','Depende solo del plazo'], correct:1},
+    ],
+  },
+  {
+    id:'banmer-c5', expediente:'SBP-2026-142', role:'Analista de Cartera en Vigilancia',
+    title:'Un cliente pide reestructurar su crédito — tu decisión cambia todo lo que sigue',
+    brief:'Ferretería del Valle tiene un crédito comercial vigente de US$95,000 con Banco Itsmeño. El dueño llama pidiendo reestructurar el crédito antes de su primer atraso, alegando problemas temporales de flujo de caja. Cómo respondas a esta llamada determina qué información descubres — y qué problema termina enfrentando el banco.',
+    character:{name:'Rogelio Batista', role:'Propietario, Ferretería del Valle', quote:'"Necesito una cuota más baja este trimestre. Es algo temporal, se los prometo — el negocio va bien, solo necesito un respiro."'},
+    facts:[['Saldo del crédito vigente','US$ 95,000'],['Cuota mensual actual','US$ 2,850'],['Meses de historial de pago puntual','18 meses seguidos'],['Motivo declarado por el cliente','Problema temporal de flujo de caja']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Revisando el historial antes de responder', icon:'ti-history', competencia:'credito_riesgo',
+        intro:'Antes de decidir cómo proceder, conviene mirar el historial real del cliente — su comportamiento pasado es la mejor pista disponible sobre qué tan seria es esta solicitud.',
+        databox:{title:'Historial del cliente', rows:[['Meses de pago puntual','18 meses seguidos'],['Cuota mensual','US$2,850'],['Saldo actual','US$95,000']]},
+        questions:[
+          {type:'mc', q:'Con 18 meses de pago puntual y ningún atraso previo, ¿qué sugiere este historial sobre la solicitud del cliente?', opts:['Que definitivamente está mintiendo','Que tiene un historial sólido, lo cual hace más creíble —aunque no automáticamente cierta— su explicación de un problema temporal','Que el crédito nunca debió aprobarse','El historial no aporta ninguna información relevante'], correct:1, explain:'Un historial de 18 meses sin atrasos es una señal real a favor de la credibilidad del cliente — no la confirma por completo, pero sí hace más razonable considerar que se trata de algo temporal, en vez de asumir automáticamente lo peor.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · La decisión que cambia el rumbo del caso', icon:'ti-git-branch', competencia:'credito_riesgo',
+        intro:'Aquí está la decisión central de este caso — no hay una opción "correcta" en abstracto, cada camino te lleva a descubrir algo distinto, y tendrás que trabajar con las consecuencias reales de lo que elijas.',
+        questions:[
+          {type:'mc', q:'¿Cómo procedes con la solicitud de Rogelio?', opts:[
+            'Investigar primero la causa real antes de decidir cualquier cosa — pedir estados financieros recientes y el detalle de qué está causando el problema de flujo de caja',
+            'Aprobar la reestructuración de inmediato, confiando en el buen historial de 18 meses — reducir la cuota y seguir adelante sin más trámite',
+          ], ramificaHacia: {0:'s3a', 1:'s3b'}, consecuencias: {
+            0: 'Decidiste investigar antes de resolver. Pediste los estados financieros — vamos a ver qué revelan.',
+            1: 'Confiaste en el historial y aprobaste de inmediato. El cliente quedó satisfecho — pero pasaron los meses, y ahora hay algo que atender.',
+          }},
+        ],
+      },
+      { id:'s3a', title:'Etapa 3 · Lo que revelan los estados financieros', icon:'ti-file-search', competencia:'credito_riesgo', esRama:true,
+        intro:'Rogelio entrega sus estados financieros de los últimos tres meses. Al revisarlos, aparece algo que su explicación por teléfono no mencionaba.',
+        databox:{title:'Lo que revelan los estados financieros', rows:[['Cuenta por cobrar de un solo cliente, vencida hace 45 días','US$ 31,000'],['Flujo de caja mensual promedio (antes de este problema)','US$ 4,200'],['Cuota actual','US$ 2,850']]},
+        questions:[
+          {type:'num', q:'¿A cuántas cuotas mensuales equivale la cuenta por cobrar vencida de US$31,000? (un decimal)', placeholder:'Ej: 10.9', correct:10.9, tolerance:0.3, explain:'31,000 / 2,850 = 10.9 cuotas — un monto considerable, pendiente de cobro de un solo cliente, que explica de forma concreta y verificable el problema de flujo de caja que Rogelio mencionó por teléfono.'},
+          {type:'mc', q:'¿Cómo cambia esta información concreta la naturaleza de la decisión, comparado con solo tener la palabra del cliente por teléfono?', opts:['No cambia nada, la decisión sigue siendo igual de incierta','Ahora hay evidencia verificable y específica del problema real —una cuenta por cobrar vencida de un cliente identificado— en vez de solo una explicación verbal genérica, lo que permite estructurar una solución dirigida al problema real, no solo "bajar la cuota" en general','La información hace que la situación sea peor de lo que parecía','Esta información no tiene ninguna relación con la solicitud de reestructuración'], correct:1, explain:'Con esta evidencia concreta, ya no se trata de creer o no una explicación genérica — hay un problema específico, cuantificado y verificable, lo que permite diseñar una solución realmente dirigida a esa causa (por ejemplo, una reestructuración temporal atada al plazo esperado de cobro de esa cuenta), en vez de una reducción de cuota indefinida y genérica.'},
+        ],
+      },
+      { id:'s3b', title:'Etapa 3 · Tres meses después, aparece un problema', icon:'ti-alert-triangle', competencia:'credito_riesgo', esRama:true,
+        intro:'Aprobaste la reestructuración sin más trámite. Tres meses después, revisando la cartera del banco, notas algo que no se investigó en su momento.',
+        databox:{title:'Lo que aparece tres meses después', rows:[['Cuota reestructurada aprobada entonces','US$ 1,900'],['Situación actual: el cliente pide una SEGUNDA reestructuración','Sí'],['Motivo declarado ahora','El mismo "problema temporal" que antes']],},
+        questions:[
+          {type:'mc', q:'Rogelio pide una segunda reestructuración, con la misma explicación genérica de "problema temporal" que la primera vez. ¿Qué debería generar esto, dado que nunca se investigó la causa real la primera vez?', opts:['Ninguna preocupación adicional, es normal pedir ajustes','Una señal de alerta real — sin haber investigado la causa original, no hay forma de saber si el "problema temporal" de hace tres meses realmente se resolvió, o si nunca fue temporal y el banco solo aplazó el problema sin entenderlo', 'Confirma que el negocio de Rogelio va excelente', 'Ninguna relación con la decisión de la primera reestructuración'], correct:1, explain:'Al no haber investigado la causa real la primera vez, el banco se quedó sin la información necesaria para saber si esto era genuinamente temporal o un problema estructural más serio — la segunda solicitud, con la misma explicación vaga, es exactamente la señal de que aplazar sin investigar no resolvió nada, solo retrasó el momento de tener que entender qué está pasando de verdad.'},
+          {type:'mc', q:'¿Qué debería hacer el analista ahora, ante esta segunda solicitud?', opts:['Aprobarla de nuevo, igual de rápido que la primera vez','Esta vez sí exigir los estados financieros y la causa real antes de considerar una segunda reestructuración — no se puede seguir aplazando sin entender qué está pasando realmente con el negocio','Rechazar el crédito por completo sin ninguna investigación','Ignorar la solicitud'], correct:1, explain:'Después de una primera reestructuración sin investigar, y una segunda solicitud con la misma explicación genérica, el camino profesional correcto es finalmente exigir la evidencia real que se debió pedir desde el principio — seguir aprobando sin entender la causa solo pospone un problema que puede estarse agravando.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Recomendación final', icon:'ti-gavel',
+        intro:'Sin importar qué camino tomaste, ahora debes dar tu recomendación final sobre cómo el banco debería manejar la relación de crédito con Ferretería del Valle de aquí en adelante.',
+        verdictOptions:[
+          {v:'reestructurar_dirigido', label:'Reestructurar de forma dirigida al problema real identificado, con seguimiento', desc:'Diseña una solución específica para la causa real del problema (como la cuenta por cobrar vencida), con revisión de seguimiento antes de considerar el caso resuelto.'},
+          {v:'exigir_evidencia_ahora', label:'Exigir evidencia completa antes de aprobar cualquier ajuste adicional', desc:'Sin importar lo que pasó antes, cualquier decisión de aquí en adelante debe basarse en información verificable, no en explicaciones genéricas repetidas.'},
+          {v:'cartera_vigilancia', label:'Pasar el crédito a cartera en vigilancia con reportes obligatorios', desc:'Dado el patrón observado, establece un seguimiento más cercano y formal, sin llegar todavía a una acción más drástica.'},
+        ],
+        openPrompt:'Justifica tu recomendación final considerando el camino específico que tomaste en la Etapa 2 — si investigaste primero, qué tan distinta hubiera sido la situación si no lo hubieras hecho; si aprobaste rápido, qué te enseña la segunda solicitud sobre el costo real de no investigar la primera vez.',
+      },
+    ],
+    summary:'Este caso funciona distinto a los demás: la decisión que tomaste en la Etapa 2 determinó literalmente qué etapa viniste a ver después — investigar primero revela un problema concreto y verificable (una cuenta por cobrar vencida de US$31,000, equivalente a casi 11 cuotas), mientras que aprobar rápido sin investigar lleva, tres meses después, a una segunda solicitud con la misma explicación vaga, sin que el banco tenga ninguna información nueva para evaluarla. Ninguno de los dos caminos es "el correcto" de forma absoluta — pero cada uno tiene consecuencias reales y distintas, y el caso te obliga a trabajar con las consecuencias de tu propia decisión, no con un camino único que todos los estudiantes ven igual.',
+    flashcards:[
+      {q:'¿Por qué investigar la causa real de un problema de flujo de caja antes de reestructurar es valioso, aunque tome más tiempo?', a:'Porque permite diseñar una solución dirigida al problema real (como una cuenta por cobrar específica), en vez de una reducción de cuota genérica que no resuelve la causa de fondo.'},
+      {q:'¿Qué riesgo corre un banco que aprueba una reestructuración sin investigar la causa real?', a:'Que el problema no sea realmente temporal, y sin esa información, el banco no tiene forma de saberlo — descubriéndolo tarde, cuando aparece una segunda solicitud con la misma explicación genérica.'},
+    ],
+    glossary:[
+      {t:'Reestructuración dirigida', d:'Una reestructuración de crédito diseñada específicamente en torno a la causa real y verificada del problema del deudor, en vez de un ajuste genérico como simplemente reducir la cuota.'},
+    ],
+    quiz:[
+      {q:'¿Por qué es valioso investigar la causa real antes de reestructurar un crédito?', opts:['No es valioso, solo retrasa el proceso','Permite diseñar una solución dirigida al problema real, no un ajuste genérico','Es un requisito legal sin excepción','Solo aplica a créditos grandes'], correct:1},
     ],
   },
 ]};
@@ -6237,6 +6301,7 @@ function renderSidebarLists(){
 // diagnóstico del estudiante como el de la clase, para no duplicar la
 // lógica ni arriesgar que se desincronicen.
 function esRespuestaCorrecta(pregunta, respuestaDada){
+  if(pregunta.ramificaHacia) return null; // una decisión no es correcta ni incorrecta, es una bifurcación
   if(respuestaDada===undefined) return null; // no respondida — no cuenta como acierto ni como error
   if(pregunta.type==='mc') return respuestaDada===pregunta.correct;
   return Math.abs(parseFloat(respuestaDada)-pregunta.correct) <= (pregunta.tolerance||0);
@@ -6439,6 +6504,43 @@ function saveAnswers(){
   }
 }
 function findCase(caseId){ for(const subjId in SUBJECT_DATA){ const c=SUBJECT_DATA[subjId].cases.find(x=>x.id===caseId); if(c) return {subjId, case:c}; } return null; }
+// ═══════════════════════════════════════════════════════════════════
+// RAMIFICACIÓN REAL DE CASOS — un caso normal sigue sus etapas en
+// orden fijo. Un caso con ramificación puede tener una pregunta de
+// decisión (marcada con "ramificaHacia") cuya respuesta decide cuál
+// etapa viene después — dos estudiantes que decidan distinto pueden
+// terminar viendo etapas completamente diferentes.
+//
+// Para casos SIN ramificación (todos los existentes hasta ahora), esta
+// función simplemente devuelve las etapas en su orden normal — cero
+// cambio de comportamiento para lo que ya funciona.
+// ═══════════════════════════════════════════════════════
+function obtenerRutaDelCaso(c, ans){
+  const tieneRamificacion = c.stages.some(s => s.questions?.some(q => q.ramificaHacia));
+  if(!tieneRamificacion) return c.stages;
+  const porId = {}; c.stages.forEach(s=>porId[s.id]=s);
+  const ruta = [];
+  let actual = c.stages[0];
+  const visitados = new Set();
+  while(actual && !visitados.has(actual.id)){
+    visitados.add(actual.id);
+    ruta.push(actual);
+    const idxPreguntaRamifica = actual.questions?.findIndex(q=>q.ramificaHacia);
+    if(idxPreguntaRamifica!==undefined && idxPreguntaRamifica>=0){
+      const stAns = ans.stages[actual.id] || {};
+      const respuestaDada = stAns[idxPreguntaRamifica];
+      if(respuestaDada===undefined){ actual=null; break; } // todavía no decide — la ruta se detiene aquí
+      const siguienteId = actual.questions[idxPreguntaRamifica].ramificaHacia[respuestaDada];
+      actual = siguienteId ? porId[siguienteId] : null;
+    } else {
+      const idxActual = c.stages.indexOf(actual);
+      let siguiente = c.stages[idxActual+1];
+      while(siguiente && siguiente.esRama) siguiente = c.stages[c.stages.indexOf(siguiente)+1];
+      actual = siguiente || null;
+    }
+  }
+  return ruta;
+}
 
 // ───── Apertura de caso ─────
 function openCase(caseId){
@@ -6487,6 +6589,17 @@ function renderQuestions(caseId, questions, stageId){
   const stAns = ans.stages[stageId];
   container.innerHTML = questions.map((q,i)=>{
     const saved = stAns[i];
+    if(q.ramificaHacia){
+      // Pregunta de decisión real: no hay "correcta" — cada opción
+      // lleva a una etapa distinta del caso, con su propia consecuencia.
+      return `<div class="q-block">
+        <div class="q-text"><span class="q-num">${i+1}</span>${q.q}</div>
+        <div class="q-options" id="opts-${stageId}-${i}">
+          ${q.opts.map((o,oi)=>`<div class="q-opt ${saved===oi?'selected':''}" style="${saved===oi?'border-color:var(--ac);background:rgba(0,196,255,.08);':''}" onclick="${saved===undefined?`answerMC('${caseId}','${stageId}',${i},${oi})`:''}"><span class="dot">${saved===oi?'●':''}</span>${o}</div>`).join('')}
+        </div>
+        <div class="q-feedback ${saved!==undefined?'show ok':''}" id="fb-${stageId}-${i}">${saved!==undefined?'<b>Decisión tomada.</b> '+(q.consecuencias?.[saved]||''):''}</div>
+      </div>`;
+    }
     if(q.type==='mc'){
       return `<div class="q-block">
         <div class="q-text"><span class="q-num">${i+1}</span>${q.q}</div>
@@ -6517,6 +6630,13 @@ function answerMC(caseId, stageId, qIndex, optIndex){
   ans.stages[stageId][qIndex]=optIndex;
   saveAnswers();
   const found=findCase(caseId); const stage=found.case.stages.find(s=>s.id===stageId);
+  if(stage.questions[qIndex]?.ramificaHacia){
+    // Una pregunta de decisión cambia qué etapa viene después — hay
+    // que redibujar el caso completo, no solo la pregunta, para que
+    // el botón de avance refleje que la ruta ya quedó decidida.
+    renderCase();
+    return;
+  }
   renderQuestions(caseId, stage.questions, stageId);
   updateStagePillProgress();
 }
@@ -6556,9 +6676,10 @@ function renderCase(){
   const ans=ensureAnswers(currentCaseId);
   ans.lastStage=currentStage;
   saveAnswers();
-  const stage=c.stages[currentStage];
+  const ruta = obtenerRutaDelCaso(c, ans);
+  const stage=ruta[currentStage];
 
-  const stageNav = c.stages.map((s,i)=>{
+  const stageNav = ruta.map((s,i)=>{
     const stAns=(ans.stages[s.id]||{});
     let isDone = s.questions ? Object.keys(stAns).length>=s.questions.length : !!stAns.verdict;
     return `<div class="stage-pill ${i===currentStage?'current':''} ${isDone?'done':''}" data-stage="${s.id}" onclick="goStage(${i})"><i class="ti ${isDone&&i!==currentStage?'ti-circle-check-filled':s.icon}"></i> ${i+1}</div>`;
@@ -6602,9 +6723,14 @@ function renderCase(){
       </div>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStage(${currentStage-1})" ${currentStage===0?'disabled style="opacity:.4;pointer-events:none;"':''}><i class="ti ti-arrow-left"></i> Etapa anterior</button>
-        ${currentStage === c.stages.length-1
-          ? `<button class="btn btn-ghost" onclick="exportCase('${c.id}')"><i class="ti ti-download"></i> Exportar mi análisis</button><button class="btn" onclick="finishCase('${c.id}')"><i class="ti ti-check"></i> Finalizar caso</button>`
-          : `<button class="btn" onclick="goStage(${currentStage+1})"><i class="ti ti-arrow-right"></i> Siguiente etapa</button>`}
+        ${(() => {
+          const idxRamifica = stage.questions?.findIndex(q=>q.ramificaHacia);
+          const faltaDecidir = idxRamifica!==undefined && idxRamifica>=0 && (ans.stages[stage.id]||{})[idxRamifica]===undefined;
+          if(faltaDecidir) return `<button class="btn" disabled style="opacity:.5;"><i class="ti ti-arrow-right"></i> Responde la decisión de arriba para continuar</button>`;
+          return currentStage === ruta.length-1
+            ? `<button class="btn btn-ghost" onclick="exportCase('${c.id}')"><i class="ti ti-download"></i> Exportar mi análisis</button><button class="btn" onclick="finishCase('${c.id}')"><i class="ti ti-check"></i> Finalizar caso</button>`
+            : `<button class="btn" onclick="goStage(${currentStage+1})"><i class="ti ti-arrow-right"></i> Siguiente etapa</button>`;
+        })()}
       </div>
     `;
   }
@@ -6643,7 +6769,10 @@ function renderCase(){
 // resolviendo), no al inicio absoluto de la página. Se usa el ancla #stage-anchor con scroll-margin-top
 // definido en CSS para que el sticky topbar no tape el contenido.
 function goStage(i){
-  if(i<0||i>=findCase(currentCaseId).case.stages.length) return;
+  const found = findCase(currentCaseId);
+  const ans = ensureAnswers(currentCaseId);
+  const ruta = obtenerRutaDelCaso(found.case, ans);
+  if(i<0||i>=ruta.length) return;
   currentStage=i;
   renderCase();
   requestAnimationFrame(()=>{
@@ -6654,7 +6783,8 @@ function goStage(i){
 
 function setVerdict(v){
   const ans=ensureAnswers(currentCaseId);
-  const stage=findCase(currentCaseId).case.stages[currentStage];
+  const c=findCase(currentCaseId).case;
+  const stage=obtenerRutaDelCaso(c, ans)[currentStage];
   ans.stages[stage.id]=ans.stages[stage.id]||{};
   ans.stages[stage.id].verdict=v;
   saveAnswers();
@@ -6662,7 +6792,8 @@ function setVerdict(v){
 }
 function onVerdictOpenInput(){
   const ans=ensureAnswers(currentCaseId);
-  const stage=findCase(currentCaseId).case.stages[currentStage];
+  const c=findCase(currentCaseId).case;
+  const stage=obtenerRutaDelCaso(c, ans)[currentStage];
   ans.stages[stage.id]=ans.stages[stage.id]||{};
   ans.stages[stage.id].open=$('deep-open').value;
   saveAnswers();
@@ -6673,7 +6804,8 @@ function finishCase(caseId){
   const found=findCase(caseId);
   const c=found.case;
   const ans=ensureAnswers(caseId);
-  const lastStage=c.stages[c.stages.length-1];
+  const ruta=obtenerRutaDelCaso(c, ans);
+  const lastStage=ruta[ruta.length-1];
   // Un caso creado por el docente puede no tener etapa de veredicto —
   // en ese caso, finalizar solo depende de haber respondido las
   // preguntas, no de una decisión que la propia etapa nunca ofreció.
@@ -6683,11 +6815,13 @@ function finishCase(caseId){
     if(!lastAns.open || lastAns.open.trim().length<20){ toast('Completa la justificación de tu decisión.'); return; }
   }
   let totalQ=0, correctQ=0;
-  c.stages.forEach(s=>{
+  ruta.forEach(s=>{
     if(s.questions){
-      totalQ+=s.questions.length;
+      const preguntasCalificables = s.questions.filter(q=>!q.ramificaHacia);
+      totalQ+=preguntasCalificables.length;
       const stAns=ans.stages[s.id]||{};
       s.questions.forEach((q,i)=>{
+        if(q.ramificaHacia) return; // una decisión no suma ni resta a la calificación
         if(q.type==='mc'){ if(stAns[i]===q.correct) correctQ++; }
         else { if(stAns[i]!==undefined && Math.abs(parseFloat(stAns[i])-q.correct)<=q.tolerance) correctQ++; }
       });
@@ -9176,7 +9310,7 @@ function iniciarExamenAsignado(){
   const { subjectId, conceptos, preguntas_propias, id: examenId, modo_estricto, tiempo_limite_minutos } = examen;
   const data = SUBJECT_DATA[subjectId];
   const preguntas = [];
-  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos?.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos?.includes(st.title)) st.questions.filter(q=>!q.ramificaHacia).forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
   (preguntas_propias||[]).forEach(q => preguntas.push({ q: { type:'mc', ...q }, stageTitle: 'Pregunta del profesor', caseTitle: examen.titulo }));
   if(!preguntas.length){ toast('Este examen no tiene preguntas disponibles.'); return; }
   for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
@@ -9230,7 +9364,7 @@ function iniciarExamenPersonalizado(subjectId){
   if(!elegidos.length){ toast('Elige al menos un concepto.'); return; }
   const data = SUBJECT_DATA[subjectId];
   const preguntas = [];
-  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && elegidos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && elegidos.includes(st.title)) st.questions.filter(q=>!q.ramificaHacia).forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
   if(!preguntas.length){ toast('No hay preguntas para los conceptos elegidos.'); return; }
   for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
   $('constructor-repaso-overlay').remove();
@@ -9297,7 +9431,7 @@ async function iniciarRepasoProgramado(repasoId, subjectId, conceptos){
   await cargarCasosPersonalizados(subjectId);
   const data = SUBJECT_DATA[subjectId];
   const preguntas = [];
-  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos.includes(st.title)) st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
+  data.cases.forEach(c => c.stages.forEach(st => { if(st.questions && conceptos.includes(st.title)) st.questions.filter(q=>!q.ramificaHacia).forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title })); }));
   if(!preguntas.length){ toast('Esas preguntas ya no están disponibles.'); return; }
   for(let i=preguntas.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [preguntas[i],preguntas[j]]=[preguntas[j],preguntas[i]]; }
   await sb.from('academy_repasos_programados').update({ completado:true }).eq('id', repasoId);
