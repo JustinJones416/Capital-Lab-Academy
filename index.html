@@ -4924,12 +4924,15 @@ function abrirCrearTarea(){
   document.body.appendChild(overlay);
 }
 async function crearTarea(){
+  const boton = document.querySelector('#crear-tarea-overlay button.auth-submit');
+  if(boton?.disabled) return; // ya se está publicando — ignora clics repetidos
   const titulo = $('tarea-titulo').value.trim();
   const descripcion = $('tarea-descripcion').value.trim();
   const fecha = $('tarea-fecha').value;
   const archivo = $('tarea-archivo-input')?.files[0];
   const msg = $('tarea-msg');
   if(!titulo || !fecha){ msg.className='auth-msg show error'; msg.textContent='El título y la fecha límite son obligatorios.'; return; }
+  if(boton){ boton.disabled = true; boton.style.opacity = '.6'; boton.textContent = archivo ? 'Subiendo archivo y publicando…' : 'Publicando…'; }
   try {
     const payload = { grupo_id: currentUser.grupo_id, materia_id: currentUser.materia_id, titulo, descripcion, fecha_limite: fecha };
     if(archivo){
@@ -4944,7 +4947,10 @@ async function crearTarea(){
     toast('Tarea publicada.');
     notificarEstudiantesDeContenidoNuevo(currentUser.materia_id, `Nueva tarea: "${titulo}" — vence el ${new Date(fecha+'T12:00').toLocaleDateString('es-PA',{day:'2-digit',month:'long'})}.`);
     cargarTareasYCalendario();
-  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo publicar: ' + (e.message||e); }
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo publicar: ' + (e.message||e);
+    if(boton){ boton.disabled = false; boton.style.opacity = '1'; boton.textContent = 'Publicar tarea'; }
+  }
 }
 async function eliminarTarea(tareaId){
   if(!confirm('¿Eliminar esta tarea? También se borrarán las entregas ya hechas.')) return;
@@ -4992,10 +4998,13 @@ function mostrarPestanaEntrega(cual){
   $('entrega-tab-subir').classList.toggle('active', cual==='subir');
 }
 async function guardarEntregaTarea(tareaId){
+  const boton = document.querySelector('#entregar-tarea-overlay button.auth-submit');
+  if(boton?.disabled) return; // ya se está entregando — ignora clics repetidos
   const archivo = $('entrega-archivo-input')?.files[0];
   const contenido = $('entrega-texto').innerHTML.trim();
   const msg = $('entrega-msg');
   if(!archivo && (!contenido || contenido==='<br>')){ msg.className='auth-msg show error'; msg.textContent='Escribe tu entrega o sube un archivo antes de enviarla.'; return; }
+  if(boton){ boton.disabled = true; boton.style.opacity = '.6'; boton.textContent = archivo ? 'Subiendo archivo…' : 'Entregando…'; }
   try {
     let archivo_url = null, archivo_nombre = null;
     if(archivo){
@@ -5011,9 +5020,12 @@ async function guardarEntregaTarea(tareaId){
     $('entregar-tarea-overlay').remove();
     toast('Entrega guardada.');
     cargarTareasYCalendario();
-  } catch(e){ msg.className='auth-msg show error'; msg.textContent = 'No se pudo entregar: ' + (e.message||e); }
+  } catch(e){
+    msg.className='auth-msg show error'; msg.textContent = 'No se pudo entregar: ' + (e.message||e);
+    if(boton){ boton.disabled = false; boton.style.opacity = '1'; boton.textContent = 'Entregar'; }
+  }
 }
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // RÚBRICAS DE EVALUACIÓN — criterios específicos y reutilizables, en
 // vez de una nota suelta. Se crean una vez por clase y se aplican a
 // cualquier tarea al calificar, para que el estudiante vea exactamente
@@ -5783,6 +5795,10 @@ function mostrarTipPersonalizadoSiCorresponde(subjectId){
 // ═══════════════════════════════════════════════════════
 let libroState = null;
 let simulacionState = null;
+function salirDelModoLibro(subjectId){
+  libroState = null;
+  navSubject(subjectId);
+}
 function iniciarModoLibro(subjectId){
   const libroEscrito = SUBJECT_DATA[subjectId].studyMaterial?.libro;
   let capitulos, esNarrativo;
