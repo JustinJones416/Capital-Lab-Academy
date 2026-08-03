@@ -171,7 +171,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .docfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--c3);border:1px solid var(--c3);border-radius:var(--r2);overflow:hidden;margin-top:16px;}
 .docfacts div{background:var(--c1);padding:11px 14px;}
 .docfacts .k{font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
-.docfacts .v{font-size:13.5px;font-weight:700;font-family:var(--font-mono);color:var(--t1);}
+.docfacts .v{font-size:13.5px;font-weight:600;font-family:var(--font-mono);color:var(--t2);}
 
 .card{background:var(--c1);border:1px solid var(--c3);border-radius:var(--r2);padding:20px 22px;margin-bottom:16px;scroll-margin-top:70px;}
 .card-title{font-weight:700;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:9px;}
@@ -205,8 +205,8 @@ h1,h2,h3{font-family:var(--font-head);}
 .q-num-input input:focus{outline:none;border-color:var(--ac);}
 .q-feedback{margin-left:30px;margin-top:10px;font-size:12.5px;padding:10px 13px;border-radius:var(--r);display:none;line-height:1.5;}
 .q-feedback.show{display:block;}
-.q-feedback.ok{background:rgba(0,208,132,.08);border:1px solid rgba(0,208,132,.3);color:var(--t1);}
-.q-feedback.bad{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);color:var(--t1);}
+.q-feedback.ok{background:rgba(0,208,132,.08);border:1px solid rgba(0,208,132,.3);color:var(--t2);}
+.q-feedback.bad{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);color:var(--t2);}
 
 .open-box textarea{width:100%;min-height:120px;background:var(--bg2);border:1px solid var(--c3);border-radius:var(--r);padding:13px 14px;color:var(--t1);font-family:var(--font-body);font-size:13.5px;line-height:1.55;resize:vertical;}
 .open-box textarea:focus{outline:none;border-color:var(--ac);}
@@ -1436,7 +1436,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
             'Sí, siempre hay que sumar los dividendos al flujo antes de comparar',
             'Los dividendos solo importan para créditos hipotecarios, no comerciales',
           ], correct:1, impacto:{0:-15, 1:12, 2:-15, 3:-15}, explain:'Los dividendos que la propietaria retira mensualmente son una salida de efectivo real que compite por el mismo flujo de caja que tendría que cubrir la nueva cuota — un analista riguroso pregunta si esa salida continuará después de aprobado el crédito, en vez de ignorarla solo porque técnicamente está "por debajo" del flujo operativo en el expediente.'},
-          {type:'num', q:'Si los dividendos mensuales de US$12,000 continuaran retirándose después de aprobado el crédito, ¿cuál sería la cobertura real de la cuota (Flujo operativo − Dividendos) ÷ Cuota? (dos decimales)', placeholder:'Ej: 2.71', correct:2.71, tolerance:0.1, pista:'Reste los dividendos del flujo de caja operativo mensual antes de dividir entre la cuota — ambos datos están en el expediente.', explain:'(38,500 − 12,000) / 9,800 = 26,500 / 9,800 ≈ 2.71x — todavía una cobertura saludable, pero notablemente menor a los 3.93x que resultarían de ignorar los dividendos, y un dato que el comité de crédito debería conocer antes de aprobar.'},
+          {type:'num', q:'Si los dividendos mensuales de US$12,000 continuaran retirándose después de aprobado el crédito, ¿cuál sería la cobertura real de la cuota?', placeholder:'Ej: 2.71', correct:2.71, tolerance:0.1, formula:'Cobertura real = (Flujo operativo − Dividendos) ÷ Cuota mensual', pista:'Reste los dividendos del flujo de caja operativo mensual antes de dividir entre la cuota — ambos datos están en el expediente.', explain:'(38,500 − 12,000) / 9,800 = 26,500 / 9,800 ≈ 2.71x — todavía una cobertura saludable, pero notablemente menor a los 3.93x que resultarían de ignorar los dividendos, y un dato que el comité de crédito debería conocer antes de aprobar.'},
           {type:'mc', q:'¿Qué evalúa específicamente el componente de "Carácter" en las 5 C del crédito?', opts:['La capacidad de generar ingresos futuros','La disposición histórica del solicitante a cumplir sus obligaciones de pago','El valor de los activos en garantía','Las condiciones macroeconómicas del sector'], correct:1, explain:'El Carácter evalúa la reputación y el historial de pago del solicitante: su disposición demostrada a cumplir compromisos financieros, más allá de su capacidad numérica de pago.'},
         ],
       },
@@ -1523,7 +1523,7 @@ SUBJECT_DATA.bancred = { casesPlanned:3, cases:[
       { id:'s2', title:'Etapa 2 · El margen neto real', icon:'ti-percentage', competencia:'credito_riesgo',
         intro:'Las ventas suenan grandes, pero lo que importa para pagar una deuda es cuánto queda realmente de utilidad.',
         questions:[
-          {type:'num', q:'¿Cuál es el margen neto del negocio (Utilidad neta / Ventas)? (en %, un decimal)', placeholder:'Ej: 2.3', correct:2.3, tolerance:0.1, explain:'Margen neto = 42,000 / 1,850,000 × 100 = 2.3% — un margen muy delgado para la industria de restaurantes, que deja poco colchón ante cualquier imprevisto.', patronConfusion:'liquidez_vs_rentabilidad'},
+          {type:'num', q:'¿Cuál es el margen neto del negocio? (en %, un decimal)', placeholder:'Ej: 2.3', correct:2.3, tolerance:0.1, formula:'Margen neto = Utilidad neta ÷ Ventas', explain:'Margen neto = 42,000 / 1,850,000 × 100 = 2.3% — un margen muy delgado para la industria de restaurantes, que deja poco colchón ante cualquier imprevisto.', patronConfusion:'liquidez_vs_rentabilidad'},
           {type:'mc', q:'Con un margen neto de apenas 2.3%, ¿qué implica esto para la capacidad de absorber un cuarto local que no funcione como lo proyectado?', opts:['No tiene ninguna implicación','El negocio tiene muy poco margen de error — un local nuevo con desempeño débil podría comprometer la operación completa','Un margen bajo siempre es mejor que uno alto','El margen neto no se relaciona con el riesgo de crédito'], correct:1, explain:'Con un margen tan delgado, el negocio combinado tiene poco colchón: si el cuarto local no alcanza las proyecciones de ventas rápidamente, la presión sobre el flujo de caja del negocio completo puede ser severa, justo cuando ya existe tensión de liquidez de corto plazo (etapa 1).'},
         ],
       },
@@ -1735,26 +1735,25 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
       },
       { id:'s2', title:'Etapa 2 · UAII y UONDI', icon:'ti-calculator', competencia:'analisis_financiero',
         intro:'El siguiente paso es calcular la Utilidad Operativa Neta Después de Impuestos (UONDI), que aísla el desempeño operativo del efecto fiscal sin mezclarlo con la estructura de deuda.',
-        databox:{title:'Cálculo de UONDI', rows:[['UAII','US$ 2,150,000'],['Tasa efectiva de impuesto sobre la renta','25%'],['UONDI = UAII × (1 − Tasa de impuesto)','US$ 1,612,500']]},
+        databox:{title:'Cálculo de UONDI', rows:[['UAII','US$ 2,150,000'],['Tasa efectiva de impuesto sobre la renta','25%']]},
         questions:[
-          {type:'num', q:'Calcula la UONDI: UAII × (1 − Tasa de impuesto) = 2,150,000 × (1 − 0.25). Resultado en US$.', placeholder:'En US$', correct:1612500, tolerance:5000, explain:'UONDI = 2,150,000 × 0.75 = US$ 1,612,500. A diferencia de la utilidad neta (US$ 1,380,000), la UONDI no descuenta los gastos financieros, por lo que aísla el desempeño puramente operativo.'},
+          {type:'num', q:'¿Cuál es la UONDI (Utilidad Operativa Neta Después de Impuestos) de la empresa?', placeholder:'En US$', correct:1612500, tolerance:5000, formula:'UONDI = UAII × (1 − Tasa de impuesto) — con UAII de US$2,150,000 y tasa de impuesto de 25%', explain:'UONDI = 2,150,000 × 0.75 = US$ 1,612,500. A diferencia de la utilidad neta (US$ 1,380,000), la UONDI no descuenta los gastos financieros, por lo que aísla el desempeño puramente operativo.'},
           {type:'mc', q:'¿Por qué la UONDI es distinta a la utilidad neta reportada (US$ 1,380,000)?', opts:['Por un error de cálculo','Porque la UONDI no descuenta los gastos financieros (intereses), a diferencia de la utilidad neta','Porque usan tasas de impuesto diferentes sin razón','No deberían ser diferentes'], correct:1, explain:'La utilidad neta sí descuenta los intereses de la deuda; la UONDI los excluye deliberadamente, para evaluar el negocio como si no tuviera deuda, aislando el desempeño puramente operativo.'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Flujo de Efectivo Operativo (FEO)', icon:'ti-cash', competencia:'analisis_financiero',
         intro:'La utilidad contable no es lo mismo que el efectivo real generado. El FEO ajusta la UONDI por partidas que no implican movimiento de caja, como la depreciación.',
-        databox:{title:'Cálculo del FEO', rows:[['UONDI','US$ 1,612,500'],['Depreciación y amortización del período','US$ 780,000'],['FEO = UONDI + Depreciación','US$ 2,392,500']]},
-        chart:{type:'bar', title:'Utilidad neta vs. FEO', labels:['Utilidad neta','UONDI','FEO'], data:[1380000,1612500,2392500], color:'var(--green)'},
+        databox:{title:'Cálculo del FEO', rows:[['UONDI','US$ 1,612,500'],['Depreciación y amortización del período','US$ 780,000']]},
         questions:[
-          {type:'num', q:'Calcula el FEO: UONDI + Depreciación = 1,612,500 + 780,000. Resultado en US$.', placeholder:'En US$', correct:2392500, tolerance:5000, explain:'FEO = 1,612,500 + 780,000 = US$ 2,392,500. La depreciación se suma de vuelta porque es un gasto contable que no representa una salida real de efectivo en el período.'},
+          {type:'num', q:'¿Cuál es el Flujo de Efectivo Operativo (FEO) de la empresa?', placeholder:'En US$', correct:2392500, tolerance:5000, formula:'FEO = UONDI + Depreciación', explain:'FEO = 1,612,500 + 780,000 = US$ 2,392,500. La depreciación se suma de vuelta porque es un gasto contable que no representa una salida real de efectivo en el período.'},
           {type:'mc', q:'¿Por qué el FEO (US$ 2,392,500) es considerablemente mayor a la utilidad neta reportada (US$ 1,380,000)?', opts:['Porque la empresa está ocultando ingresos','Principalmente porque el FEO suma de vuelta la depreciación y excluye el efecto de los intereses, partidas que no representan salida de efectivo operativo o no son parte del negocio en sí','Es un error de cálculo','Porque las ventas aumentaron en el período'], correct:1, explain:'La diferencia se explica por dos ajustes: la depreciación (gasto contable sin salida de caja) se suma de vuelta, y los intereses (relacionados con financiamiento, no operación) no se restan en el FEO.'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Inversión en activos y FEL', icon:'ti-building', competencia:'analisis_financiero',
         intro:'Para llegar al Flujo de Efectivo Libre (FEL), hay que restar al FEO la inversión necesaria para sostener y hacer crecer la operación: el Incremento de Activos Fijos Netos (IAFN) y el Incremento de Activos Corrientes Netos (IACN).',
-        databox:{title:'Cálculo del FEL', rows:[['FEO','US$ 2,392,500'],['Incremento de Activos Fijos Netos (IAFN)','US$ 1,640,000'],['Incremento de Activos Corrientes Netos (IACN)','US$ 310,000'],['FEL = FEO − IAFN − IACN','US$ 442,500']]},
+        databox:{title:'Cálculo del FEL', rows:[['FEO','US$ 2,392,500'],['Incremento de Activos Fijos Netos (IAFN)','US$ 1,640,000'],['Incremento de Activos Corrientes Netos (IACN)','US$ 310,000']]},
         questions:[
-          {type:'num', q:'Calcula el FEL: FEO − IAFN − IACN = 2,392,500 − 1,640,000 − 310,000. Resultado en US$.', placeholder:'En US$', correct:442500, tolerance:5000, explain:'FEL = 2,392,500 − 1,640,000 − 310,000 = US$ 442,500. Este es el efectivo que realmente queda disponible después de que la empresa reinvierte lo necesario para sostener y crecer su operación.'},
+          {type:'num', q:'¿Cuál es el Flujo de Efectivo Libre (FEL) de la empresa?', placeholder:'En US$', correct:442500, tolerance:5000, formula:'FEL = FEO − IAFN − IACN', explain:'FEL = 2,392,500 − 1,640,000 − 310,000 = US$ 442,500. Este es el efectivo que realmente queda disponible después de que la empresa reinvierte lo necesario para sostener y crecer su operación.'},
           {type:'mc', q:'Con un FEL de solo US$ 442,500 frente a una utilidad neta reportada de US$ 1,380,000, ¿qué advertencia debe hacer el analista?', opts:['Ninguna, la utilidad neta es el único dato relevante','Que la empresa genera utilidad contable, pero una inversión intensiva en activos está consumiendo gran parte de su efectivo operativo disponible','Que la empresa está en quiebra','Que los datos son inconsistentes y deben descartarse'], correct:1, explain:'Esta es exactamente la "lectura forense": una empresa puede mostrar utilidad neta creciente y, al mismo tiempo, tener muy poco efectivo libre disponible si su inversión en activos es muy intensiva. Eso afecta su capacidad real de servicio de deuda adicional.'},
         ],
       },
@@ -1801,7 +1800,7 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
         intro:'El análisis DuPont descompone el ROE en tres partes, cada una contando una historia distinta sobre de dónde viene la rentabilidad: qué tan rentable es cada venta, qué tan eficiente es la empresa usando sus activos, y qué tanto apalancamiento financiero usa.',
         databox:{title:'Componentes de la Empresa A', rows:[['Margen neto','3%'],['Rotación de activos','2.5x'],['Multiplicador de capital','2.0x']]},
         questions:[
-          {type:'num', q:'Con la fórmula ROE = Margen neto × Rotación de activos × Multiplicador de capital, ¿cuál es el ROE de la Empresa A? (en %, un decimal)', placeholder:'Ej: 15.0', correct:15.0, tolerance:0.3, explain:'ROE = 3% × 2.5 × 2.0 = 15.0%. Confirma el dato que ya te dieron — el punto de este ejercicio es entender CÓMO se llega a ese número, no solo verificarlo.'},
+          {type:'num', q:'¿Cuál es el ROE de la Empresa A, descomponiéndolo por DuPont? (en %, un decimal)', placeholder:'Ej: 15.0', correct:15.0, tolerance:0.3, formula:'ROE = Margen neto × Rotación de activos × Multiplicador de capital', explain:'ROE = 3% × 2.5 × 2.0 = 15.0%. Confirma el dato que ya te dieron — el punto de este ejercicio es entender CÓMO se llega a ese número, no solo verificarlo.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · La misma fórmula, la otra empresa', icon:'ti-chart-donut-2', competencia:'analisis_financiero',
@@ -1828,7 +1827,7 @@ SUBJECT_DATA.aeef = { casesPlanned:3, cases:[
         intro:'Pides el detalle de utilidad operativa y gastos de intereses de la Empresa A, para evaluar qué tan cómoda está cubriendo el costo de su deuda con su operación.',
         databox:{title:'Datos de cobertura de deuda — Empresa A', rows:[['Utilidad operativa (EBIT)','US$4,200,000'],['Gastos de intereses anuales','US$2,000,000']]},
         questions:[
-          {type:'num', q:'¿Cuál es la razón de cobertura de intereses de la Empresa A (EBIT ÷ Gastos de intereses)? (un decimal)', placeholder:'Ej: 2.1', correct:2.1, tolerance:0.1, explain:'4,200,000 / 2,000,000 = 2.1x — la utilidad operativa cubre los intereses poco más de dos veces, un margen de seguridad relativamente ajustado si la operación tuviera un mal trimestre.'},
+          {type:'num', q:'¿Cuál es la razón de cobertura de intereses de la Empresa A?', placeholder:'Ej: 2.1', correct:2.1, tolerance:0.1, formula:'Cobertura de intereses = EBIT ÷ Gastos de intereses', explain:'4,200,000 / 2,000,000 = 2.1x — la utilidad operativa cubre los intereses poco más de dos veces, un margen de seguridad relativamente ajustado si la operación tuviera un mal trimestre.'},
           {type:'mc', q:'Una cobertura de intereses de 2.1x, ¿qué te dice sobre el riesgo real de la Empresa A, más allá del multiplicador de capital que ya conocías?', opts:['No agrega ninguna información nueva','Confirma con un número concreto que el apalancamiento de la Empresa A deja un margen de seguridad ajustado — una caída moderada en la utilidad operativa podría comprometer su capacidad de cubrir los intereses de su deuda','2.1x es una cobertura muy alta y sin ningún riesgo','La cobertura de intereses no tiene relación con el apalancamiento'], correct:1, explain:'El multiplicador de capital ya sugería mayor apalancamiento, pero la cobertura de intereses de 2.1x lo hace concreto: si la utilidad operativa cayera considerablemente, la Empresa A tendría poco margen antes de tener dificultades para cubrir sus propios intereses — una confirmación real del riesgo que el análisis DuPont solo insinuaba.'},
         ],
       },
@@ -2090,7 +2089,7 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
         databox:{title:'Datos para el cálculo', rows:[['Valor nominal','US$ 1,000 (por unidad)'],['Precio de colocación','US$ 985 (98.5%)'],['Cupón anual','6.75% → US$ 67.50'],['Plazo','10 años']]},
         questions:[
           {type:'num', q:'¿Cuál es el cupón anual en dólares por cada bono de US$ 1,000 nominales?', placeholder:'En US$', correct:67.5, tolerance:0.5, explain:'Cupón anual = 1,000 × 6.75% = US$ 67.50.'},
-          {type:'num', q:'Usando YTM ≈ [Cupón + (Nominal − Precio)/Plazo] / [(Nominal + Precio)/2], ¿cuál es el YTM aproximado en %? (Cupón=67.5, Nominal=1000, Precio=985, Plazo=10)', placeholder:'En %, ej: 6.90', correct:6.94, tolerance:0.15, explain:'YTM ≈ [67.5 + 1.5] / 992.5 ≈ 6.95%. El rendimiento efectivo supera ligeramente al cupón nominal (6.75%) por el descuento de colocación.'},
+          {type:'num', q:'¿Cuál es el rendimiento al vencimiento (YTM) aproximado de este bono, usando el cupón anual, el valor nominal, el precio de colocación y el plazo ya conocidos?', placeholder:'En %, ej: 6.90', correct:6.94, tolerance:0.15, formula:'YTM ≈ [Cupón + (Nominal − Precio) ÷ Plazo] ÷ [(Nominal + Precio) ÷ 2]', explain:'YTM ≈ [67.5 + 1.5] / 992.5 ≈ 6.95%. El rendimiento efectivo supera ligeramente al cupón nominal (6.75%) por el descuento de colocación.'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Pruebas de estrés', icon:'ti-test-pipe', competencia:'credito_riesgo',
@@ -2364,7 +2363,7 @@ SUBJECT_DATA.proy = { casesPlanned:3, cases:[
         intro:'Todo proyecto parte de definir con precisión la inversión inicial y los supuestos operativos que sustentan la proyección.',
         databox:{title:'Inversión y supuestos del proyecto', rows:[['Inversión inicial (CAPEX)','US$ 8,200,000'],['Capacidad instalada','15 MW'],['Factor de planta estimado (horas equivalentes/año)','1,850 horas'],['Generación anual estimada','27,750,000 kWh'],['Precio de venta contratado','US$ 0.085/kWh']]},
         questions:[
-          {type:'num', q:'¿Cuál es el ingreso anual estimado por venta de energía? (Generación anual × precio = 27,750,000 × 0.085). Resultado en US$.', placeholder:'En US$', correct:2358750, tolerance:10000, explain:'Ingreso anual = 27,750,000 kWh × US$ 0.085/kWh = US$ 2,358,750.'},
+          {type:'num', q:'¿Cuál es el ingreso anual estimado por venta de energía?', placeholder:'En US$', correct:2358750, tolerance:10000, formula:'Ingreso anual = Generación anual (kWh) × Precio por kWh', explain:'Ingreso anual = 27,750,000 kWh × US$ 0.085/kWh = US$ 2,358,750.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Proyección de flujos de caja', icon:'ti-chart-line',
@@ -2649,10 +2648,10 @@ SUBJECT_DATA.macro = { casesPlanned:3, cases:[
       },
       { id:'s2', title:'Etapa 2 · Propensión marginal a consumir y multiplicador', icon:'ti-chart-arrows',
         intro:'Para proyectar el efecto de un estímulo de gasto, se requiere estimar la propensión marginal a consumir (PMgC) de los hogares panameños.',
-        databox:{title:'Estimación de la PMgC', rows:[['Incremento estimado del ingreso disponible','US$ 500,000,000 (agregado)'],['Incremento estimado del consumo asociado','US$ 350,000,000'],['Propensión Marginal a Consumir (PMgC)','0.70'],['Multiplicador del gasto = 1/(1−PMgC)','3.33']]},
+        databox:{title:'Estimación de la PMgC', rows:[['Incremento estimado del ingreso disponible','US$ 500,000,000 (agregado)'],['Incremento estimado del consumo asociado','US$ 350,000,000']]},
         questions:[
-          {type:'num', q:'Calcula la PMgC = Incremento de consumo / Incremento de ingreso = 350,000,000 / 500,000,000.', placeholder:'Ej: 0.70', correct:0.70, tolerance:0.02, explain:'PMgC = 350,000,000 / 500,000,000 = 0.70. Esto significa que, de cada dólar adicional de ingreso, los hogares consumen en promedio 70 centavos.'},
-          {type:'num', q:'Calcula el multiplicador del gasto: 1 / (1 − PMgC) = 1 / (1 − 0.70). (dos decimales)', placeholder:'Ej: 3.33', correct:3.33, tolerance:0.1, explain:'Multiplicador = 1 / (1 − 0.70) = 1 / 0.30 ≈ 3.33. Esto implica que, en teoría, cada dólar adicional de gasto autónomo se traduce en un aumento aproximado de 3.33 dólares en el PIB, a través de rondas sucesivas de consumo.'},
+          {type:'num', q:'¿Cuál es la Propensión Marginal a Consumir (PMgC) de esta economía?', placeholder:'Ej: 0.70', correct:0.70, tolerance:0.02, formula:'PMgC = Incremento del consumo ÷ Incremento del ingreso', explain:'PMgC = 350,000,000 / 500,000,000 = 0.70. Esto significa que, de cada dólar adicional de ingreso, los hogares consumen en promedio 70 centavos.'},
+          {type:'num', q:'¿Cuál es el multiplicador del gasto de esta economía? (dos decimales)', placeholder:'Ej: 3.33', correct:3.33, tolerance:0.1, formula:'Multiplicador = 1 ÷ (1 − PMgC)', explain:'Multiplicador = 1 / (1 − 0.70) = 1 / 0.30 ≈ 3.33. Esto implica que, en teoría, cada dólar adicional de gasto autónomo se traduce en un aumento aproximado de 3.33 dólares en el PIB, a través de rondas sucesivas de consumo.'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Inflación y su efecto en el consumo', icon:'ti-trending-up',
@@ -2664,7 +2663,7 @@ SUBJECT_DATA.macro = { casesPlanned:3, cases:[
       },
       { id:'s4', title:'Etapa 4 · Modelo de la línea de 45 grados aplicado a Panamá', icon:'ti-chart-line',
         intro:'El modelo de la línea de 45 grados ayuda a visualizar el equilibrio entre el gasto agregado planeado y el ingreso nacional.',
-        databox:{title:'Supuestos simplificados del modelo', rows:[['Gasto autónomo estimado (consumo + inversión + gasto público no dependientes del ingreso)','US$ 28,000,000,000'],['PMgC estimada','0.70'],['Ingreso de equilibrio = Gasto autónomo / (1 − PMgC)','US$ 93,333,000,000']]},
+        databox:{title:'Supuestos simplificados del modelo', rows:[['Gasto autónomo estimado (consumo + inversión + gasto público no dependientes del ingreso)','US$ 28,000,000,000'],['PMgC estimada','0.70']]},
         chart:{type:'bar', title:'Gasto autónomo vs. ingreso de equilibrio estimado', labels:['Gasto autónomo','Ingreso de equilibrio'], data:[28000,93333], color:'var(--accent2)'},
         questions:[
           {type:'mc', q:'En el modelo de la línea de 45 grados, ¿qué representa el punto donde la curva de gasto agregado planeado cruza la línea de 45 grados?', opts:['El nivel máximo posible de PIB','El nivel de ingreso nacional de equilibrio, donde el gasto planeado iguala al ingreso','El nivel de inflación objetivo','El punto de quiebre de una empresa'], correct:1, explain:'La línea de 45 grados representa todos los puntos donde el gasto planeado es igual al ingreso. El cruce con la curva de gasto agregado identifica el nivel de ingreso de equilibrio de la economía.'},
@@ -2929,9 +2928,9 @@ SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
       },
       { id:'s3', title:'Etapa 3 · Retorno y riesgo del portafolio', icon:'ti-calculator',
         intro:'Con la asignación definida, se estima el retorno esperado y el riesgo (volatilidad) del portafolio combinado.',
-        databox:{title:'Retorno y riesgo por clase de activo', rows:[['Bonos soberanos: retorno esperado / volatilidad','4.2% / 3.5%'],['Bonos corporativos: retorno esperado / volatilidad','5.8% / 5.0%'],['Acciones: retorno esperado / volatilidad','9.5% / 16.0%'],['Liquidez: retorno esperado / volatilidad','3.0% / 0.5%'],['Retorno esperado ponderado del portafolio','6.04%']]},
+        databox:{title:'Retorno y riesgo por clase de activo', rows:[['Bonos soberanos: retorno esperado / volatilidad','4.2% / 3.5%'],['Bonos corporativos: retorno esperado / volatilidad','5.8% / 5.0%'],['Acciones: retorno esperado / volatilidad','9.5% / 16.0%'],['Liquidez: retorno esperado / volatilidad','3.0% / 0.5%']]},
         questions:[
-          {type:'num', q:'Calcula el retorno esperado ponderado del portafolio: (0.45×4.2) + (0.20×5.8) + (0.25×9.5) + (0.10×3.0). Resultado en %.', placeholder:'En %, ej: 6.04', correct:6.045, tolerance:0.1, explain:'(0.45×4.2) + (0.20×5.8) + (0.25×9.5) + (0.10×3.0) = 1.89 + 1.16 + 2.375 + 0.30 = 6.045%, aproximadamente 6.04%.'},
+          {type:'num', q:'¿Cuál es el retorno esperado ponderado del portafolio, con estos cuatro activos y sus pesos?', placeholder:'En %, ej: 6.04', correct:6.045, tolerance:0.1, formula:'Retorno ponderado = Σ (Peso del activo × Retorno esperado del activo)', explain:'(0.45×4.2) + (0.20×5.8) + (0.25×9.5) + (0.10×3.0) = 1.89 + 1.16 + 2.375 + 0.30 = 6.045%, aproximadamente 6.04%.'},
           {type:'mc', q:'¿Por qué la volatilidad del portafolio combinado no es simplemente el promedio ponderado de las volatilidades individuales?', opts:['Sí lo es, ese es el cálculo correcto','Porque la diversificación reduce el riesgo total cuando los activos no están perfectamente correlacionados entre sí','Porque la volatilidad no se puede combinar matemáticamente','Porque solo aplica a portafolios con un único activo'], correct:1, explain:'El principio central de la diversificación es que, al combinar activos que no se mueven exactamente igual (correlación menor a 1), el riesgo del portafolio combinado es menor a la suma ponderada simple de los riesgos individuales.'},
         ],
       },
@@ -3192,9 +3191,9 @@ SUBJECT_DATA.bancint = { casesPlanned:3, cases:[
       },
       { id:'s3', title:'Etapa 3 · Costos de financiamiento internacional', icon:'ti-receipt',
         intro:'Mientras espera el cobro a 90 días, la empresa puede solicitar financiamiento de corto plazo (descuento de la carta de crédito) para cubrir capital de trabajo.',
-        databox:{title:'Costo del financiamiento por descuento de la carta de crédito', rows:[['Monto a descontar','US$ 455,700 (valor actual en dólares)'],['Tasa de descuento ofrecida por el banco','6.2% anual'],['Plazo','90 días (0.25 años aprox.)'],['Costo financiero estimado = Monto × Tasa × (Plazo/360)','US$ 7,063']]},
+        databox:{title:'Costo del financiamiento por descuento de la carta de crédito', rows:[['Monto a descontar','US$ 455,700 (valor actual en dólares)'],['Tasa de descuento ofrecida por el banco','6.2% anual'],['Plazo','90 días (0.25 años aprox.)']]},
         questions:[
-          {type:'num', q:'Calcula el costo financiero estimado: 455,700 × 0.062 × (90/360). Resultado en US$.', placeholder:'En US$', correct:7063, tolerance:200, explain:'455,700 × 0.062 × 0.25 = US$ 7,063 aproximadamente. Este es el costo de obtener el efectivo de inmediato en lugar de esperar los 90 días del plazo de pago.'},
+          {type:'num', q:'¿Cuál es el costo financiero estimado de esta operación?', placeholder:'En US$', correct:7063, tolerance:200, formula:'Costo financiero = Monto × Tasa anual × (Días ÷ 360)', explain:'455,700 × 0.062 × 0.25 = US$ 7,063 aproximadamente. Este es el costo de obtener el efectivo de inmediato en lugar de esperar los 90 días del plazo de pago.'},
         ],
       },
       { id:'s4', title:'Etapa 4 · Cobertura cambiaria', icon:'ti-shield-check',
@@ -3452,7 +3451,7 @@ SUBJECT_DATA.corredor = { casesPlanned:4, cases:[
         intro:'Antes de tocar el mercado, el corredor debe verificar que la orden sea viable con los fondos disponibles del cliente.',
         databox:{title:'Verificación de la orden', rows:[['Cantidad solicitada','2,000 acciones'],['Precio de referencia','US$ 61.80'],['Costo estimado (2,000 × 61.80)','US$ 123,600'],['Fondos disponibles del cliente','US$ 130,000'],['Comisión de corretaje estimada (0.45%)','US$ 556']]},
         questions:[
-          {type:'num', q:'¿Cuál es el costo estimado de la orden antes de comisiones? (2,000 × 61.80). Resultado en US$.', placeholder:'En US$', correct:123600, tolerance:500, explain:'2,000 acciones × US$ 61.80 = US$ 123,600.'},
+          {type:'num', q:'¿Cuál es el costo estimado de la orden antes de comisiones?', placeholder:'En US$', correct:123600, tolerance:500, formula:'Costo = Cantidad de acciones × Precio por acción', explain:'2,000 acciones × US$ 61.80 = US$ 123,600.'},
           {type:'mc', q:'Sumando el costo estimado (US$ 123,600) y la comisión (US$ 556), ¿los fondos disponibles del cliente (US$ 130,000) son suficientes?', opts:['No, faltan fondos','Sí, son suficientes con margen disponible','Es insuficiente por muy poco','No se puede determinar'], correct:1, explain:'123,600 + 556 = US$ 124,156, monto inferior a los US$ 130,000 disponibles. La orden es viable con margen adicional disponible.'},
         ],
       },
@@ -3771,11 +3770,10 @@ SUBJECT_DATA.asesor = { casesPlanned:4, cases:[
       },
       { id:'s2', title:'Etapa 2 · Diagnóstico de la situación financiera actual', icon:'ti-report-money',
         intro:'Antes de proponer un plan, se diagnostica la capacidad de ahorro mensual real de la familia.',
-        databox:{title:'Flujo de caja familiar mensual', rows:[['Ingreso familiar mensual','US$ 6,800'],['Gastos mensuales actuales','US$ 5,900'],['Capacidad de ahorro mensual actual','US$ 900'],['Capacidad de ahorro como % del ingreso','13.2%']]},
-        chart:{type:'bar', title:'Distribución del ingreso mensual', labels:['Gastos','Ahorro actual'], data:[5900,900], color:'var(--purple2)'},
+        databox:{title:'Flujo de caja familiar mensual', rows:[['Ingreso familiar mensual','US$ 6,800'],['Gastos mensuales actuales','US$ 5,900']]},
         questions:[
-          {type:'num', q:'¿Cuál es la capacidad de ahorro mensual actual de la familia? (Ingreso − Gastos = 6,800 − 5,900). Resultado en US$.', placeholder:'En US$', correct:900, tolerance:20, explain:'6,800 − 5,900 = US$ 900 de capacidad de ahorro mensual actual.'},
-          {type:'mc', q:'Con una capacidad de ahorro de solo US$ 900 mensuales (13.2% del ingreso) y tres metas simultáneas, ¿qué le corresponde evaluar al asesor antes de diseñar el plan?', opts:['Que la familia debe abandonar alguna de las metas de inmediato','Si existe margen para optimizar gastos o si se requiere priorizar y escalonar las metas en el tiempo, dado que el ahorro actual es insuficiente para las tres metas en sus plazos originales','Nada, US$ 900 mensuales es más que suficiente para todas las metas','Recomendar un préstamo para cada meta'], correct:1, explain:'Antes de descartar metas, un asesor responsable evalúa primero si hay espacio para optimizar el presupuesto, y solo después decide cómo priorizar o escalonar las metas si el ahorro disponible sigue siendo insuficiente.'},
+          {type:'num', q:'¿Cuál es la capacidad de ahorro mensual actual de la familia?', placeholder:'En US$', correct:900, tolerance:20, formula:'Capacidad de ahorro = Ingreso mensual − Gastos mensuales', explain:'6,800 − 5,900 = US$ 900 de capacidad de ahorro mensual actual.'},
+          {type:'mc', q:'Con una capacidad de ahorro mensual tan ajustada y tres metas simultáneas, ¿qué le corresponde evaluar al asesor antes de diseñar el plan?', opts:['Que la familia debe abandonar alguna de las metas de inmediato','Si existe margen para optimizar gastos o si se requiere priorizar y escalonar las metas en el tiempo, dado que el ahorro actual es insuficiente para las tres metas en sus plazos originales','Nada, US$ 900 mensuales es más que suficiente para todas las metas','Recomendar un préstamo para cada meta'], correct:1, explain:'Antes de descartar metas, un asesor responsable evalúa primero si hay espacio para optimizar el presupuesto, y solo después decide cómo priorizar o escalonar las metas si el ahorro disponible sigue siendo insuficiente.'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Diseño del plan de ahorro e inversión', icon:'ti-pig-money',
@@ -3881,7 +3879,7 @@ SUBJECT_DATA.asesor = { casesPlanned:4, cases:[
         intro:'Un método común para estimar la necesidad de seguro de vida es calcular cuánto ingreso futuro dejaría de recibir la familia si el sostén principal faltara, durante el período en que todavía lo necesitan.',
         databox:{title:'Datos para el cálculo', rows:[['Ingreso anual','US$72,000'],['Años restantes hasta independencia de los hijos','15 años']]},
         questions:[
-          {type:'num', q:'Usando una versión simple del método (ingreso anual × años restantes), ¿cuál sería el valor de vida humana estimado? (en US$)', placeholder:'Ej: 1080000', correct:1080000, tolerance:5000, explain:'72,000 × 15 = US$1,080,000 — una estimación simple de cuánto ingreso total dejaría de percibir la familia durante los años en que todavía depende de ese ingreso.'},
+          {type:'num', q:'¿Cuál sería el valor de vida humana estimado, con este método simple?', placeholder:'Ej: 1080000', correct:1080000, tolerance:5000, formula:'Valor de vida humana = Ingreso anual × Años restantes de dependencia', explain:'72,000 × 15 = US$1,080,000 — una estimación simple de cuánto ingreso total dejaría de percibir la familia durante los años en que todavía depende de ese ingreso.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Ajustando por deudas y gastos adicionales', icon:'ti-plus', competencia:'valoracion',
@@ -6900,9 +6898,13 @@ function renderQuestions(caseId, questions, stageId){
       const correctNum = isAnswered && Math.abs(parseFloat(saved)-q.correct)<=q.tolerance;
       return `<div class="q-block">
         <div class="q-text"><span class="q-num">${i+1}</span>${q.q}</div>
-        <div class="q-num-input">
-          <input type="number" step="0.01" id="num-${stageId}-${i}" placeholder="${q.placeholder}" value="${saved!==undefined?saved:''}" ${isAnswered?'disabled':''}>
-          ${isAnswered?'':`<button class="btn btn-sm" onclick="answerNum('${caseId}','${stageId}',${i},${q.correct},${q.tolerance})">Verificar</button>`}
+        ${q.formula ? `<div style="background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);padding:9px 13px;margin-bottom:10px;font-family:var(--font-mono);font-size:12.5px;color:var(--ac);text-align:center;">${q.formula}</div>` : ''}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+          <div class="q-num-input" style="margin:0;">
+            <input type="number" step="0.01" id="num-${stageId}-${i}" placeholder="${q.placeholder}" value="${saved!==undefined?saved:''}" ${isAnswered?'disabled':''}>
+            ${isAnswered?'':`<button class="btn btn-sm" onclick="answerNum('${caseId}','${stageId}',${i},${q.correct},${q.tolerance})">Verificar</button>`}
+          </div>
+          ${!isAnswered ? `<textarea placeholder="Espacio para hacer el cálculo a mano…" style="flex:1;min-width:160px;min-height:38px;max-height:90px;padding:8px 11px;background:var(--c2);border:1px dashed var(--c4);border-radius:var(--r);color:var(--t2);font-size:12px;font-family:var(--font-mono);resize:vertical;"></textarea>` : ''}
         </div>
         ${!isAnswered && q.pista ? `<div style="margin-top:6px;"><button class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:5px 10px;" onclick="this.nextElementSibling.classList.toggle('hidden');this.remove();"><i class="ti ti-bulb"></i> Ver pista</button><div class="hidden" style="font-size:12px;color:var(--t2);background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);padding:8px 12px;margin-top:6px;"><i class="ti ti-map-pin" style="color:var(--gold);"></i> ${q.pista}</div></div>` : ''}
         <div class="q-feedback ${isAnswered?'show '+(correctNum?'ok':'bad'):''}" id="fb-${stageId}-${i}">${isAnswered?(correctNum?'<b>Correcto.</b> ':'<b>Resultado esperado: '+q.correct+'.</b> ')+q.explain:''}</div>
