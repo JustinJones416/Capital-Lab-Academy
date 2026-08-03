@@ -931,17 +931,34 @@ SUBJECT_DATA.banmer = { casesPlanned:5, cases:[
   {
     id:'banmer-c1', expediente:'SBP-2026-101', role:'Analista de Supervisión Bancaria',
     title:'Diagnóstico prudencial de un banco de plaza panameño',
-    brief:'La Superintendencia de Bancos de Panamá (SBP) te asigna la revisión trimestral de un banco de licencia general que opera en plaza. Debes evaluar su solvencia, calidad de cartera y liquidez bajo los parámetros prudenciales vigentes, y determinar si requiere medidas de seguimiento especial.',
-    character:{name:'Roberto Saavedra', role:'Gerente General, Banco Itsmeño, S.A.', quote:'"Nuestros números son sólidos, pero entiendo que ustedes deben verificarlo con su propia lupa. Aquí tiene todo lo que necesita."'},
+    medidor:{ nombre:'Credibilidad de tu informe ante el Comité de Supervisión', inicial:65, icon:'ti-report-analytics' },
+    brief:'La Superintendencia de Bancos de Panamá (SBP) te asigna la revisión trimestral de un banco de licencia general que opera en plaza. Debes evaluar su solvencia, calidad de cartera y liquidez bajo los parámetros prudenciales vigentes, y determinar si requiere medidas de seguimiento especial. El Comité de Supervisión revisará tu informe — cada conclusión mal fundamentada le resta credibilidad, incluso si la respuesta final "suena" razonable.',
+    character:{name:'Roberto Saavedra', role:'Gerente General, Banco Itsmeño, S.A.', quote:'"Nuestros números son sólidos, pero entiendo que ustedes deben verificarlo con su propia lupa. Aquí tiene todo lo que necesita — y algunos datos que quizás ni siquiera use."'},
     facts:[['Activos totales','US$ 1,840 millones'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8%'],['Índice de morosidad (cartera vencida/cartera bruta)','3.8%'],['Cobertura de provisiones sobre cartera vencida','92%']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Indicadores prudenciales', icon:'ti-shield-check', competencia:'regulacion_bancaria',
-        intro:'El primer filtro de cualquier supervisión es verificar que el banco cumpla los mínimos regulatorios de capital exigidos por la SBP.',
-        databox:{title:'Indicadores de solvencia', rows:[['Activos totales','US$ 1,840,000,000'],['Patrimonio (fondos de capital)','US$ 243,000,000'],['Activos ponderados por riesgo','US$ 1,840,000,000 × factor promedio 0.66'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8.0%']]},
-        chart:{type:'bar', title:'IAC del banco vs. mínimo regulatorio', labels:['Banco Itsmeño','Mínimo SBP','Promedio sistema'], data:[13.2,8.0,14.5], color:'var(--accent)'},
+      { id:'s1', title:'Etapa 1 · Con qué datos se calcula realmente el IAC', icon:'ti-shield-check', competencia:'regulacion_bancaria',
+        intro:'El banco te entrega su paquete completo de indicadores financieros del trimestre — más datos de los que realmente necesitas para esta pregunta específica. Parte de tu trabajo como analista es identificar cuáles son relevantes antes de calcular nada.',
+        databox:{title:'Paquete de datos entregado por el banco', rows:[
+          ['Activos totales','US$ 1,840,000,000'],
+          ['Activos ponderados por riesgo','US$ 1,214,400,000'],
+          ['Patrimonio (fondos de capital primario)','US$ 160,300,000'],
+          ['Utilidad neta del trimestre','US$ 18,600,000'],
+          ['Depósitos totales del banco','US$ 1,340,000,000'],
+        ]},
         questions:[
-          {type:'mc', q:'¿Qué indica un Índice de Adecuación de Capital (IAC) de 13.2% frente a un mínimo regulatorio de 8%?', opts:['El banco está en incumplimiento técnico','El banco mantiene un colchón de capital superior al mínimo exigido','El banco tiene exceso de liquidez, no de capital','El dato es irrelevante sin más contexto'], correct:1, explain:'Un IAC de 13.2% frente al mínimo de 8% indica que el banco tiene un colchón de capital de 5.2 puntos porcentuales por encima de lo exigido, lo cual es una posición de solvencia razonablemente sólida.', explicacionAlterna:'Resta los dos números: 13.2% menos 8% son 5.2 puntos de margen. Ese margen es capital propio "de sobra" — dinero que el banco tiene guardado por encima de lo que la ley le obliga, listo para absorber pérdidas antes de que le toque a los depositantes.', patronConfusion:'solvencia_vs_liquidez'},
-          {type:'mc', q:'Comparado con el promedio del sistema bancario panameño (14.5%), ¿cómo se posiciona este banco?', opts:['Por encima del sistema','Ligeramente por debajo del promedio del sistema, aunque sobre el mínimo','Igual al sistema','No es comparable'], correct:1, explain:'13.2% está por debajo del promedio del sistema (14.5%), aunque sigue siendo holgadamente superior al mínimo regulatorio. Esto no es una alerta por sí sola, pero merece seguimiento.', explicacionAlterna:'Hay dos comparaciones distintas aquí, y es fácil mezclarlas: contra el mínimo legal (8%) el banco va muy bien. Pero contra sus competidores (14.5% de promedio) va un poco por debajo. Ninguna de las dos comparaciones invalida a la otra — cumplir la ley y ser competitivo frente al resto del sistema son dos preguntas distintas.'},
+          {type:'mc', q:'El Índice de Adecuación de Capital se calcula como Capital regulatorio ÷ Activos ponderados por riesgo. De los cinco datos entregados, ¿cuáles dos son los que realmente necesitas para este cálculo específico?', opts:[
+            'Activos totales y Depósitos totales',
+            'Patrimonio (fondos de capital primario) y Activos ponderados por riesgo',
+            'Utilidad neta del trimestre y Activos totales',
+            'Depósitos totales y Utilidad neta del trimestre',
+          ], correct:1, impacto:{0:-12, 1:8, 2:-15, 3:-20}, explain:'El IAC compara el capital regulatorio del banco (aquí, el patrimonio de US$160.3 millones) contra sus activos ponderados por riesgo (US$1,214.4 millones) — no contra sus activos totales sin ponderar, ni contra sus depósitos o utilidad, que miden otras cosas completamente distintas (tamaño del balance, y rentabilidad, respectivamente).', explicacionAlterna:'Fíjate en el nombre: "Adecuación de CAPITAL". Eso ya descarta depósitos y utilidad, que no son capital. Y "activos PONDERADOS POR RIESGO" es una frase específica — no es lo mismo que "activos totales" a secas, aunque suenen parecido.'},
+          {type:'num', q:'Con esos dos datos correctos, ¿cuál es el IAC real de este banco? (en %, un decimal)', placeholder:'Ej: 13.2', correct:13.2, tolerance:0.2, impactoCorrecto:10, impactoIncorrecto:-10, explain:'IAC = 160,300,000 / 1,214,400,000 × 100 = 13.2% — el mismo dato que aparecía en el resumen inicial, pero ahora usted mismo confirmó de dónde sale exactamente, en vez de darlo por sentado.'},
+          {type:'mc', q:'Un colega tuyo calculó el IAC usando Activos totales en vez de Activos ponderados por riesgo, y obtuvo 8.7% — un número menor, pero todavía sobre el mínimo regulatorio. ¿Por qué ese resultado, aunque esté "cerca" del correcto, no sirve para el informe?', opts:[
+            'Sí sirve, ambos números están sobre el mínimo de 8%, así que la conclusión final es la misma',
+            'No sirve — usar la base equivocada del cálculo invalida el número por completo, incluso si por coincidencia la conclusión final (que el banco cumple) resulta ser la misma; el Comité necesita el cálculo correcto, no una casualidad',
+            'Es mejor ser conservador, así que el número más bajo siempre es el que se debe reportar',
+            'No hay ninguna diferencia real entre las dos formas de calcularlo',
+          ], correct:1, impacto:{0:-15, 1:12, 2:-8, 3:-15}, explain:'Que la conclusión final coincida por casualidad (ambos números superan el 8% mínimo) no valida un cálculo hecho con la base equivocada — en un escenario distinto, ese mismo error metodológico podría dar una conclusión completamente errada. El Comité de Supervisión necesita confiar en que el método es correcto, no solo que el resultado "sonó bien" esta vez.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Calidad de cartera', icon:'ti-file-search', competencia:'credito_riesgo',
@@ -6684,12 +6701,20 @@ function answerMC(caseId, stageId, qIndex, optIndex){
   ans.stages[stageId]=ans.stages[stageId]||{};
   if(ans.stages[stageId][qIndex]!==undefined) return;
   ans.stages[stageId][qIndex]=optIndex;
-  saveAnswers();
   const found=findCase(caseId); const stage=found.case.stages.find(s=>s.id===stageId);
-  if(stage.questions[qIndex]?.ramificaHacia){
-    // Una pregunta de decisión cambia qué etapa viene después — hay
-    // que redibujar el caso completo, no solo la pregunta, para que
-    // el botón de avance refleje que la ruta ya quedó decidida.
+  const q = stage.questions[qIndex];
+  let cambioMedidor = false;
+  if(found.case.medidor && q?.impacto && q.impacto[optIndex]!==undefined){
+    if(ans.medidorValor===undefined) ans.medidorValor = found.case.medidor.inicial;
+    ans.medidorValor = Math.max(0, Math.min(100, ans.medidorValor + q.impacto[optIndex]));
+    cambioMedidor = true;
+  }
+  saveAnswers();
+  if(q?.ramificaHacia || cambioMedidor){
+    // Una pregunta de decisión cambia qué etapa viene después, y un
+    // cambio en el medidor de consecuencias vive en el encabezado del
+    // caso, no en el bloque de preguntas — en ambos casos hay que
+    // redibujar el caso completo, no solo la pregunta.
     renderCase();
     return;
   }
@@ -6703,8 +6728,18 @@ function answerNum(caseId, stageId, qIndex, correct, tolerance){
   const ans=ensureAnswers(caseId);
   ans.stages[stageId]=ans.stages[stageId]||{};
   ans.stages[stageId][qIndex]=val;
-  saveAnswers();
   const found=findCase(caseId); const stage=found.case.stages.find(s=>s.id===stageId);
+  const q = stage.questions[qIndex];
+  let cambioMedidor = false;
+  if(found.case.medidor && (q?.impactoCorrecto!==undefined || q?.impactoIncorrecto!==undefined)){
+    if(ans.medidorValor===undefined) ans.medidorValor = found.case.medidor.inicial;
+    const acerto = Math.abs(val-correct) <= (tolerance||0);
+    const delta = acerto ? (q.impactoCorrecto||0) : (q.impactoIncorrecto||0);
+    ans.medidorValor = Math.max(0, Math.min(100, ans.medidorValor + delta));
+    cambioMedidor = true;
+  }
+  saveAnswers();
+  if(cambioMedidor){ renderCase(); return; }
   renderQuestions(caseId, stage.questions, stageId);
   updateStagePillProgress();
 }
@@ -6734,6 +6769,23 @@ function renderCase(){
   saveAnswers();
   const ruta = obtenerRutaDelCaso(c, ans);
   const stage=ruta[currentStage];
+
+  // Medidor de consecuencias — solo aparece si el caso lo define. Sube
+  // o baja según exactamente qué opción se elige en cada pregunta que
+  // tenga un "impacto" definido, no solo si acertó o falló.
+  let medidorHTML = '';
+  if(c.medidor){
+    if(ans.medidorValor===undefined) ans.medidorValor = c.medidor.inicial;
+    const v = Math.max(0, Math.min(100, ans.medidorValor));
+    const color = v>=60 ? 'var(--green)' : v>=35 ? 'var(--amber)' : 'var(--red)';
+    medidorHTML = `<div style="display:flex;align-items:center;gap:10px;background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;">
+      <i class="ti ${c.medidor.icon||'ti-heart-handshake'}" style="color:${color};font-size:18px;"></i>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:3px;"><span>${c.medidor.nombre}</span><span style="color:${color};font-weight:700;">${v}/100</span></div>
+        <div style="height:5px;background:var(--c3);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${v}%;background:${color};transition:width .4s;"></div></div>
+      </div>
+    </div>`;
+  }
 
   const stageNav = ruta.map((s,i)=>{
     const stAns=(ans.stages[s.id]||{});
@@ -6801,6 +6853,7 @@ function renderCase(){
         </div>
       </div>
       <div class="brief">${c.brief}</div>
+      ${medidorHTML}
       ${c.materiasConectadas?.length ? `<div class="card" style="border-color:var(--teal);margin-bottom:16px;padding:10px 14px;"><i class="ti ti-arrows-cross" style="color:var(--teal);"></i> <b>Este caso conecta con:</b> ${c.materiasConectadas.map(mid=>SUBJECTS.find(s=>s.id===mid)?.title).filter(Boolean).join(', ')} — necesitas conceptos de ambas materias para resolverlo bien.</div>` : ''}
       <div class="docfacts">${c.facts.map(f=>`<div><div class="k">${f[0]}</div><div class="v">${f[1]}</div></div>`).join('')}</div>
       <div style="display:flex;gap:8px;margin-top:18px;overflow-x:auto;padding-bottom:4px;">${stageNav}</div>
@@ -7081,20 +7134,28 @@ function exportCase(caseId){
   const name = currentUser?.nombre || studentName || 'Estudiante';
   studentName=name; localStorage.setItem('academy_student_name',name);
   const ans=ensureAnswers(caseId);
+  const ruta = obtenerRutaDelCaso(c, ans);
   let cuerpo = `<h1>${c.title}</h1><div class="sub">${name} · ${SUBJECTS.find(s=>s.id===found.subjId).title} · ${new Date().toLocaleDateString('es-PA')}</div>`;
-  c.stages.forEach(s=>{
+  ruta.forEach(s=>{
     cuerpo += `<h2>${s.title}</h2>`;
     const stAns=ans.stages[s.id]||{};
     if(s.questions){
       s.questions.forEach((q,i)=>{
         const given=stAns[i];
+        if(q.ramificaHacia){
+          // Una decisión no tiene "respuesta correcta" — se muestra la
+          // decisión tomada y su consecuencia, no un acierto o error.
+          const decisionTxt = given!==undefined ? q.opts[given] : '(sin decisión tomada)';
+          cuerpo += `<div class="preg"><b>P${i+1}. ${q.q}</b><div class="resp">Decisión tomada: ${decisionTxt}${given!==undefined && q.consecuencias?.[given] ? '<br>'+q.consecuencias[given] : ''}</div></div>`;
+          return;
+        }
         const correctTxt = q.type==='mc' ? q.opts[q.correct] : q.correct;
         const givenTxt = q.type==='mc' ? (given!==undefined?q.opts[given]:'(sin responder)') : (given!==undefined?given:'(sin responder)');
         cuerpo += `<div class="preg"><b>P${i+1}. ${q.q}</b><div class="resp">Mi respuesta: ${givenTxt}<br>Respuesta esperada: ${correctTxt}</div></div>`;
       });
     }
     if(s.verdictOptions){
-      const v = stAns.verdict ? s.verdictOptions.find(x=>x.v===stAns.verdict).label : '(sin decisión)';
+      const v = stAns.verdict ? s.verdictOptions.find(x=>x.v===stAns.verdict)?.label ?? '(sin decisión)' : '(sin decisión)';
       cuerpo += `<div class="preg"><b>Decisión:</b> ${v}<div class="resp">${stAns.open||'(sin justificación)'}</div></div>`;
     }
   });
@@ -7990,7 +8051,7 @@ async function generarGuiaDeClase(){
       <div>${c.brief}</div>
       ${c.stages.map((st,j)=>{
         const q = st.questions?.[0];
-        const respuestaCorrecta = q ? (q.type==='mc' ? q.opts[q.correct] : q.correct) : '';
+        const respuestaCorrecta = q ? (q.ramificaHacia ? '(pregunta de decisión — sin respuesta única)' : (q.type==='mc' ? q.opts[q.correct] : q.correct)) : '';
         return `<div class="preg"><b>Etapa ${j+1}: ${st.title}</b>${q ? `<div class="resp">Pregunta: ${q.q}<br>Respuesta correcta: ${respuestaCorrecta}</div>` : ''}</div>`;
       }).join('')}
     </div>`;
@@ -8114,11 +8175,17 @@ function exportMyAnalysis(){
       hasAny = true;
       cuerpo += `<div class="caso"><h2>${s.title} — ${c.title}</h2>
         <div class="sub">Calificación: ${ans.score}/${ans.total} · ${ans.completedAt ? new Date(ans.completedAt).toLocaleDateString('es-PA') : 'sin fecha'}</div>`;
-      c.stages.forEach(st=>{
+      const rutaPortafolio = obtenerRutaDelCaso(c, ans);
+      rutaPortafolio.forEach(st=>{
         const stAns = (ans.stages||{})[st.id]||{};
         if(st.questions){
           st.questions.forEach((q,i)=>{
             const given = stAns[i];
+            if(q.ramificaHacia){
+              const decisionTxt = given!==undefined ? q.opts[given] : '(sin decisión tomada)';
+              cuerpo += `<div class="preg"><b>${q.q}</b><div class="resp">Decisión tomada: ${decisionTxt}</div></div>`;
+              return;
+            }
             const givenTxt = q.type==='mc' ? (given!==undefined?q.opts[given]:'(sin responder)') : (given!==undefined?given:'(sin responder)');
             const correct = q.type==='mc' ? given===q.correct : (given!==undefined && Math.abs(parseFloat(given)-q.correct)<=q.tolerance);
             cuerpo += `<div class="preg"><b>${q.q}</b><div class="resp">Mi respuesta: ${givenTxt} ${correct?'✓':'✗'}</div></div>`;
@@ -8930,7 +8997,7 @@ async function iniciarExamenPractica(subjectId){
   data.cases.forEach(c => {
     c.stages.forEach(st => {
       if(!st.questions) return;
-      st.questions.forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title }));
+      st.questions.filter(q=>!q.ramificaHacia).forEach(q => preguntas.push({ q, stageTitle: st.title, caseTitle: c.title }));
     });
   });
   if(preguntas.length < 3){ toast('Esta materia todavía no tiene suficientes preguntas para armar un examen de práctica.'); return; }
