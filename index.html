@@ -2071,6 +2071,18 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
         questions:[
           {type:'mc', q:'¿Qué riesgo específico destaca la alta concentración de ingresos en solo 3 clientes navieros?', opts:['Riesgo cambiario','Riesgo de concentración de contraparte','Riesgo de inflación','Riesgo regulatorio exclusivamente'], correct:1, explain:'Cuando una porción muy grande de los ingresos depende de pocos clientes, la pérdida de uno de ellos puede afectar materialmente el flujo de caja disponible para el pago del bono: es riesgo de concentración.'},
           {type:'mc', q:'Una cobertura de intereses de 4.2x (EBITDA/Intereses) indica que la empresa genera utilidad operativa equivalente a:', opts:['4.2 veces sus intereses por pagar','El 42% de sus intereses por pagar','4.2 veces su deuda total','42% de su deuda total'], correct:0, explain:'Cobertura de intereses = EBITDA / Gasto en intereses. Un valor de 4.2x significa que el EBITDA cubre 4.2 veces el gasto en intereses, lo cual es un colchón razonable para un emisor BBB.'},
+          {type:'multi', q:'De estos factores del emisor, ¿cuáles representan genuinamente un riesgo real para esta emisión?', opts:[
+            'Concentración del 62% de ingresos en solo 3 clientes navieros',
+            'Sector cíclico, sensible al comercio internacional',
+            'Cobertura de intereses de 4.2x, por encima del umbral de alerta de 2.5x',
+            'Calificación BBB, en el último escalón del grado de inversión',
+          ], correctos:[0,1,3], explain:'La concentración de clientes y la naturaleza cíclica del sector son riesgos reales y verificables. La calificación BBB, aunque sólida, está en el escalón más bajo del grado de inversión — cualquier deterioro adicional la sacaría de ese grado, así que también es una señal a vigilar. La cobertura de 4.2x, en cambio, es una fortaleza, no un riesgo: está cómodamente por encima del umbral de alerta de 2.5x, no cerca de él.'},
+          {type:'orden', q:'Ordene estos cuatro factores del más al menos determinante para la calificación de riesgo BBB de este bono.', items:[
+            'Cobertura de intereses actual (EBITDA/Intereses)',
+            'Concentración de ingresos en pocos clientes',
+            'Ciclicidad del sector portuario',
+            'Que la emisión sea en la Bolsa de Valores de Panamá y no en otro mercado',
+          ], ordenCorrecto:[0,1,2,3], explain:'La cobertura de intereses es la medida más directa de la capacidad real de pago, por eso pesa más que cualquier otra señal. La concentración de clientes viene después, como el riesgo estructural más específico de este emisor. La ciclicidad del sector es un riesgo real pero más genérico, compartido por cualquier empresa portuaria. Dónde se lista la emisión (qué bolsa) no tiene ninguna relación directa con el riesgo de crédito del emisor — es la señal más débil de las cuatro, casi irrelevante para la calificación.'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Cálculo del rendimiento', icon:'ti-calculator', competencia:'valoracion',
