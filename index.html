@@ -182,7 +182,7 @@ h1,h2,h3{font-family:var(--font-head);}
 .databox table{width:100%;border-collapse:collapse;font-size:13px;}
 .databox td{padding:6px 4px;border-bottom:1px solid var(--c3);}
 .databox td:first-child{color:var(--t2);}
-.databox td:last-child{text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--t1);}
+.databox td:last-child{text-align:right;font-family:var(--font-mono);font-weight:600;color:var(--t2);}
 .databox tr:last-child td{border-bottom:none;}
 .chart-box{height:240px;margin-top:4px;}
 
@@ -6798,6 +6798,7 @@ function openCase(caseId){
   applyAccent(found.subjId);
   const ans=ensureAnswers(caseId);
   currentStage = ans.lastStage || 0;
+  window.__caseIntroExpandida = false;
   renderCase();
   showView('view-case');
   setActiveNav(null); setActiveSubjectPill(found.subjId);
@@ -7121,6 +7122,7 @@ function renderCase(){
     `;
   }
 
+  const mostrarIntroCompleta = currentStage === 0 || window.__caseIntroExpandida;
   $('view-case').innerHTML = `
     <div class="case-head">
       <button class="btn btn-ghost btn-sm" onclick="navSubject('${found.subjId}')" style="margin-bottom:14px;"><i class="ti ti-arrow-left"></i> Volver a la materia</button>
@@ -7130,19 +7132,25 @@ function renderCase(){
           <h2>${c.title}</h2>
         </div>
       </div>
-      <div class="brief">${c.brief}</div>
-      ${medidorHTML}
-      ${c.materiasConectadas?.length ? `<div class="card" style="border-color:var(--teal);margin-bottom:16px;padding:10px 14px;"><i class="ti ti-arrows-cross" style="color:var(--teal);"></i> <b>Este caso conecta con:</b> ${c.materiasConectadas.map(mid=>SUBJECTS.find(s=>s.id===mid)?.title).filter(Boolean).join(', ')} — necesitas conceptos de ambas materias para resolverlo bien.</div>` : ''}
-      <div class="docfacts">${c.facts.map(f=>`<div><div class="k">${f[0]}</div><div class="v">${f[1]}</div></div>`).join('')}</div>
-      <div style="display:flex;gap:8px;margin-top:18px;overflow-x:auto;padding-bottom:4px;">${stageNav}</div>
-    </div>
-    <div class="character-card">
-      <div class="character-avatar">${c.character.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
-      <div class="character-info">
-        <div class="name">${c.character.name}</div>
-        <div class="role">${c.character.role}</div>
-        <div class="quote">${c.character.quote}</div>
-      </div>
+      ${mostrarIntroCompleta ? `
+        <div class="brief">${c.brief}</div>
+        ${medidorHTML}
+        ${c.materiasConectadas?.length ? `<div class="card" style="border-color:var(--teal);margin-bottom:16px;padding:10px 14px;"><i class="ti ti-arrows-cross" style="color:var(--teal);"></i> <b>Este caso conecta con:</b> ${c.materiasConectadas.map(mid=>SUBJECTS.find(s=>s.id===mid)?.title).filter(Boolean).join(', ')} — necesitas conceptos de ambas materias para resolverlo bien.</div>` : ''}
+        <div class="docfacts">${c.facts.map(f=>`<div><div class="k">${f[0]}</div><div class="v">${f[1]}</div></div>`).join('')}</div>
+        <div class="character-card" style="margin-top:12px;">
+          <div class="character-avatar">${c.character.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <div class="character-info">
+            <div class="name">${c.character.name}</div>
+            <div class="role">${c.character.role}</div>
+            <div class="quote">${c.character.quote}</div>
+          </div>
+        </div>
+        ${currentStage>0 ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="window.__caseIntroExpandida=false;renderCase();"><i class="ti ti-chevron-up"></i> Ocultar detalles del caso</button>` : ''}
+      ` : `
+        ${medidorHTML}
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:10px;" onclick="window.__caseIntroExpandida=true;renderCase();"><i class="ti ti-info-circle"></i> Ver brief, personaje y datos del caso</button>
+      `}
+      <div style="display:flex;gap:8px;margin-top:${mostrarIntroCompleta?'18':'4'}px;overflow-x:auto;padding-bottom:4px;">${stageNav}</div>
     </div>
     ${stageBody}
   `;
