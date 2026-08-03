@@ -597,6 +597,7 @@ h1 > i.ti, h2 > i.ti, .card-title > i.ti, .eyebrow > i.ti{font-size:0.62em;verti
     <section id="view-documentos" class="hidden"></section>
     <section id="view-glosario" class="hidden"></section>
     <section id="view-mensajes" class="hidden"></section>
+    <section id="view-documentos-analizar" class="hidden"></section>
     <section id="view-foro" class="hidden"></section>
     <section id="view-dashboard" class="hidden"></section>
     <section id="view-libro" class="hidden"></section>
@@ -1282,6 +1283,52 @@ SUBJECT_DATA.banmer.leyes = [
   { nombre:'Normativa prudencial de la Superintendencia de Bancos',
     resumen:'Además de la Ley Bancaria, la SBP emite acuerdos específicos que desarrollan los detalles técnicos: cómo se calcula exactamente el IAC, cómo se clasifica la cartera de crédito por nivel de riesgo, cuánta provisión se exige según esa clasificación, y los requisitos de las pruebas de estrés de liquidez que se practicaron en los casos de esta materia.',
     temasClave:['Clasificación de cartera de crédito por riesgo', 'Reglas de constitución de provisiones', 'Pruebas de estrés de liquidez', 'Reportes periódicos obligatorios a la SBP'] },
+];
+SUBJECT_DATA.banmer.documentos = [
+  {
+    id:'doc-banmer-1', titulo:'Estado de Situación Financiera — Banco Itsmeño, S.A.',
+    descripcion:'El balance completo del banco, tal como lo recibiría un analista real — sin ningún número recortado o resaltado de antemano. Usted decide qué cifras necesita para responder cada pregunta.',
+    tabla:{
+      titulo:'Estado de Situación Financiera al 31 de diciembre de 2026 (en miles de US$)',
+      secciones:[
+        { nombre:'ACTIVOS', filas:[
+          ['Efectivo y depósitos en bancos','142,600'],
+          ['Inversiones en valores','198,400'],
+          ['Cartera de préstamos, bruta','1,120,000'],
+          ['(–) Provisión para préstamos incobrables','(39,160)'],
+          ['Cartera de préstamos, neta','1,080,840'],
+          ['Propiedad, mobiliario y equipo, neto','64,200'],
+          ['Otros activos','353,960'],
+          ['TOTAL ACTIVOS','1,840,000'],
+        ]},
+        { nombre:'PASIVOS', filas:[
+          ['Depósitos a la vista y de ahorro','920,000'],
+          ['Depósitos a plazo fijo','486,300'],
+          ['Obligaciones con otros bancos','143,900'],
+          ['Bonos subordinados en circulación','65,000'],
+          ['Otros pasivos','64,500'],
+          ['TOTAL PASIVOS','1,679,700'],
+        ]},
+        { nombre:'PATRIMONIO', filas:[
+          ['Capital social pagado','120,000'],
+          ['Reservas de capital','21,700'],
+          ['Utilidades retenidas','18,600'],
+          ['TOTAL PATRIMONIO','160,300'],
+        ]},
+      ],
+    },
+    preguntas:[
+      {type:'num', q:'¿Cuál es la razón de endeudamiento del banco (Total Pasivos ÷ Total Patrimonio)? (un decimal)', placeholder:'Ej: 10.5', correct:10.5, tolerance:0.2, pista:'Ambas cifras están en el documento — busque las filas "TOTAL PASIVOS" y "TOTAL PATRIMONIO".', explain:'1,679,700 / 160,300 = 10.5x — por cada dólar de patrimonio propio, el banco tiene 10.5 dólares financiados con pasivos (principalmente depósitos de clientes), una estructura típica de un banco, cuyo negocio es precisamente intermediar el dinero de terceros.'},
+      {type:'num', q:'¿Qué porcentaje del total de pasivos representan los depósitos a la vista y de ahorro? (en %, un decimal)', placeholder:'Ej: 54.8', correct:54.8, tolerance:0.3, pista:'Necesita dos cifras del documento: los depósitos a la vista y de ahorro, y el total de pasivos — ninguna pregunta se lo dice directamente, tiene que identificarlas usted mismo en la tabla.', explain:'920,000 / 1,679,700 × 100 = 54.8% — más de la mitad del financiamiento del banco proviene de depósitos a la vista y ahorro, el tipo de depósito más volátil (el cliente puede retirarlo en cualquier momento), lo cual es relevante para el análisis de liquidez.'},
+      {type:'mc', q:'La cartera de préstamos aparece dos veces en el documento: "bruta" (US$1,120,000 miles) y "neta" (US$1,080,840 miles). ¿Qué explica exactamente esa diferencia de US$39,160 miles?', opts:[
+        'Un error de la contabilidad del banco',
+        'La provisión para préstamos incobrables, que se resta de la cartera bruta para reflejar el monto que el banco realmente espera recuperar',
+        'Los préstamos que ya se pagaron completamente durante el año',
+        'El monto de nuevos préstamos otorgados en el último trimestre',
+      ], correct:1, explain:'La diferencia exacta (US$39,160 miles) coincide con la línea "(–) Provisión para préstamos incobrables" que aparece justo entre ambas cifras en el documento — la cartera "neta" es la bruta menos esa provisión, reflejando de forma más realista cuánto de esa cartera el banco espera efectivamente cobrar.'},
+      {type:'num', q:'¿Los bonos subordinados en circulación (US$65,000 miles) representan qué porcentaje del Total de Patrimonio? (en %, un decimal)', placeholder:'Ej: 40.5', correct:40.5, tolerance:0.5, pista:'Esta pregunta conecta con el Banco de fórmulas — busque cuánto de un bono subordinado se puede reconocer como capital regulatorio, y compare ese límite con este porcentaje.', explain:'65,000 / 160,300 × 100 = 40.5% — un porcentaje que vale la pena vigilar: la normativa bancaria panameña típicamente limita cuánto de un bono subordinado puede reconocerse como capital regulatorio (capital secundario), precisamente para evitar que un banco se apoye demasiado en deuda subordinada en vez de capital propio real.'},
+    ],
+  },
 ];
 SUBJECT_DATA.banmer.simulaciones = [
   {
@@ -4509,7 +4556,7 @@ function setActiveSubjectPill(id){
 }
 
 function showView(id){
-  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion','view-glosario','view-mensajes'].forEach(v=>$(v).classList.add('hidden'));
+  ['view-portal','view-progress','view-subject','view-case','view-teacher','view-examen-practica','view-calificaciones','view-tareas','view-apuntes','view-metricas','view-documentos','view-libro','view-foro','view-dashboard','view-simulacion','view-glosario','view-mensajes','view-documentos-analizar'].forEach(v=>$(v).classList.add('hidden'));
   $(id).classList.remove('hidden');
   $(id).classList.add('fade-in');
   setTimeout(()=>$(id).classList.remove('fade-in'),350);
@@ -5221,6 +5268,101 @@ async function actualizarBadgeMensajes(){
     const badge = $('mensajes-badge');
     if(badge){ badge.textContent = count||0; badge.classList.toggle('hidden', !count); }
   } catch(e){ /* silencioso */ }
+}
+// ═══════════════════════════════════════════════════════════════════
+// DOCUMENTOS PARA ANALIZAR — a diferencia del resumen (que explica los
+// conceptos), esto es un documento real y completo (como un estado
+// financiero de verdad) que el estudiante tiene que leer e interpretar
+// por su cuenta — nadie le recorta ni le resalta los números de
+// antemano, igual que le pasaría a un analista real.
+// ═══════════════════════════════════════════════════════
+function navDocumentosAnalizar(subjectId){
+  showView('view-documentos-analizar');
+  setActiveNav(null); setActiveSubjectPill(subjectId);
+  afterNav();
+  const s = SUBJECTS.find(x=>x.id===subjectId);
+  const docs = SUBJECT_DATA[subjectId].documentos||[];
+  $('view-documentos-analizar').innerHTML = `<div class="hero" style="padding-top:18px;">
+    <button class="btn btn-ghost btn-sm" onclick="navSubject('${subjectId}')" style="margin-bottom:14px;"><i class="ti ti-arrow-left"></i> Volver a la materia</button>
+    <div class="eyebrow"><i class="ti ti-file-analytics"></i> Documentos para analizar — ${s?.title||''}</div>
+    <h1>Lea el documento completo, no un resumen recortado</h1>
+    <p>Son documentos reales, tal como los recibiría un analista — usted decide qué cifras necesita para cada pregunta, nadie se las resalta de antemano.</p>
+  </div>
+  ${docs.map(d => `<div class="card" style="margin-bottom:10px;cursor:pointer;" onclick="abrirDocumentoAnalizar('${subjectId}','${d.id}')">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <i class="ti ti-file-text" style="color:var(--teal);font-size:22px;"></i>
+      <div style="flex:1;"><b>${d.titulo}</b><div class="sub" style="margin-top:3px;">${d.descripcion}</div></div>
+      <i class="ti ti-chevron-right" style="color:var(--t3);"></i>
+    </div>
+  </div>`).join('')}`;
+}
+function abrirDocumentoAnalizar(subjectId, docId){
+  const d = SUBJECT_DATA[subjectId].documentos.find(x=>x.id===docId);
+  if(!d) return;
+  const ans = ensureAnswers(docId); // se reutiliza el mismo mecanismo de guardado que los casos
+  const filasHTML = d.tabla.secciones.map(sec => `
+    <tr style="background:var(--c2);"><td colspan="2" style="padding:8px 12px;font-weight:800;font-size:11.5px;letter-spacing:.05em;color:var(--gold);">${sec.nombre}</td></tr>
+    ${sec.filas.map(([nombre,valor])=>`<tr><td style="padding:6px 12px;border-bottom:1px solid var(--c3);">${nombre}</td><td style="padding:6px 12px;border-bottom:1px solid var(--c3);text-align:right;font-family:var(--font-mono);">${valor}</td></tr>`).join('')}
+  `).join('');
+  $('view-documentos-analizar').innerHTML = `<div class="hero" style="padding-top:18px;">
+    <button class="btn btn-ghost btn-sm" onclick="navDocumentosAnalizar('${subjectId}')" style="margin-bottom:14px;"><i class="ti ti-arrow-left"></i> Volver a documentos</button>
+    <div class="eyebrow"><i class="ti ti-file-analytics"></i> Documento para analizar</div>
+    <h1>${d.titulo}</h1>
+  </div>
+  <div class="card" style="overflow-x:auto;margin-bottom:20px;">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">${d.tabla.titulo}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;">${filasHTML}</table>
+  </div>
+  <div class="card-title" style="margin-bottom:12px;"><i class="ti ti-list-check"></i> Preguntas de análisis</div>
+  <div id="doc-preguntas-${docId}"></div>`;
+  dibujarPreguntasDocumento(subjectId, docId);
+}
+function dibujarPreguntasDocumento(subjectId, docId){
+  const d = SUBJECT_DATA[subjectId].documentos.find(x=>x.id===docId);
+  const ans = ensureAnswers(docId);
+  ans.stages.doc = ans.stages.doc || {};
+  const stAns = ans.stages.doc;
+  $('doc-preguntas-'+docId).innerHTML = d.preguntas.map((q,i)=>{
+    const saved = stAns[i];
+    const isAnswered = saved!==undefined;
+    if(q.type==='mc'){
+      return `<div class="q-block">
+        <div class="q-text"><span class="q-num">${i+1}</span>${q.q}</div>
+        <div class="q-options">
+          ${q.opts.map((o,oi)=>`<div class="q-opt ${isAnswered?(oi===q.correct?'correct':(oi===saved&&saved!==q.correct?'incorrect':'')):''}" onclick="responderPreguntaDocumento('${subjectId}','${docId}',${i},${oi})"><span class="dot">${isAnswered&&oi===q.correct?'✓':(isAnswered&&oi===saved&&saved!==q.correct?'✕':'')}</span>${o}</div>`).join('')}
+        </div>
+        <div class="q-feedback ${isAnswered?'show '+(saved===q.correct?'ok':'bad'):''}">${isAnswered?(saved===q.correct?'<b>Correcto.</b> ':'<b>No es la opción correcta.</b> ')+q.explain:''}</div>
+      </div>`;
+    }
+    const correctNum = isAnswered && Math.abs(parseFloat(saved)-q.correct)<=q.tolerance;
+    return `<div class="q-block">
+      <div class="q-text"><span class="q-num">${i+1}</span>${q.q}</div>
+      <div class="q-num-input">
+        <input type="number" step="0.01" id="docnum-${docId}-${i}" placeholder="${q.placeholder}" value="${isAnswered?saved:''}" ${isAnswered?'disabled':''}>
+        ${isAnswered?'':`<button class="btn btn-sm" onclick="responderPreguntaDocumentoNum('${subjectId}','${docId}',${i})">Verificar</button>`}
+      </div>
+      ${!isAnswered && q.pista ? `<div style="margin-top:6px;"><button class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:5px 10px;" onclick="this.nextElementSibling.classList.toggle('hidden');this.remove();"><i class="ti ti-bulb"></i> Ver pista</button><div class="hidden" style="font-size:12px;color:var(--t2);background:var(--c2);border:1px solid var(--c4);border-radius:var(--r);padding:8px 12px;margin-top:6px;"><i class="ti ti-map-pin" style="color:var(--gold);"></i> ${q.pista}</div></div>` : ''}
+      <div class="q-feedback ${isAnswered?'show '+(correctNum?'ok':'bad'):''}">${isAnswered?(correctNum?'<b>Correcto.</b> ':'<b>Resultado esperado: '+q.correct+'.</b> ')+q.explain:''}</div>
+    </div>`;
+  }).join('');
+}
+function responderPreguntaDocumento(subjectId, docId, qIndex, optIndex){
+  const ans = ensureAnswers(docId);
+  ans.stages.doc = ans.stages.doc || {};
+  if(ans.stages.doc[qIndex]!==undefined) return;
+  ans.stages.doc[qIndex] = optIndex;
+  saveAnswers();
+  dibujarPreguntasDocumento(subjectId, docId);
+}
+function responderPreguntaDocumentoNum(subjectId, docId, qIndex){
+  const input = $('docnum-'+docId+'-'+qIndex);
+  const val = parseFloat(input.value);
+  if(isNaN(val)){ toast('Ingresa un valor numérico.'); return; }
+  const ans = ensureAnswers(docId);
+  ans.stages.doc = ans.stages.doc || {};
+  ans.stages.doc[qIndex] = val;
+  saveAnswers();
+  dibujarPreguntasDocumento(subjectId, docId);
 }
 function navGlosarioGeneral(){
   showView('view-glosario');
@@ -6531,6 +6673,7 @@ function renderSubjectView(subjectId){
       <div id="examen-asignado-banner"></div>
       <button class="btn" onclick="iniciarExamenPractica('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--accent2),var(--teal));border:none;"><i class="ti ti-clipboard-check"></i> Examen de práctica — todas las preguntas de la materia</button>
       <button class="btn btn-ghost" onclick="iniciarModoLibro('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;"><i class="ti ti-book"></i> Modo libro — leer por capítulos con autoevaluación</button>
+      ${SUBJECT_DATA[subjectId].documentos?.length ? `<button class="btn btn-ghost" onclick="navDocumentosAnalizar('${subjectId}')" style="width:100%;justify-content:center;margin-bottom:16px;border-color:var(--teal);color:var(--teal);"><i class="ti ti-file-analytics"></i> Documentos para analizar</button>` : ''}
       ${SUBJECT_DATA[subjectId].simulaciones?.length ? SUBJECT_DATA[subjectId].simulaciones.map(s=>`<button class="btn" onclick="abrirSimulacion('${subjectId}','${s.id}')" style="width:100%;justify-content:center;margin-bottom:16px;background:linear-gradient(135deg,var(--rose),#a855f7);border:none;"><i class="ti ti-building-bank"></i> Simulación: ${s.titulo}</button>`).join('') : ''}
       <div style="display:flex;gap:10px;margin-bottom:16px;">
         ${SUBJECT_DATA[subjectId].formulas?.length ? `<button class="btn btn-ghost" onclick="abrirBancoFormulas('${subjectId}')" style="flex:1;justify-content:center;"><i class="ti ti-math-function"></i> Banco de fórmulas</button>` : ''}
