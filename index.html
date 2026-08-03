@@ -938,21 +938,43 @@ SUBJECT_DATA.banmer = { casesPlanned:5, cases:[
     facts:[['Activos totales','US$ 1,840 millones'],['Índice de Adecuación de Capital (IAC)','13.2%'],['Mínimo regulatorio SBP','8%'],['Índice de morosidad (cartera vencida/cartera bruta)','3.8%'],['Cobertura de provisiones sobre cartera vencida','92%']],
     stages:[
       { id:'s1', title:'Etapa 1 · Con qué datos se calcula realmente el IAC', icon:'ti-shield-check', competencia:'regulacion_bancaria',
-        intro:'El banco te entrega su paquete completo de indicadores financieros del trimestre — más datos de los que realmente necesitas para esta pregunta específica. Parte de tu trabajo como analista es identificar cuáles son relevantes antes de calcular nada.',
-        databox:{title:'Paquete de datos entregado por el banco', rows:[
-          ['Activos totales','US$ 1,840,000,000'],
-          ['Activos ponderados por riesgo','US$ 1,214,400,000'],
-          ['Patrimonio (fondos de capital primario)','US$ 160,300,000'],
-          ['Utilidad neta del trimestre','US$ 18,600,000'],
-          ['Depósitos totales del banco','US$ 1,340,000,000'],
+        intro:'El banco te entrega su Estado de Situación Financiera completo del trimestre — el documento real, sin ningún número recortado o resaltado de antemano. Parte de tu trabajo como analista es identificar qué filas son relevantes antes de calcular nada.',
+        documento:{titulo:'Estado de Situación Financiera al 31 de diciembre de 2026 (en miles de US$)', secciones:[
+          { nombre:'ACTIVOS', filas:[
+            ['Efectivo y depósitos en bancos','142,600'],
+            ['Inversiones en valores','198,400'],
+            ['Cartera de préstamos, bruta','1,120,000'],
+            ['(–) Provisión para préstamos incobrables','(39,160)'],
+            ['Cartera de préstamos, neta','1,080,840'],
+            ['Propiedad, mobiliario y equipo, neto','64,200'],
+            ['Otros activos','353,960'],
+            ['TOTAL ACTIVOS','1,840,000'],
+          ]},
+          { nombre:'PASIVOS', filas:[
+            ['Depósitos a la vista y de ahorro','920,000'],
+            ['Depósitos a plazo fijo','486,300'],
+            ['Obligaciones con otros bancos','143,900'],
+            ['Bonos subordinados en circulación','65,000'],
+            ['Otros pasivos','64,500'],
+            ['TOTAL PASIVOS','1,679,700'],
+          ]},
+          { nombre:'PATRIMONIO', filas:[
+            ['Capital social pagado','120,000'],
+            ['Reservas de capital','21,700'],
+            ['Utilidades retenidas','18,600'],
+            ['TOTAL PATRIMONIO','160,300'],
+          ]},
+          { nombre:'NOTA REGULATORIA (memorándum — no forma parte del balance contable)', filas:[
+            ['Activos ponderados por riesgo (según metodología SBP)','1,214,400'],
+          ]},
         ]},
         questions:[
-          {type:'mc', q:'El Índice de Adecuación de Capital se calcula como Capital regulatorio ÷ Activos ponderados por riesgo. De los cinco datos entregados, ¿cuáles dos son los que realmente necesitas para este cálculo específico?', opts:[
-            'Activos totales y Depósitos totales',
-            'Patrimonio (fondos de capital primario) y Activos ponderados por riesgo',
-            'Utilidad neta del trimestre y Activos totales',
-            'Depósitos totales y Utilidad neta del trimestre',
-          ], correct:1, impacto:{0:-12, 1:8, 2:-15, 3:-20}, explain:'El IAC compara el capital regulatorio del banco (aquí, el patrimonio de US$160.3 millones) contra sus activos ponderados por riesgo (US$1,214.4 millones) — no contra sus activos totales sin ponderar, ni contra sus depósitos o utilidad, que miden otras cosas completamente distintas (tamaño del balance, y rentabilidad, respectivamente).', explicacionAlterna:'Fíjate en el nombre: "Adecuación de CAPITAL". Eso ya descarta depósitos y utilidad, que no son capital. Y "activos PONDERADOS POR RIESGO" es una frase específica — no es lo mismo que "activos totales" a secas, aunque suenen parecido.'},
+          {type:'mc', q:'El Índice de Adecuación de Capital se calcula como Capital regulatorio ÷ Activos ponderados por riesgo. Ninguna fila del balance contable dice literalmente "capital regulatorio" — pero el documento sí tiene una nota regulatoria aparte. ¿Cuáles dos cifras del documento completo (balance + nota) son las que realmente necesita?', opts:[
+            'TOTAL ACTIVOS y TOTAL PASIVOS',
+            'TOTAL PATRIMONIO (como capital regulatorio) y Activos ponderados por riesgo (de la nota regulatoria)',
+            'TOTAL PATRIMONIO y TOTAL ACTIVOS',
+            'Capital social pagado y TOTAL ACTIVOS',
+          ], correct:1, impacto:{0:-15, 1:10, 2:-10, 3:-15}, explain:'El capital regulatorio de un banco corresponde a su TOTAL PATRIMONIO (US$160,300 miles) — el capital propio real de los accionistas. Los activos ponderados por riesgo no aparecen en el balance contable estándar, porque son un cálculo regulatorio aparte (cada activo se pesa según su riesgo) — por eso aparecen como una nota memorándum separada, no como una línea del balance.', explicacionAlterna:'Fíjese en dónde está cada cifra: el balance contable normal no tiene una fila de "activos ponderados por riesgo", porque eso es un cálculo que hace el área de riesgo del banco aparte, no la contabilidad — por eso el documento se lo da como una nota separada al final, no mezclada con las demás líneas.'},
           {type:'num', q:'Con esos dos datos correctos, ¿cuál es el IAC real de este banco? (en %, un decimal)', placeholder:'Ej: 13.2', correct:13.2, tolerance:0.2, impactoCorrecto:10, impactoIncorrecto:-10, pista:'La fórmula exacta está en el Banco de fórmulas de esta materia, bajo "Índice de Adecuación de Capital (IAC)".', explain:'IAC = 160,300,000 / 1,214,400,000 × 100 = 13.2% — el mismo dato que aparecía en el resumen inicial, pero ahora usted mismo confirmó de dónde sale exactamente, en vez de darlo por sentado.'},
           {type:'mc', q:'Un colega tuyo calculó el IAC usando Activos totales en vez de Activos ponderados por riesgo, y obtuvo 8.7% — un número menor, pero todavía sobre el mínimo regulatorio. ¿Por qué ese resultado, aunque esté "cerca" del correcto, no sirve para el informe?', opts:[
             'Sí sirve, ambos números están sobre el mínimo de 8%, así que la conclusión final es la misma',
@@ -1283,52 +1305,6 @@ SUBJECT_DATA.banmer.leyes = [
   { nombre:'Normativa prudencial de la Superintendencia de Bancos',
     resumen:'Además de la Ley Bancaria, la SBP emite acuerdos específicos que desarrollan los detalles técnicos: cómo se calcula exactamente el IAC, cómo se clasifica la cartera de crédito por nivel de riesgo, cuánta provisión se exige según esa clasificación, y los requisitos de las pruebas de estrés de liquidez que se practicaron en los casos de esta materia.',
     temasClave:['Clasificación de cartera de crédito por riesgo', 'Reglas de constitución de provisiones', 'Pruebas de estrés de liquidez', 'Reportes periódicos obligatorios a la SBP'] },
-];
-SUBJECT_DATA.banmer.documentos = [
-  {
-    id:'doc-banmer-1', titulo:'Estado de Situación Financiera — Banco Itsmeño, S.A.',
-    descripcion:'El balance completo del banco, tal como lo recibiría un analista real — sin ningún número recortado o resaltado de antemano. Usted decide qué cifras necesita para responder cada pregunta.',
-    tabla:{
-      titulo:'Estado de Situación Financiera al 31 de diciembre de 2026 (en miles de US$)',
-      secciones:[
-        { nombre:'ACTIVOS', filas:[
-          ['Efectivo y depósitos en bancos','142,600'],
-          ['Inversiones en valores','198,400'],
-          ['Cartera de préstamos, bruta','1,120,000'],
-          ['(–) Provisión para préstamos incobrables','(39,160)'],
-          ['Cartera de préstamos, neta','1,080,840'],
-          ['Propiedad, mobiliario y equipo, neto','64,200'],
-          ['Otros activos','353,960'],
-          ['TOTAL ACTIVOS','1,840,000'],
-        ]},
-        { nombre:'PASIVOS', filas:[
-          ['Depósitos a la vista y de ahorro','920,000'],
-          ['Depósitos a plazo fijo','486,300'],
-          ['Obligaciones con otros bancos','143,900'],
-          ['Bonos subordinados en circulación','65,000'],
-          ['Otros pasivos','64,500'],
-          ['TOTAL PASIVOS','1,679,700'],
-        ]},
-        { nombre:'PATRIMONIO', filas:[
-          ['Capital social pagado','120,000'],
-          ['Reservas de capital','21,700'],
-          ['Utilidades retenidas','18,600'],
-          ['TOTAL PATRIMONIO','160,300'],
-        ]},
-      ],
-    },
-    preguntas:[
-      {type:'num', q:'¿Cuál es la razón de endeudamiento del banco (Total Pasivos ÷ Total Patrimonio)? (un decimal)', placeholder:'Ej: 10.5', correct:10.5, tolerance:0.2, pista:'Ambas cifras están en el documento — busque las filas "TOTAL PASIVOS" y "TOTAL PATRIMONIO".', explain:'1,679,700 / 160,300 = 10.5x — por cada dólar de patrimonio propio, el banco tiene 10.5 dólares financiados con pasivos (principalmente depósitos de clientes), una estructura típica de un banco, cuyo negocio es precisamente intermediar el dinero de terceros.'},
-      {type:'num', q:'¿Qué porcentaje del total de pasivos representan los depósitos a la vista y de ahorro? (en %, un decimal)', placeholder:'Ej: 54.8', correct:54.8, tolerance:0.3, pista:'Necesita dos cifras del documento: los depósitos a la vista y de ahorro, y el total de pasivos — ninguna pregunta se lo dice directamente, tiene que identificarlas usted mismo en la tabla.', explain:'920,000 / 1,679,700 × 100 = 54.8% — más de la mitad del financiamiento del banco proviene de depósitos a la vista y ahorro, el tipo de depósito más volátil (el cliente puede retirarlo en cualquier momento), lo cual es relevante para el análisis de liquidez.'},
-      {type:'mc', q:'La cartera de préstamos aparece dos veces en el documento: "bruta" (US$1,120,000 miles) y "neta" (US$1,080,840 miles). ¿Qué explica exactamente esa diferencia de US$39,160 miles?', opts:[
-        'Un error de la contabilidad del banco',
-        'La provisión para préstamos incobrables, que se resta de la cartera bruta para reflejar el monto que el banco realmente espera recuperar',
-        'Los préstamos que ya se pagaron completamente durante el año',
-        'El monto de nuevos préstamos otorgados en el último trimestre',
-      ], correct:1, explain:'La diferencia exacta (US$39,160 miles) coincide con la línea "(–) Provisión para préstamos incobrables" que aparece justo entre ambas cifras en el documento — la cartera "neta" es la bruta menos esa provisión, reflejando de forma más realista cuánto de esa cartera el banco espera efectivamente cobrar.'},
-      {type:'num', q:'¿Los bonos subordinados en circulación (US$65,000 miles) representan qué porcentaje del Total de Patrimonio? (en %, un decimal)', placeholder:'Ej: 40.5', correct:40.5, tolerance:0.5, pista:'Esta pregunta conecta con el Banco de fórmulas — busque cuánto de un bono subordinado se puede reconocer como capital regulatorio, y compare ese límite con este porcentaje.', explain:'65,000 / 160,300 × 100 = 40.5% — un porcentaje que vale la pena vigilar: la normativa bancaria panameña típicamente limita cuánto de un bono subordinado puede reconocerse como capital regulatorio (capital secundario), precisamente para evitar que un banco se apoye demasiado en deuda subordinada en vez de capital propio real.'},
-    ],
-  },
 ];
 SUBJECT_DATA.banmer.simulaciones = [
   {
@@ -6967,6 +6943,14 @@ function renderCase(){
         <div class="card-title"><i class="ti ${stage.icon}"></i> ${stage.title}</div>
         <div class="card-sub">${stage.intro}</div>
         ${stage.databox ? `<div class="databox"><table>${stage.databox.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div>` : ''}
+        ${stage.documento ? `<div class="card" style="overflow-x:auto;margin:14px 0;">
+          <div style="font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;"><i class="ti ti-file-text"></i> Documento del caso</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:10px;">${stage.documento.titulo}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">${stage.documento.secciones.map(sec => `
+            <tr style="background:var(--c2);"><td colspan="2" style="padding:7px 10px;font-weight:800;font-size:10.5px;letter-spacing:.05em;color:var(--gold);">${sec.nombre}</td></tr>
+            ${sec.filas.map(([nombre,valor])=>`<tr><td style="padding:5px 10px;border-bottom:1px solid var(--c3);">${nombre}</td><td style="padding:5px 10px;border-bottom:1px solid var(--c3);text-align:right;font-family:var(--font-mono);">${valor}</td></tr>`).join('')}
+          `).join('')}</table>
+        </div>` : ''}
         ${stage.chart?`<div class="chart-box"><canvas id="chart-${stage.id}"></canvas></div>`:''}
       </div>
       <div class="card">
