@@ -6249,12 +6249,13 @@ async function elegirOpcionSimulacion(indice){
   const ronda = st.sim.rondas[st.rondaActual];
   const opcion = ronda.opciones[indice];
   Object.entries(opcion.efectos||{}).forEach(([clave,delta]) => { st.kpis[clave] = (st.kpis[clave]||0) + delta; });
-  st.decisiones.push({ ronda: st.rondaActual, texto: opcion.texto });
+  const efectoNeto = Object.values(opcion.efectos||{}).reduce((a,b)=>a+b,0);
+  st.decisiones.push({ ronda: st.rondaActual, texto: opcion.texto, neto: efectoNeto, tituloRonda: ronda.titulo });
   $('sim-barra-kpis').innerHTML = dibujarBarraKpis();
   document.querySelectorAll('#sim-opciones .q-opt').forEach(el=>el.style.pointerEvents='none');
   const cont = $('sim-resultado');
   cont.classList.remove('hidden');
-  cont.innerHTML = `<div class="q-feedback show ${Object.values(opcion.efectos||{}).reduce((a,b)=>a+b,0)>=0?'ok':'bad'}">${opcion.resultado}</div>
+  cont.innerHTML = `<div class="q-feedback show ${efectoNeto>=0?'ok':'bad'}">${opcion.resultado}</div>
     <button class="btn" style="margin-top:10px;width:100%;" onclick="avanzarRondaSimulacion()">${st.rondaActual<st.sim.rondas.length-1?'Siguiente ronda':'Ver el resultado final'} <i class="ti ti-arrow-right"></i></button>`;
   guardarProgresoSimulacion();
 }
@@ -6281,15 +6282,30 @@ function avanzarRondaSimulacion(){
 function dibujarResultadoFinalSimulacion(){
   const st = simulacionState;
   const cont = $('view-simulacion');
+  const positivas = st.decisiones.filter(d=>d.neto>0).length;
+  const negativas = st.decisiones.filter(d=>d.neto<0).length;
+  const total = st.decisiones.length;
+  let veredicto, colorVeredicto, iconoVeredicto;
+  if(positivas >= total*0.7){ veredicto='Desempeño sólido'; colorVeredicto='var(--green)'; iconoVeredicto='ti-trophy'; }
+  else if(negativas >= total*0.6){ veredicto='Vale la pena repasar tus decisiones'; colorVeredicto='var(--red)'; iconoVeredicto='ti-alert-triangle'; }
+  else { veredicto='Desempeño mixto'; colorVeredicto='var(--amber)'; iconoVeredicto='ti-scale'; }
+  const mejorDecision = st.decisiones.reduce((max,d)=>d.neto>(max?.neto??-Infinity)?d:max, null);
+  const peorDecision = st.decisiones.reduce((min,d)=>d.neto<(min?.neto??Infinity)?d:min, null);
   cont.innerHTML = `<div class="hero" style="padding-top:24px;text-align:center;">
     <i class="ti ti-confetti" style="font-size:36px;color:var(--gold);"></i>
     <h1 style="margin-top:8px;">Terminaste como ${st.sim.rolJugador}</h1>
     <p>Así quedó el banco después de tus ${st.sim.rondas.length} decisiones.</p>
   </div>
   ${dibujarBarraKpis()}
+  <div class="card" style="border-color:${colorVeredicto};margin-bottom:14px;">
+    <div class="card-title" style="color:${colorVeredicto};"><i class="ti ${iconoVeredicto}"></i> Resumen ejecutivo — ${veredicto}</div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px;">De tus ${total} decisiones, ${positivas} tuvieron un efecto neto positivo sobre los indicadores, y ${negativas} un efecto neto negativo${total-positivas-negativas>0?`, ${total-positivas-negativas} fueron neutrales`:''}.</p>
+    ${mejorDecision && mejorDecision.neto>0 ? `<div style="font-size:12.5px;color:var(--t2);margin-bottom:6px;"><i class="ti ti-arrow-up-circle" style="color:var(--green);"></i> <b>Tu decisión más acertada</b> fue en "${mejorDecision.tituloRonda}": ${mejorDecision.texto}</div>` : ''}
+    ${peorDecision && peorDecision.neto<0 ? `<div style="font-size:12.5px;color:var(--t2);"><i class="ti ti-arrow-down-circle" style="color:var(--red);"></i> <b>La decisión que más costó</b> fue en "${peorDecision.tituloRonda}": ${peorDecision.texto}</div>` : ''}
+  </div>
   <div class="card">
-    <div class="card-title"><i class="ti ti-list-details"></i> Tus decisiones</div>
-    ${st.decisiones.map((d,i)=>`<div class="preg"><b>Ronda ${d.ronda+1}:</b> ${d.texto}</div>`).join('')}
+    <div class="card-title"><i class="ti ti-list-details"></i> Tus decisiones, ronda por ronda</div>
+    ${st.decisiones.map((d,i)=>`<div class="preg"><b>Ronda ${d.ronda+1}${d.neto!==undefined?(d.neto>0?' <i class="ti ti-circle-check-filled" style="color:var(--green);font-size:12px;"></i>':d.neto<0?' <i class="ti ti-circle-x-filled" style="color:var(--red);font-size:12px;"></i>':''):''}:</b> ${d.texto}</div>`).join('')}
     <button class="btn" style="width:100%;justify-content:center;margin-top:14px;" onclick="navSubject('${st.subjectId}')">Volver a la materia</button>
   </div>`;
 }
@@ -6686,15 +6702,19 @@ function subjectCardHtml(s){
 function renderProgressView(){
   updateGlobalProgressBadge();
   const rows = SUBJECTS.map(s=>{
+    const data=SUBJECT_DATA[s.id];
     const prog=subjectProgress(s.id);
-    const icon = prog.done>=prog.total && prog.total>0 ? '<i class="ti ti-circle-check" style="color:var(--green)"></i>' : prog.done>0 ? '<i class="ti ti-clock-hour-4" style="color:var(--amber)"></i>' : '<i class="ti ti-circle-dashed" style="color:var(--t3)"></i>';
-    return `<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:10px;cursor:pointer;" onclick="navSubject('${s.id}')">
-      ${icon}
-      <div style="flex:1;">
-        <div style="font-weight:700;font-size:13.5px;">${s.title}</div>
-        <div style="font-size:11.5px;color:var(--t3);font-family:var(--font-mono);">${prog.done}/${prog.total} casos completados</div>
+    const casesAvail = data ? data.cases.length : 0;
+    const estado = prog.done>=prog.total && prog.total>0 ? '<i class="ti ti-circle-check-filled" style="color:var(--green);"></i> Completa' : prog.done>0 ? '<i class="ti ti-clock-hour-4" style="color:var(--amber);"></i> En progreso' : '<i class="ti ti-circle-dashed" style="color:var(--t3);"></i> Sin empezar';
+    return `<div class="subject-card" style="--card-color:${s.color};margin-bottom:0;" onclick="navSubject('${s.id}')">
+      <div class="clave">${s.clave!=='ROL'?s.clave:'<span class="badge-rol">ROL</span>'} </div>
+      <div class="subject-icon"><i class="ti ${s.icon}"></i></div>
+      <h3>${s.title}</h3>
+      <div class="sub" style="display:flex;align-items:center;gap:5px;">${estado}</div>
+      <div class="subject-progress">
+        <div class="bar"><div class="fill" style="width:${prog.pct}%"></div></div>
+        <div class="pct">${prog.done}/${prog.total}</div>
       </div>
-      <i class="ti ti-chevron-right" style="color:var(--t3)"></i>
     </div>`;
   }).join('');
   $('view-progress').innerHTML = `
@@ -6703,7 +6723,8 @@ function renderProgressView(){
       <h1>Progreso general en CapitalLab Academy</h1>
       <p>Tu avance real, materia por materia — desde los casos hasta el modo libro y las simulaciones.</p>
     </div>
-    ${rows}
+    <button class="btn btn-ghost" style="margin-bottom:18px;" onclick="navPortal()"><i class="ti ti-layout-grid"></i> Ver el portal completo de materias</button>
+    <div class="subject-grid">${rows}</div>
   `;
 }
 
