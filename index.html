@@ -2921,15 +2921,41 @@ SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
   {
     id:'inv1-c1', expediente:'FIN325-2026-601', role:'Asesor de Inversiones',
     title:'Construcción de un portafolio diversificado para preservación de capital',
+    medidor:{ nombre:'Confianza de la clienta en tu propuesta', inicial:65, icon:'ti-mood-smile' },
     brief:'Una inversionista próxima a jubilarse busca reestructurar sus ahorros hacia un portafolio que priorice la preservación de capital sobre el crecimiento agresivo. Debes diseñar una asignación diversificada acorde a su perfil de riesgo.',
     character:{name:'Marlene Aguirre', role:'Inversionista individual, próxima a jubilarse', quote:'"Ya no puedo permitirme grandes pérdidas como cuando era joven. Prefiero crecer menos, pero dormir tranquila."'},
     facts:[['Edad de la inversionista','58 años'],['Horizonte de inversión','7 años hasta el retiro'],['Patrimonio a invertir','US$ 420,000'],['Tolerancia al riesgo (declarada)','Baja a moderada'],['Objetivo principal','Preservación de capital con crecimiento moderado']],
     stages:[
       { id:'s1', title:'Etapa 1 · Perfil de riesgo del inversionista', icon:'ti-user-circle',
-        intro:'Antes de proponer cualquier activo, hay que traducir las circunstancias y preferencias del cliente en un perfil de riesgo formal.',
-        databox:{title:'Cuestionario de perfilamiento (resumen)', rows:[['Horizonte de inversión','7 años'],['Reacción declarada ante una caída del 15% del portafolio','"Vendería una parte para reducir la exposición"'],['Necesidad de liquidez en los próximos 2 años','Baja'],['Experiencia previa en mercados','Moderada (bonos y depósitos a plazo principalmente)']]},
+        intro:'Antes de proponer cualquier activo, hay que traducir las circunstancias y preferencias del cliente en un perfil de riesgo formal. Aquí tiene el cuestionario de perfilamiento completo que Marlene respondió, sin ningún dato pre-seleccionado.',
+        documento:{titulo:'Cuestionario de Perfilamiento de Riesgo — Marlene Aguirre', secciones:[
+          { nombre:'DATOS PERSONALES Y FINANCIEROS', filas:[
+            ['Edad','58 años'],
+            ['Años hasta el retiro planeado','7 años'],
+            ['Patrimonio total a invertir','US$ 420,000'],
+            ['Ingreso mensual actual','US$ 6,200'],
+            ['Otros ahorros fuera de este portafolio (fondo de emergencia)','US$ 35,000'],
+          ]},
+          { nombre:'EXPERIENCIA Y CONOCIMIENTO DE INVERSIÓN', filas:[
+            ['Experiencia previa en mercados','Moderada (bonos y depósitos a plazo principalmente)'],
+            ['¿Ha invertido antes en acciones?','Sí, una porción pequeña hace 10 años'],
+            ['Nivel de comodidad con terminología financiera','Básico a intermedio'],
+          ]},
+          { nombre:'TOLERANCIA AL RIESGO DECLARADA', filas:[
+            ['Reacción declarada ante una caída del 15% del portafolio','"Vendería una parte para reducir la exposición"'],
+            ['Objetivo principal declarado','Preservación de capital con crecimiento moderado'],
+            ['Necesidad de liquidez en los próximos 2 años','Baja'],
+            ['¿Depende este portafolio para gastos esenciales inmediatos?','No, tiene el fondo de emergencia aparte'],
+          ]},
+        ]},
         questions:[
-          {type:'mc', q:'¿Qué perfil de riesgo es más coherente con una inversionista que reaccionaría vendiendo ante una caída del 15%, con horizonte de 7 años?', opts:['Agresivo, dispuesto a alta volatilidad por mayor retorno','Conservador a moderado, con baja tolerancia a pérdidas no realizadas','Especulativo de muy corto plazo','No se puede determinar el perfil con esta información'], correct:1, explain:'La reacción de vender ante una caída moderada y la preferencia explícita por preservación de capital son señales claras de un perfil conservador a moderado, no agresivo.'},
+          {type:'mc', q:'¿Qué perfil de riesgo es más coherente con esta inversionista, considerando el cuestionario completo?', opts:['Agresivo, dispuesto a alta volatilidad por mayor retorno','Conservador a moderado, con baja tolerancia a pérdidas no realizadas','Especulativo de muy corto plazo','No se puede determinar el perfil con esta información'], correct:1, impacto:{0:-15,1:12,2:-15,3:-10}, explain:'La reacción de vender ante una caída moderada, la preferencia explícita por preservación de capital, y el horizonte de 7 años son señales consistentes de un perfil conservador a moderado, no agresivo.'},
+          {type:'multi', q:'De estas señales del cuestionario, ¿cuáles justifican genuinamente incluir una porción moderada de acciones, en vez de un portafolio 100% conservador?', opts:[
+            'Horizonte de inversión de 7 años, suficiente para absorber volatilidad de corto plazo',
+            'Ya tiene un fondo de emergencia aparte, no depende de este portafolio para gastos inmediatos',
+            'Su reacción declarada de vender ante una caída del 15%',
+            'Su experiencia previa limitada en acciones',
+          ], correctos:[0,1], explain:'El horizonte de 7 años y tener el fondo de emergencia separado son las dos señales que realmente sustentan incluir algo de renta variable — dan tiempo y margen para absorber volatilidad sin comprometer necesidades inmediatas. Su reacción de venta ante caídas y su experiencia limitada, en cambio, son argumentos a favor de MENOS acciones, no más — van en la dirección contraria a la pregunta.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Selección de activos y diversificación', icon:'ti-chart-pie',
@@ -2938,6 +2964,12 @@ SUBJECT_DATA.inv1 = { casesPlanned:3, cases:[
         chart:{type:'bar', title:'Asignación propuesta del portafolio (%)', labels:['Bonos soberanos','Bonos corp.','Acciones','Liquidez'], data:[45,20,25,10], color:'var(--accent2)'},
         questions:[
           {type:'mc', q:'¿Por qué se recomienda una porción de acciones (25%) aunque el perfil sea conservador, en lugar de 0%?', opts:['Por error de diseño del portafolio','Porque con un horizonte de 7 años, una porción moderada en acciones ayuda a generar crecimiento real por encima de la inflación, sin comprometer la estabilidad general','Porque las acciones no tienen riesgo','Porque el cliente lo exigió expresamente'], correct:1, explain:'Eliminar completamente la renta variable en un horizonte de 7 años puede sacrificar crecimiento real necesario para mantener el poder adquisitivo del capital, especialmente frente a la inflación. Una porción moderada equilibra estabilidad y crecimiento.'},
+          {type:'orden', q:'Ordene estos cuatro criterios del más al menos importante al momento de decidir cuánto asignar a cada clase de activo para Marlene.', items:[
+            'Su horizonte real de 7 años hasta el retiro',
+            'Su tolerancia al riesgo declarada en el cuestionario',
+            'El rendimiento histórico de cada clase de activo en los últimos 12 meses',
+            'Las recomendaciones genéricas de asignación que aparecen en artículos financieros populares',
+          ], ordenCorrecto:[0,1,2,3], explain:'El horizonte real del cliente y su tolerancia declarada son los dos factores que deben definir la asignación — son específicos de esta persona, no genéricos. El rendimiento reciente de cada clase de activo es información de contexto útil, pero perseguir rendimientos recientes es un error común (el pasado reciente no predice el futuro). Las recomendaciones genéricas de artículos son el criterio más débil de los cuatro — un punto de partida posible, nunca un sustituto del perfil real del cliente específico.'},
         ],
       },
       { id:'s3', title:'Etapa 3 · Retorno y riesgo del portafolio', icon:'ti-calculator',
