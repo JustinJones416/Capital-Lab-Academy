@@ -2087,16 +2087,34 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
   {
     id:'mdofin-c1', expediente:'BVP-2026-014', role:'Analista de Renta Fija',
     title:'Emisión de bonos corporativos en la Bolsa de Valores de Panamá',
+    medidor:{ nombre:'Confianza del comité de inversión en tu recomendación', inicial:65, icon:'ti-report-analytics' },
     brief:'Una empresa del sector logístico-portuario panameño anuncia una emisión de bonos corporativos en la Bolsa de Valores de Panamá para financiar la expansión de su infraestructura. Tu firma de inversión te asigna el caso completo: desde la lectura del prospecto hasta la recomendación final al comité de inversión.',
     character:{name:'Ileana Bósquez', role:'Directora de Finanzas, Terminal Portuaria del Istmo, S.A.', quote:'"Esta emisión financia la expansión que nos permitirá duplicar capacidad de atraque. El prospecto tiene todo lo que su comité necesita revisar."'},
-    facts:[['Sector','Logística y operación portuaria'],['Monto de la emisión','US$ 40,000,000'],['Plazo','10 años'],['Cupón ofrecido','6.75% anual, pago semestral'],['Precio de colocación','98.5% del valor nominal'],['Calificación de riesgo','BBB (grado de inversión)'],['Garantía','Fideicomiso de flujos de la operación portuaria']],
+    facts:[['Sector','Logística y operación portuaria'],['Monto de la emisión','US$ 40,000,000'],['Plazo','10 años']],
     stages:[
-      { id:'s1', title:'Etapa 1 · Lectura del prospecto', icon:'ti-file-text', competencia:'valoracion',
-        intro:'El prospecto de emisión es el primer documento que revisa un analista. Contiene los términos legales y financieros de la oferta.',
-        databox:{title:'Términos de la emisión', rows:[['Monto total','US$ 40,000,000'],['Plazo','10 años'],['Cupón nominal','6.75% anual'],['Frecuencia de pago','Semestral'],['Precio de colocación','98.5% del nominal'],['Uso de fondos','Expansión de infraestructura portuaria'],['Garantía','Fideicomiso de flujos de operación']]},
+      { id:'s1', title:'Etapa 1 · Lectura del prospecto completo', icon:'ti-file-text', competencia:'valoracion',
+        intro:'El prospecto de emisión es el primer documento que revisa un analista de renta fija — el documento legal y financiero completo, sin ningún término ya resaltado.',
+        documento:{titulo:'Prospecto de Emisión — Bonos Corporativos Terminal Portuaria del Istmo, S.A.', secciones:[
+          { nombre:'TÉRMINOS DE LA EMISIÓN', filas:[
+            ['Monto total de la emisión','US$ 40,000,000'],
+            ['Plazo','10 años'],
+            ['Cupón nominal','6.75% anual, pago semestral'],
+            ['Precio de colocación','98.5% del valor nominal'],
+            ['Uso de fondos','Expansión de infraestructura portuaria (duplicar capacidad de atraque)'],
+          ]},
+          { nombre:'GARANTÍAS Y PROTECCIONES', filas:[
+            ['Garantía principal','Fideicomiso de flujos de la operación portuaria'],
+            ['Calificación de riesgo asignada','BBB (grado de inversión)'],
+            ['Covenant financiero incluido','Razón Deuda/EBITDA no podrá superar 3.5x durante la vida del bono'],
+          ]},
+          { nombre:'INFORMACIÓN ADICIONAL DEL EMISOR', filas:[
+            ['Años de operación de la empresa','22 años'],
+            ['Porcentaje de la emisión ya comprometido por inversionistas institucionales','35% (antes de la colocación pública)'],
+          ]},
+        ]},
         questions:[
           {type:'mc', q:'El bono se coloca al 98.5% del valor nominal. ¿Qué efecto tiene esto sobre el costo efectivo de financiamiento para el emisor, comparado con el cupón nominal de 6.75%?', opts:['Lo reduce, porque recibe menos de lo que debe devolver','Lo incrementa, porque recibe menos efectivo del que tendrá que repagar a la par','No tiene efecto, el costo es siempre igual al cupón','Depende exclusivamente de la calificación de riesgo'], correct:1, explain:'Si la empresa recibe 98.5 pero debe devolver 100 al vencimiento, ese descuento de colocación incrementa el costo efectivo de la deuda por encima del cupón nominal de 6.75%.'},
-          {type:'mc', q:'¿Qué función cumple el fideicomiso de flujos como garantía?', opts:['Elimina por completo el riesgo de la emisión','Da a los tenedores del bono una fuente identificada y separada de repago, reduciendo el riesgo relativo','Es solo un requisito administrativo sin efecto financiero','Aumenta automáticamente la calificación a AAA'], correct:1, explain:'Un fideicomiso de flujos aísla los ingresos de la operación portuaria para el pago del bono, dando a los inversionistas una fuente de repago más predecible y reduciendo (sin eliminar) el riesgo de crédito.'},
+          {type:'mc', q:'El prospecto incluye un covenant que limita la razón Deuda/EBITDA a un máximo de 3.5x durante la vida del bono. ¿Qué protege específicamente esta cláusula?', opts:['Garantiza que el emisor nunca podrá tener pérdidas','Limita cuánta deuda adicional puede asumir el emisor en relación con su capacidad de generar flujo, protegiendo a los tenedores actuales de un deterioro futuro del perfil de riesgo','Es un requisito puramente administrativo sin efecto financiero real','Aumenta automáticamente la calificación del bono a AAA'], correct:1, explain:'Un covenant de este tipo protege a los tenedores del bono limitando cuánta deuda adicional puede asumir el emisor durante la vida del instrumento — sin este límite, el emisor podría endeudarse mucho más después de colocar el bono, deteriorando el perfil de riesgo que los inversionistas originalmente aceptaron.'},
         ],
       },
       { id:'s2', title:'Etapa 2 · Evaluación del riesgo crediticio', icon:'ti-shield-half', competencia:'credito_riesgo',
