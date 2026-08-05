@@ -2083,7 +2083,7 @@ SUBJECT_DATA.aeef.simulaciones = [
   },
 ];
 
-SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
+SUBJECT_DATA.mdofin = { casesPlanned:4, cases:[
   {
     id:'mdofin-c1', expediente:'BVP-2026-014', role:'Analista de Renta Fija',
     title:'Emisión de bonos corporativos en la Bolsa de Valores de Panamá',
@@ -2153,21 +2153,95 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
           {type:'mc', q:'Bajo el escenario adverso, la cobertura de intereses cae de 4.2x a 3.3x. ¿Qué implica esto para el bono?', opts:['El emisor entra automáticamente en impago','La capacidad de pago se reduce pero permanece por encima del umbral crítico de la cláusula de protección','El bono pierde su calificación de grado de inversión de forma automática','No tiene ningún efecto relevante'], correct:1, explain:'3.3x sigue estando por encima del umbral de 2.5x que activaría la cláusula de restricción de endeudamiento. La capacidad de pago se debilita pero no se rompe bajo este escenario.'},
         ],
       },
-      { id:'s5', title:'Etapa 5 · Decisión de inversión', icon:'ti-gavel',
-        intro:'Con el análisis completo, el comité de inversión espera tu recomendación final, fundamentada en los datos revisados en las cuatro etapas anteriores.',
-        verdictOptions:[
-          {v:'recomendar', label:'Recomendar la inversión', desc:'El rendimiento ajustado por riesgo es atractivo y las protecciones contractuales son adecuadas.'},
-          {v:'condicionar', label:'Recomendar con límite de exposición', desc:'Invertir, pero limitando el monto por la concentración de clientes y la naturaleza cíclica del sector.'},
-          {v:'no-recomendar', label:'No recomendar la inversión', desc:'El riesgo de concentración y ciclicidad no compensa adecuadamente el rendimiento ofrecido.'},
+      { id:'s5', title:'Etapa 5 · Comparando contra emisiones similares del mercado', icon:'ti-scale', competencia:'valoracion',
+        intro:'Un rendimiento de 6.95% no dice nada por sí solo — hay que compararlo contra emisiones comparables que ya cotizan, del mismo nivel de riesgo, para saber si el precio ofrecido es competitivo.',
+        documento:{titulo:'Emisiones comparables recientes en la Bolsa de Valores de Panamá', secciones:[
+          { nombre:'BONOS CORPORATIVOS BBB YA LISTADOS', filas:[
+            ['Bono Distribuidora Nacional (BBB, 8 años)','YTM 6.60%'],
+            ['Bono Grupo Logístico del Caribe (BBB+, 10 años)','YTM 6.40%'],
+            ['Bono Industrias del Norte (BBB-, 10 años)','YTM 7.35%'],
+          ]},
+        ]},
+        questions:[
+          {type:'mc', q:'Con un YTM de 6.95% y calificación BBB a 10 años, ¿cómo se posiciona esta emisión frente a las tres comparables del documento?', opts:['Es la más barata de las cuatro sin excepción','Rinde más que las dos comparables con mejor o igual calificación (BBB y BBB+), pero menos que la de menor calificación (BBB-) — una posición intermedia consistente con su propio riesgo específico','Es idéntica a las tres comparables','No se puede comparar calificaciones distintas bajo ningún criterio'], correct:1, impacto:{0:-10,1:12,2:-15,3:-15}, explain:'Terminal Portuaria (BBB, 6.95%) rinde más que Distribuidora Nacional (BBB, 6.60%) y Grupo Logístico (BBB+, 6.40%), pero menos que Industrias del Norte (BBB-, 7.35%, un escalón de riesgo más abajo) — una posición intermedia razonable dado su propio perfil de riesgo específico (concentración de clientes, sector cíclico).'},
+          {type:'num', q:'¿Cuántos puntos porcentuales rinde de más esta emisión (6.95%) comparada con el bono de mejor calificación del grupo, Grupo Logístico del Caribe (BBB+, 6.40%)?', placeholder:'En puntos porcentuales', correct:0.55, tolerance:0.05, formula:'Diferencial = YTM de la emisión − YTM de la comparable de mejor calificación', explain:'6.95% − 6.40% = 0.55 puntos porcentuales — el spread adicional que el mercado exige por la calificación un escalón más baja (BBB vs BBB+) y los riesgos específicos de este emisor.'},
         ],
-        openPrompt:'Justifica tu decisión final integrando el riesgo crediticio (etapa 2), el rendimiento calculado (etapa 3) y la prueba de estrés (etapa 4).',
+      },
+      { id:'s6', title:'Etapa 6 · Sensibilidad del precio ante cambios en las tasas', icon:'ti-arrows-vertical', competencia:'valoracion',
+        intro:'Un bono a 10 años tiene mucha más sensibilidad a cambios en las tasas de interés que uno de corto plazo — hay que cuantificar qué tanto podría moverse el precio si las tasas de mercado cambian.',
+        documento:{titulo:'Sensibilidad estimada del precio ante cambios de tasas (duración aproximada)', secciones:[
+          { nombre:'ESTIMACIÓN DE DURACIÓN', filas:[
+            ['Duración aproximada estimada del bono (por su plazo de 10 años)','7.8 años'],
+            ['Regla aproximada','Por cada 1% que suban las tasas de mercado, el precio del bono cae aproximadamente el % de su duración'],
+          ]},
+        ]},
+        questions:[
+          {type:'num', q:'Si las tasas de mercado suben 1 punto porcentual, y la duración aproximada del bono es 7.8 años, ¿aproximadamente qué porcentaje caería el precio del bono?', placeholder:'En %', correct:7.8, tolerance:0.3, formula:'Caída aproximada de precio = Duración × Cambio en tasas', explain:'7.8% aproximadamente — un bono a 10 años con esta duración es considerablemente sensible a cambios de tasas, mucho más que un bono de corto plazo, un riesgo real para cualquier inversionista que necesite vender antes del vencimiento.'},
+          {type:'mc', q:'¿Para qué tipo de inversionista es menos preocupante esta sensibilidad de precio ante cambios de tasas?', opts:['Uno que planea mantener el bono hasta su vencimiento, sin necesidad de venderlo antes', 'Cualquier inversionista, sin excepción, se ve igualmente afectado', 'Solo afecta a inversionistas institucionales, nunca a individuales', 'Un inversionista que necesita liquidez inmediata en los próximos meses'], correct:0, explain:'Un inversionista que mantiene el bono hasta el vencimiento recibirá el valor nominal completo al final, sin importar cómo fluctúe el precio de mercado mientras tanto — la sensibilidad de precio solo es un riesgo real para quien podría necesitar vender antes de esa fecha.'},
+        ],
+      },
+      { id:'s7', title:'Etapa 7 · ¿El proyecto financiado genera suficiente flujo para pagar el bono?', icon:'ti-building-factory', competencia:'valoracion',
+        intro:'El uso de fondos declarado es "duplicar capacidad de atraque" — hay que revisar si el proyecto específico que se financia genera flujo suficiente para sostener el servicio de la nueva deuda, más allá del EBITDA general de la empresa.',
+        documento:{titulo:'Proyección del proyecto de expansión portuaria financiado con la emisión', secciones:[
+          { nombre:'PROYECCIÓN DEL PROYECTO ESPECÍFICO', filas:[
+            ['Inversión total del proyecto de expansión','US$ 40,000,000 (financiado en su totalidad con esta emisión)'],
+            ['Flujo de caja adicional proyectado del proyecto, una vez operativo (año 3 en adelante)','US$ 5,200,000 anuales'],
+            ['Servicio anual de deuda del bono (cupón + amortización estimada)','US$ 4,300,000 anuales'],
+          ]},
+        ]},
+        questions:[
+          {type:'num', q:'¿Cuál es la cobertura del servicio de deuda específicamente con el flujo adicional que genera el proyecto financiado (una vez operativo)?', placeholder:'Ej: 1.21', correct:1.21, tolerance:0.05, formula:'Cobertura del proyecto = Flujo de caja adicional del proyecto ÷ Servicio anual de deuda', explain:'5,200,000 / 4,300,000 ≈ 1.21x — el proyecto específico, por sí solo, genera apenas un poco más de lo necesario para cubrir el servicio de esta nueva deuda, un margen bastante más ajustado que la cobertura general de la empresa (4.2x) que se vio en la Etapa 2.'},
+          {type:'mc', q:'¿Por qué es relevante calcular la cobertura del proyecto específico (1.21x), y no conformarse solo con la cobertura general de la empresa (4.2x) vista en la Etapa 2?', opts:['No es relevante, la cobertura general ya es suficiente para cualquier análisis','Porque revela que el proyecto específico que genera la necesidad de esta deuda tiene un margen de seguridad mucho más ajustado que el negocio en su conjunto — si el proyecto no cumple su proyección, la empresa dependería más del resto de su negocio para cubrir esta deuda específica','Ambas cifras miden exactamente lo mismo','La cobertura del proyecto siempre debe ser menor a la cobertura general por definición'], correct:1, impacto:{0:-15,1:12,2:-12,3:-10}, explain:'Que el proyecto específico apenas cubra 1.21x su propio servicio de deuda, comparado con la cobertura de 4.2x de toda la empresa, revela una dependencia real: si el proyecto de expansión no cumple su proyección de flujo, el resto del negocio (que sí tiene mejor cobertura) tendría que absorber esa diferencia — información que no se ve si solo se mira el EBITDA consolidado de la empresa.'},
+        ],
+      },
+      { id:'s8', title:'Etapa 8 · Prioridad de pago en un escenario de incumplimiento', icon:'ti-list-numbers', competencia:'credito_riesgo',
+        intro:'Si, en el peor de los casos, el emisor no pudiera cumplir con sus obligaciones, es importante entender en qué orden se pagarían los distintos acreedores — la estructura de garantías de este bono no es la única deuda de la empresa.',
+        documento:{titulo:'Estructura de capital y orden de prelación de pago de Terminal Portuaria del Istmo', secciones:[
+          { nombre:'ESTRUCTURA DE DEUDA COMPLETA DEL EMISOR', filas:[
+            ['Préstamo bancario garantizado con activos fijos (primera prioridad)','US$ 15,000,000'],
+            ['Esta emisión de bonos (garantizada por fideicomiso de flujos)','US$ 40,000,000'],
+            ['Deuda no garantizada existente (proveedores y otros)','US$ 8,000,000'],
+            ['Patrimonio de los accionistas','Última prioridad de cobro, absorbe pérdidas primero'],
+          ]},
+        ]},
+        questions:[
+          {type:'orden', q:'Ordene estos cuatro tipos de acreedores según el orden real en que cobrarían si la empresa entrara en un proceso de liquidación, del primero al último en recibir pago.', items:[
+            'Préstamo bancario garantizado con activos fijos',
+            'Esta emisión de bonos (garantizada por fideicomiso de flujos)',
+            'Deuda no garantizada (proveedores y otros)',
+            'Accionistas (patrimonio)',
+          ], ordenCorrecto:[0,1,2,3], explain:'El préstamo bancario con garantía específica sobre activos fijos normalmente tiene la primera prioridad de cobro. Esta emisión de bonos, aunque garantizada por el fideicomiso de flujos, viene después de esa garantía más específica sobre activos. La deuda no garantizada cobra después de toda la deuda garantizada. Los accionistas son siempre los últimos en la fila — absorben las pérdidas primero y solo reciben algo si sobra valor después de pagar a todos los acreedores.'},
+        ],
+      },
+      { id:'s9', title:'Etapa 9 · ¿Cambia la recomendación según el tipo de inversionista?', icon:'ti-users', competencia:'valoracion',
+        intro:'La misma emisión puede ser una decisión distinta para un fondo de pensiones institucional que para un inversionista individual con otros objetivos.',
+        questions:[
+          {type:'multi', q:'¿Para cuáles de estos perfiles de inversionista sería MENOS adecuada esta emisión específica, dado todo lo analizado en las etapas anteriores?', opts:[
+            'Un inversionista que necesita liquidez segura en los próximos 6 meses',
+            'Un fondo de pensiones con horizonte de inversión de largo plazo, buscando diversificar su cartera de renta fija',
+            'Un inversionista que ya tiene una concentración alta en el sector de transporte y logística panameño',
+            'Un inversionista dispuesto a mantener el bono hasta su vencimiento a cambio de un rendimiento superior al promedio de mejor calificación',
+          ], correctos:[0,2], explain:'Un inversionista que necesita liquidez en 6 meses estaría mal servido por este bono, dada la sensibilidad de precio ante tasas vista en la Etapa 6 y el riesgo de tener que vender antes del vencimiento. Alguien ya concentrado en el sector de transporte y logística panameño agravaría su propia concentración de riesgo sectorial, no la diversificaría. En cambio, un fondo de pensiones con horizonte largo, o alguien dispuesto a mantener hasta el vencimiento por el rendimiento adicional, son perfiles razonablemente adecuados para esta emisión específica.'},
+        ],
+      },
+      { id:'s10', title:'Etapa 10 · Decisión final de inversión', icon:'ti-gavel',
+        intro:'Con el prospecto completo (etapa 1), el riesgo crediticio (etapa 2), el rendimiento calculado (etapa 3), la prueba de estrés (etapa 4), la comparación de mercado (etapa 5), la sensibilidad a tasas (etapa 6), la cobertura específica del proyecto financiado (etapa 7), la prioridad de pago (etapa 8), y el perfil de inversionista adecuado (etapa 9), el comité espera tu recomendación final, integrando todo el análisis.',
+        verdictOptions:[
+          {v:'recomendar', label:'Recomendar la inversión sin restricciones', desc:'El rendimiento ajustado por riesgo es atractivo y las protecciones contractuales son adecuadas para el perfil general de inversionistas de la firma.'},
+          {v:'condicionar', label:'Recomendar con límite de exposición y solo para perfiles de largo plazo', desc:'Invertir, pero limitando el monto por la concentración de clientes, la ciclicidad del sector, y la cobertura ajustada del proyecto específico — y solo para inversionistas que puedan mantener hasta el vencimiento.'},
+          {v:'no-recomendar', label:'No recomendar la inversión', desc:'El conjunto de riesgos de concentración, ciclicidad, y cobertura ajustada del proyecto específico no compensa adecuadamente el rendimiento ofrecido.'},
+        ],
+        openPrompt:'Justifica tu decisión final integrando al menos cuatro de las nueve etapas anteriores — por ejemplo, el riesgo crediticio, la comparación de mercado, la cobertura específica del proyecto financiado, y el perfil de inversionista más adecuado.',
       },
     ],
-    summary:'Este caso recorre el ciclo completo de análisis de una <b>emisión de bonos corporativos</b> en la Bolsa de Valores de Panamá, en el sector logístico-portuario. Parte de la lectura del <b>prospecto</b>, continúa con la <b>evaluación del riesgo crediticio</b> (calificación BBB, cobertura de intereses de 4.2x, concentración en 3 clientes), calcula el <b>rendimiento al vencimiento</b> (≈6.95%), somete el caso a una <b>prueba de estrés</b> sectorial, y culmina en una <b>decisión de inversión</b> que integra los tres análisis previos.',
+    summary:'Este caso recorre el ciclo completo y extenso de análisis de una <b>emisión de bonos corporativos</b> en la Bolsa de Valores de Panamá, en el sector logístico-portuario, a lo largo de diez etapas: la lectura del <b>prospecto</b> completo, la <b>evaluación del riesgo crediticio</b> (calificación BBB, cobertura de intereses de 4.2x, concentración en 3 clientes), el cálculo del <b>rendimiento al vencimiento</b> (≈6.95%), una <b>prueba de estrés</b> sectorial, la <b>comparación contra emisiones similares</b> ya listadas en el mercado, el análisis de <b>sensibilidad de precio ante cambios de tasas</b> (duración de 7.8 años), la <b>cobertura específica del proyecto financiado</b> (mucho más ajustada, 1.21x, que la cobertura general de la empresa), la <b>prioridad de pago real</b> frente a otros acreedores del emisor, y el análisis de qué <b>perfil de inversionista</b> es más adecuado para esta emisión específica — culminando en una decisión final que integra los nueve análisis previos.',
     flashcards:[
       {q:'¿Qué es un fideicomiso de flujos como garantía de un bono?', a:'Un mecanismo que separa los ingresos de una operación específica para destinarlos al pago del bono, dando a los tenedores una fuente de repago identificada.'},
       {q:'¿Qué mide la cobertura de intereses (EBITDA/Intereses)?', a:'Cuántas veces el EBITDA de la empresa cubre su gasto en intereses; un valor más alto indica mayor margen de seguridad para el pago de deuda.'},
       {q:'¿Qué relación existe entre precio de colocación con descuento y rendimiento al vencimiento?', a:'Comprar con descuento sobre el valor nominal incrementa el rendimiento efectivo por encima del cupón nominal, por la ganancia de capital implícita al vencimiento.'},
+      {q:'¿Qué mide la duración de un bono, en términos aproximados?', a:'Aproximadamente cuánto caería el precio del bono por cada punto porcentual que suban las tasas de mercado — una medida de sensibilidad de precio a las tasas.'},
+      {q:'¿Por qué es útil calcular la cobertura de deuda de un proyecto específico, además de la cobertura general de la empresa?', a:'Porque revela si el proyecto que genera la necesidad de la deuda puede sostenerla por sí solo, o si la empresa dependería del resto de su negocio si el proyecto no cumple su proyección.'},
+      {q:'¿Qué determina la prioridad de pago entre distintos acreedores de una misma empresa?', a:'El tipo de garantía específica de cada deuda — la deuda con garantía sobre activos específicos suele cobrar antes que la deuda con garantías más generales, que a su vez cobra antes que la deuda no garantizada.'},
     ],
     glossary:[
       {t:'Prospecto de emisión', d:'Documento legal que detalla los términos de una emisión de valores: monto, plazo, cupón, garantías y uso de fondos.'},
@@ -2338,6 +2412,157 @@ SUBJECT_DATA.mdofin = { casesPlanned:3, cases:[
       {q:'Si una empresa no se cubre y la moneda que debe pagar se fortalece frente al dólar, ¿qué le pasa al costo del pago?', opts:['Baja','Sube','No cambia','Depende del banco'], correct:1},
     ],
   },
+  {
+    id:'mdofin-c4', expediente:'BVP-2026-058', role:'Economista de Mercado de Renta Fija',
+    title:'La curva de rendimiento se invierte — ¿qué significa para las decisiones de inversión?',
+    medidor:{ nombre:'Rigor de tu análisis ante el comité de estrategia', inicial:65, icon:'ti-chart-line' },
+    brief:'La mesa de renta fija de tu firma nota que los bonos del Tesoro de Estados Unidos a 2 años están rindiendo más que los bonos a 10 años — una situación conocida como "curva de rendimiento invertida". El comité de estrategia te pide un análisis: ¿qué significa esto realmente, y cómo debería ajustarse la estrategia de inversión en renta fija de la firma?',
+    character:{name:'Gustavo Reyes', role:'Director de Estrategia de Inversión', quote:'"Todo el mundo en el mercado habla de la curva invertida como si fuera una señal automática de recesión. Necesito que me expliques qué dice realmente la evidencia, no solo el titular."'},
+    facts:[['Rendimiento del bono del Tesoro a 2 años','4.85%'],['Rendimiento del bono del Tesoro a 10 años','4.15%'],['Situación normal histórica','El bono a 10 años rinde más que el de 2 años']],
+    stages:[
+      { id:'s1', title:'Etapa 1 · Qué es y qué no es una curva invertida', icon:'ti-chart-line', competencia:'valoracion',
+        intro:'Antes de sacar conclusiones, hay que entender exactamente qué mide la curva de rendimiento, y qué significa que estos dos puntos específicos se hayan invertido.',
+        documento:{titulo:'Curva de rendimiento del Tesoro de Estados Unidos — corte al cierre del día', secciones:[
+          { nombre:'RENDIMIENTOS POR PLAZO', filas:[
+            ['3 meses','5.10%'],
+            ['6 meses','5.02%'],
+            ['1 año','4.95%'],
+            ['2 años','4.85%'],
+            ['5 años','4.35%'],
+            ['10 años','4.15%'],
+            ['30 años','4.30%'],
+          ]},
+          { nombre:'CONTEXTO HISTÓRICO', filas:[
+            ['Número de inversiones de la curva 2s10s antes de las últimas 8 recesiones en EE.UU.','8 de 8 (100% de las veces)'],
+            ['Tiempo promedio entre la inversión y el inicio de la recesión','6 a 24 meses, con variación considerable'],
+            ['Casos de inversión sin recesión posterior en los últimos 50 años','Al menos 1 caso documentado (falsa señal)'],
+          ]},
+        ]},
+        questions:[
+          {type:'num', q:'¿Cuál es la diferencia entre el rendimiento del bono a 2 años (4.85%) y el de 10 años (4.15%), en puntos porcentuales?', placeholder:'Ej: 0.70', correct:0.70, tolerance:0.02, formula:'Diferencial 2s10s = Rendimiento a 2 años − Rendimiento a 10 años', explain:'4.85% − 4.15% = 0.70 puntos porcentuales — el bono de plazo más corto rinde más que el de plazo más largo, lo contrario de lo que ocurre en una curva "normal".'},
+          {type:'mc', q:'En una curva de rendimiento NORMAL (no invertida), ¿por qué los bonos de plazo más largo suelen rendir más que los de plazo corto?', opts:['Es una regla arbitraria sin ninguna lógica económica','Los inversionistas exigen compensación adicional por prestar su dinero durante más tiempo, asumiendo más incertidumbre sobre inflación y condiciones futuras','Los bonos largos siempre tienen menos riesgo','No hay ninguna diferencia real entre plazos'], correct:1, explain:'Comprometer capital por más tiempo expone al inversionista a más incertidumbre — sobre inflación futura, condiciones económicas, y oportunidades alternativas — por eso normalmente exige un rendimiento adicional por ese plazo más largo. Cuando esa relación se invierte, es una señal genuinamente inusual.'},
+        ],
+      },
+      { id:'s2', title:'Etapa 2 · ¿Qué tan confiable es esta señal, realmente?', icon:'ti-alert-triangle', competencia:'valoracion',
+        intro:'El documento incluye tanto la fortaleza histórica de esta señal, como su limitación real — hay que sopesar ambas antes de recomendar cualquier cosa al comité.',
+        questions:[
+          {type:'multi', q:'Según el contexto histórico del documento, ¿cuáles de estas afirmaciones sobre la curva invertida son ciertas?', opts:[
+            'Ha precedido a las últimas 8 recesiones en Estados Unidos, sin excepción',
+            'El tiempo entre la inversión y la recesión es siempre exactamente el mismo',
+            'Ha habido al menos un caso de inversión sin que le siguiera una recesión',
+            'Es una señal que garantiza con certeza absoluta una recesión inminente',
+          ], correctos:[0,2], explain:'Es cierto que ha precedido las últimas 8 recesiones — un historial notable. Pero también es cierto que ha habido al menos una "falsa señal" documentada, y que el tiempo entre la inversión y la recesión varía considerablemente (6 a 24 meses) en vez de ser fijo — por eso no se puede decir que "garantiza con certeza absoluta" nada. Es una señal estadísticamente fuerte, no una certeza matemática.'},
+          {type:'mc', q:'Dado que el tiempo histórico entre la inversión y una eventual recesión varía entre 6 y 24 meses, ¿qué implica esto para una decisión de inversión inmediata?', opts:['Que se debe liquidar toda posición de riesgo de inmediato','Que aunque la señal sea relevante, actuar de forma extrema e inmediata no está justificado por la variabilidad real del plazo — la curva invertida es una señal de alerta a incorporar, no una orden de ejecución automática','Que la señal debe ignorarse por completo','Que la recesión ya comenzó'], correct:1, explain:'Una variabilidad de 6 a 24 meses significa que actuar de forma extrema e inmediata (como liquidar todo) no está respaldado por la evidencia — la señal amerita ajustar gradualmente la estrategia y aumentar la vigilancia, no una reacción de pánico basada en un solo indicador.'},
+        ],
+      },
+      { id:'s3', title:'Etapa 3 · Un precedente histórico real: 2006-2007', icon:'ti-clock-history', competencia:'valoracion',
+        intro:'Antes de aplicar la señal al presente, vale la pena estudiar cómo se desarrolló la última inversión de curva antes de la crisis financiera de 2008 — no como garantía de que se repetirá igual, sino para entender el patrón real.',
+        documento:{titulo:'Cronología de la inversión de la curva 2s10s antes de la crisis de 2008', secciones:[
+          { nombre:'LÍNEA DE TIEMPO REAL', filas:[
+            ['Fecha de la primera inversión sostenida de la curva 2s10s','Diciembre de 2005'],
+            ['Duración de la inversión (con interrupciones)','Aproximadamente 12 meses, hasta mediados de 2007'],
+            ['Inicio oficial de la recesión en EE.UU.','Diciembre de 2007'],
+            ['Tiempo transcurrido entre la primera inversión y el inicio de la recesión','24 meses'],
+          ]},
+          { nombre:'QUÉ HIZO EL MERCADO DURANTE ESE PERÍODO', filas:[
+            ['Reacción inmediata del mercado accionario tras la primera inversión','Mínima — el mercado accionario siguió subiendo por más de un año'],
+            ['Reacción del mercado de crédito corporativo','Los spreads de crédito se mantuvieron comprimidos (poco preocupados) durante gran parte de 2006'],
+          ]},
+        ]},
+        questions:[
+          {type:'mc', q:'Según este precedente, ¿qué hizo el mercado accionario inmediatamente después de la primera inversión de la curva en 2005?', opts:['Cayó de inmediato de forma pronunciada','Siguió subiendo por más de un año, a pesar de la señal de advertencia en el mercado de bonos','Se mantuvo perfectamente estable sin ningún movimiento','Los datos históricos no están disponibles'], correct:1, explain:'El mercado accionario siguió subiendo por más de un año después de la primera inversión — un recordatorio de que distintos mercados no siempre reaccionan al unísono ante la misma señal, y de que la paciencia (o la falta de reacción visible) de otros participantes no invalida la señal de la curva por sí sola.'},
+          {type:'num', q:'Si la primera inversión ocurrió en diciembre de 2005 y la recesión comenzó oficialmente en diciembre de 2007, ¿cuántos meses transcurrieron entre ambos eventos?', placeholder:'En meses', correct:24, tolerance:1, explain:'24 meses — en el extremo superior del rango de 6 a 24 meses mencionado en el documento de la Etapa 1, un recordatorio de que la señal puede tardar mucho más de lo que la reacción inmediata del mercado sugeriría.'},
+        ],
+      },
+      { id:'s4', title:'Etapa 4 · Mirando la curva completa, no solo un punto', icon:'ti-chart-dots', competencia:'valoracion',
+        intro:'La comparación 2s10s es la más citada, pero no es la única — revise de nuevo el documento completo de la Etapa 1 para identificar otros tramos de la curva que también muestran señales de inversión.',
+        questions:[
+          {type:'multi', q:'Revisando de nuevo los siete plazos del documento de la Etapa 1, ¿en cuáles de estos pares el plazo MÁS CORTO rinde más que el plazo MÁS LARGO (es decir, también están invertidos)?', opts:[
+            '3 meses (5.10%) frente a 10 años (4.15%)',
+            '1 año (4.95%) frente a 5 años (4.35%)',
+            '10 años (4.15%) frente a 30 años (4.30%)',
+            '6 meses (5.02%) frente a 2 años (4.85%)',
+          ], correctos:[0,1,3], explain:'En los tres primeros pares, el plazo más corto efectivamente rinde más que el más largo — la inversión no es un fenómeno aislado del par 2s10s, sino que afecta buena parte de la curva de corto y mediano plazo. El único par que NO está invertido es 10 años vs 30 años (4.15% frente a 4.30%) — ahí la relación normal (el plazo más largo rinde más) todavía se mantiene, una señal de que el mercado espera normalización en el muy largo plazo.'},
+          {type:'mc', q:'¿Qué sugiere que la inversión sea tan amplia (afectando varios tramos de la curva), y no solo el par 2s10s?', opts:['No sugiere nada distinto a una inversión aislada','Una inversión que afecta múltiples tramos suele considerarse una señal más generalizada y potencialmente más seria que una inversión aislada en un solo par de plazos','Significa que los datos están mal calculados','Solo importa el par 2s10s, el resto de la curva es irrelevante'], correct:1, explain:'Cuando la inversión afecta múltiples tramos de la curva, no solo el par más citado (2s10s), suele interpretarse como una señal más amplia y consistente del mercado, no un dato aislado o casual — refuerza, en vez de debilitar, la relevancia de la señal.'},
+        ],
+      },
+      { id:'s5', title:'Etapa 5 · Impacto diferenciado por sector', icon:'ti-building-bank', competencia:'valoracion',
+        intro:'Una curva invertida no afecta a todos los sectores de la misma manera — el sector financiero, en particular, tiene una relación muy directa con la forma de la curva.',
+        documento:{titulo:'Nota de investigación sectorial — impacto de la curva invertida', secciones:[
+          { nombre:'SECTOR FINANCIERO (BANCOS)', filas:[
+            ['Modelo de negocio típico de un banco','Toma depósitos a corto plazo (tasas ligadas al corto plazo) y presta a largo plazo (tasas ligadas al largo plazo)'],
+            ['Efecto de una curva invertida sobre el margen de interés neto de un banco','Negativo — el costo de captación de corto plazo sube más que el rendimiento de los préstamos de largo plazo'],
+          ]},
+          { nombre:'SECTOR TECNOLOGÍA Y CRECIMIENTO', filas:[
+            ['Sensibilidad principal de este sector','Tasas de descuento de largo plazo, usadas para valorar flujos de caja futuros lejanos'],
+            ['Efecto de una curva invertida (con el extremo largo relativamente más bajo) sobre estas valoraciones','Puede ser menos negativo, o incluso favorable, si el extremo largo de la curva baja'],
+          ]},
+        ]},
+        questions:[
+          {type:'mc', q:'¿Por qué una curva invertida suele ser una mala noticia específicamente para el margen de interés neto de los bancos?', opts:['No tiene ningún efecto sobre los bancos','Porque el modelo de negocio bancario típico depende de captar barato a corto plazo y prestar caro a largo plazo — cuando el corto plazo rinde más que el largo, ese margen se comprime','Porque los bancos no pueden operar con tasas invertidas por ley','Porque afecta solo a bancos pequeños, nunca a los grandes'], correct:1, explain:'El negocio bancario tradicional depende de ese diferencial entre lo que paga por depósitos de corto plazo y lo que cobra por préstamos de largo plazo — cuando la curva se invierte, ese diferencial se comprime o incluso se vuelve negativo, presionando directamente la rentabilidad del negocio bancario central.'},
+        ],
+      },
+      { id:'s6', title:'Etapa 6 · El efecto en las tasas hipotecarias', icon:'ti-home-dollar', competencia:'valoracion',
+        intro:'Las tasas hipotecarias a 30 años suelen seguir de cerca al bono del Tesoro a 10 años, no a las tasas de corto plazo — un canal de transmisión concreto hacia la economía real.',
+        questions:[
+          {type:'num', q:'Si las tasas hipotecarias a 30 años típicamente cotizan con un spread de aproximadamente 1.8 puntos porcentuales sobre el bono del Tesoro a 10 años (4.15%), ¿cuál sería la tasa hipotecaria aproximada resultante? (en %, un decimal)', placeholder:'Ej: 5.9', correct:5.95, tolerance:0.2, formula:'Tasa hipotecaria aproximada = Rendimiento del bono a 10 años + Spread hipotecario típico', explain:'4.15% + 1.8% = 5.95% — a pesar de que las tasas de corto plazo (como la que fija la Fed) puedan estar más altas, las hipotecas a 30 años tienden a moverse más con el bono a 10 años, que en este escenario de curva invertida es relativamente más bajo.'},
+          {type:'mc', q:'Si el bono a 10 años sigue bajando mientras la curva permanece invertida, ¿qué podría pasarle a las tasas hipotecarias, incluso si la Fed mantiene las tasas de corto plazo altas?', opts:['Subirían inevitablemente junto con las tasas de corto plazo','Podrían bajar, ya que siguen más de cerca al bono a 10 años que a las tasas de corto plazo fijadas por la Fed','No tienen ninguna relación con ningún bono del Tesoro','Siempre se mueven exactamente igual que las tasas de corto plazo'], correct:1, explain:'Como las tasas hipotecarias siguen más de cerca al bono a 10 años que a las tasas de corto plazo, es posible que bajen incluso mientras la Fed mantiene las tasas de corto plazo elevadas — un ejemplo concreto de por qué la FORMA de la curva importa, no solo el nivel general de tasas.'},
+        ],
+      },
+      { id:'s7', title:'Etapa 7 · ¿Cómo podría reaccionar la Reserva Federal?', icon:'ti-building-monument', competencia:'valoracion',
+        intro:'La curva invertida a menudo refleja las expectativas del mercado sobre la política monetaria futura — el mercado, en cierto sentido, ya está "votando" sobre lo que espera que haga la Fed.',
+        questions:[
+          {type:'mc', q:'Si el mercado espera que la Fed empiece a BAJAR las tasas de interés en el futuro cercano (para responder a una posible desaceleración), ¿cómo se refleja típicamente esa expectativa en la forma de la curva?', opts:['No tiene ningún efecto en la curva','Los rendimientos de plazos más largos bajan por anticipado, reflejando la expectativa de tasas más bajas en el futuro, incluso si las tasas de corto plazo actuales siguen altas','Los rendimientos de plazos largos siempre suben en ese escenario','La curva se vuelve completamente plana de inmediato'], correct:1, explain:'Los bonos de plazo largo incorporan hoy las expectativas del mercado sobre las tasas futuras — si el mercado anticipa que la Fed bajará tasas más adelante (para responder a una desaceleración), los rendimientos de largo plazo bajan por anticipado, aunque las tasas de corto plazo actuales (fijadas más directamente por la Fed) sigan siendo altas. Esa es, en esencia, la mecánica detrás de una curva invertida.'},
+        ],
+      },
+      { id:'s8', title:'Etapa 8 · Decisión concreta: ajustar la duración del portafolio', icon:'ti-adjustments-horizontal', competencia:'valoracion',
+        intro:'Con toda esta evidencia, hay que traducirla en un número concreto: cuánto ajustar la duración promedio del portafolio de renta fija de la firma.',
+        documento:{titulo:'Portafolio actual de renta fija de la firma', secciones:[
+          { nombre:'COMPOSICIÓN ACTUAL', filas:[
+            ['Duración promedio actual del portafolio','6.2 años'],
+            ['Duración objetivo bajo el escenario de ajuste gradual recomendado por el comité de riesgo','5.0 a 5.5 años'],
+            ['Valor total del portafolio de renta fija','US$ 180,000,000'],
+          ]},
+        ]},
+        questions:[
+          {type:'num', q:'Si la firma decide reducir la duración promedio de 6.2 a 5.2 años, ¿cuántos años de reducción representa ese ajuste?', placeholder:'En años', correct:1.0, tolerance:0.05, explain:'6.2 − 5.2 = 1.0 año de reducción — un ajuste gradual pero real, consistente con "acortar duración" sin liquidar posiciones de forma extrema, coherente con la recomendación prudente identificada en la Etapa 2.'},
+          {type:'mc', q:'¿Por qué reducir la duración de un portafolio de bonos es una respuesta razonable ante el riesgo de una eventual bajada de tasas asociada a una recesión, en vez de ser contradictorio?', opts:['No tiene ninguna lógica, es contradictorio','Reducir duración limita la sensibilidad del portafolio a further movimientos de tasas en cualquier dirección, priorizando estabilidad y liquidez sobre maximizar ganancia si las tasas efectivamente bajan','Reducir duración siempre maximiza el rendimiento','La duración no tiene relación con el riesgo de tasas'], correct:1, explain:'Aunque bonos de mayor duración se beneficiarían más si las tasas bajan (su precio sube más), reducir duración prioriza estabilidad y menor volatilidad ante la incertidumbre real de la señal — es una decisión de gestión de riesgo, no una apuesta a que las tasas subirán o bajarán con certeza.'},
+        ],
+      },
+      { id:'s9', title:'Etapa 9 · Comunicar la señal a un cliente institucional preocupado', icon:'ti-message-circle', competencia:'valoracion',
+        intro:'Un cliente institucional, tras leer sobre la curva invertida en la prensa financiera, pregunta directamente si debería retirar sus fondos de renta fija por completo.',
+        questions:[
+          {type:'mc', q:'¿Cuál es la respuesta más profesional y honesta a esa pregunta del cliente, con todo lo analizado en las etapas anteriores?', opts:['Decirle que no hay de qué preocuparse en absoluto y que ignore la señal por completo','Explicar que la señal es históricamente relevante pero no una certeza inmediata, y que la firma ya está haciendo un ajuste gradual y prudente en vez de una reacción extrema — dándole al cliente el contexto completo, no un extremo ni el otro', 'Recomendarle retirar el 100% de sus fondos de inmediato','Evitar darle cualquier respuesta concreta'], correct:1, explain:'La respuesta más profesional integra todo lo trabajado en el caso: reconoce la relevancia histórica real de la señal (etapas 1 y 3), su variabilidad e incertidumbre real (etapa 2), y comunica la respuesta proporcional que la firma ya está implementando (etapa 8) — ni alarmismo, ni indiferencia.'},
+        ],
+      },
+      { id:'s10', title:'Etapa 10 · Recomendación final al comité de estrategia', icon:'ti-gavel',
+        intro:'Con la señal entendida (etapa 1), su confiabilidad real sopesada (etapa 2), el precedente histórico de 2006-2007 (etapa 3), el análisis completo de la curva (etapa 4), el impacto sectorial (etapa 5), el efecto en tasas hipotecarias (etapa 6), la lectura de expectativas de política monetaria (etapa 7), el ajuste concreto de duración (etapa 8), y cómo comunicarlo a los clientes (etapa 9), debes presentar tu recomendación final integrando todo el análisis.',
+        verdictOptions:[
+          {v:'ajuste_gradual', label:'Recomendar un ajuste gradual hacia mayor calidad crediticia, menor duración, y liquidez, sin cambios extremos', desc:'Reconoce la fuerza histórica de la señal (incluyendo el precedente de 2006-2007) sin sobre-reaccionar ante su variabilidad real de tiempo.'},
+          {v:'sin_cambios', label:'No recomendar ningún cambio, la señal no es suficientemente confiable', desc:'Prioriza la variabilidad de la señal (una falsa alarma documentada) sobre su historial mayormente consistente y su amplitud a lo largo de la curva.'},
+          {v:'liquidar_todo', label:'Recomendar liquidar posiciones de riesgo de inmediato', desc:'Actúa con la máxima cautela posible ante una señal con un historial de acierto notable, aceptando el costo de una posible sobre-reacción si resulta ser una falsa señal.'},
+        ],
+        openPrompt:'Justifica tu recomendación final integrando al menos tres de las nueve etapas anteriores — la confiabilidad histórica de la señal, el precedente de 2006-2007, el impacto sectorial diferenciado, o el ajuste concreto de duración que propusiste.',
+      },
+    ],
+    summary:'Este caso trabaja la <b>curva de rendimiento</b> y su inversión como señal económica, con un desarrollo extenso: qué es y qué no es la inversión (etapa 1), qué tan confiable es realmente la señal (etapa 2), un precedente histórico real de 2005-2007 antes de la crisis financiera (etapa 3), un análisis de la curva completa más allá del par 2s10s (etapa 4), el impacto diferenciado por sector — especialmente el margen de interés neto bancario (etapa 5), la transmisión hacia las tasas hipotecarias (etapa 6), la lectura de expectativas de política monetaria de la Fed implícitas en la curva (etapa 7), un ajuste concreto y cuantificado de duración de portafolio (etapa 8), cómo comunicar la señal a un cliente preocupado (etapa 9), y una recomendación final que integra todo el análisis (etapa 10). La respuesta prudente no es ignorar la señal ni reaccionar de forma extrema, sino ajustar gradualmente la estrategia en proporción a la confiabilidad real de la evidencia histórica.',
+    flashcards:[
+      {q:'¿Qué es una curva de rendimiento invertida?', a:'Una situación donde los bonos de plazo más corto rinden más que los de plazo más largo, lo contrario de la relación normal donde el plazo largo exige mayor compensación.'},
+      {q:'¿Qué tan confiable ha sido históricamente la curva invertida como señal de recesión en Estados Unidos?', a:'Ha precedido las últimas 8 recesiones sin excepción, aunque con al menos una falsa alarma documentada, y con un plazo variable de 6 a 24 meses entre la señal y la recesión.'},
+      {q:'¿Por qué actuar de forma extrema e inmediata ante una curva invertida no está bien justificado?', a:'Porque el plazo histórico entre la inversión y una eventual recesión varía considerablemente, lo que hace que una reacción extrema e inmediata no sea proporcional a la incertidumbre real de la señal.'},
+      {q:'¿Por qué una curva invertida suele perjudicar el margen de interés neto de los bancos?', a:'Porque el modelo de negocio bancario depende de captar barato a corto plazo y prestar caro a largo plazo — cuando el corto plazo rinde más que el largo, ese margen se comprime.'},
+      {q:'¿Por qué las tasas hipotecarias podrían bajar incluso si la Fed mantiene las tasas de corto plazo altas?', a:'Porque las tasas hipotecarias a 30 años siguen más de cerca al bono del Tesoro a 10 años que a las tasas de corto plazo fijadas directamente por la Fed.'},
+    ],
+    glossary:[
+      {t:'Curva de rendimiento', d:'Representación gráfica de los rendimientos de bonos de un mismo emisor (generalmente el gobierno) a distintos plazos, desde el corto hasta el largo plazo.'},
+      {t:'Curva invertida', d:'Situación donde los bonos de plazo corto rinden más que los de plazo largo, lo contrario de la relación normal, históricamente asociada con expectativas de desaceleración económica.'},
+      {t:'Diferencial 2s10s', d:'La diferencia entre el rendimiento del bono del Tesoro a 2 años y el de 10 años, uno de los indicadores de curva de rendimiento más seguidos por los mercados.'},
+    ],
+    quiz:[
+      {q:'¿Qué es una curva de rendimiento invertida?', opts:['Cuando todos los bonos rinden igual','Cuando los bonos de plazo corto rinden más que los de plazo largo','Cuando solo existen bonos de un plazo','Un tipo de bono específico'], correct:1},
+      {q:'¿Por qué no se justifica una reacción extrema e inmediata ante la curva invertida?', opts:['Porque la señal nunca ha sido confiable','Porque el plazo histórico entre la señal y una eventual recesión varía considerablemente','Porque la curva invertida no tiene ninguna relación con la economía','Porque siempre hay que ignorar señales de mercado'], correct:1},
+    ],
+  },
 ]};
 
 SUBJECT_DATA.mdofin.studyMaterial = {
@@ -2356,6 +2581,8 @@ SUBJECT_DATA.mdofin.studyMaterial = {
     {q:'¿Qué es el rendimiento por dividendo?', a:'El dividendo anual por acción dividido entre el precio de la acción — el retorno en efectivo que recibe el inversionista cada año, sin contar la variación del precio.'},
     {q:'¿Qué elimina un contrato forward de moneda?', a:'La incertidumbre sobre el tipo de cambio de una operación futura, fijándolo hoy a cambio de un costo cierto.'},
     {q:'¿Por qué el tipo de cambio forward suele diferir del spot?', a:'Principalmente por el diferencial de tasas de interés entre las dos monedas durante el plazo del contrato.'},
+    {q:'¿Qué es una curva de rendimiento invertida?', a:'Una situación donde los bonos de plazo corto rinden más que los de plazo largo, lo contrario de la relación normal, históricamente asociada con expectativas de desaceleración económica.'},
+    {q:'¿Qué tan confiable ha sido históricamente la curva invertida como señal de recesión en Estados Unidos?', a:'Ha precedido las últimas 8 recesiones sin excepción, aunque con al menos una falsa alarma documentada, y con un plazo variable de 6 a 24 meses entre la señal y la recesión.'},
   ],
   glossary:[
     {t:'Prospecto de emisión', d:'Documento legal que detalla los términos de una emisión de valores: monto, plazo, cupón, garantías y uso de fondos.'},
@@ -2366,8 +2593,10 @@ SUBJECT_DATA.mdofin.studyMaterial = {
     {t:'Rendimiento por dividendo (dividend yield)', d:'El dividendo anual por acción dividido entre el precio de la acción, expresado en porcentaje.'},
     {t:'Tipo de cambio forward', d:'El tipo de cambio fijado hoy para una operación de cambio de divisas que se ejecutará en una fecha futura acordada.'},
     {t:'Riesgo cambiario', d:'La exposición de una empresa a que el valor de sus pagos o cobros futuros en moneda extranjera cambie por movimientos en el tipo de cambio.'},
+    {t:'Curva de rendimiento', d:'Representación de los rendimientos de bonos de un mismo emisor a distintos plazos; cuando se invierte (plazos cortos rinden más que los largos), es una señal históricamente asociada con desaceleración económica.'},
   ],
   quiz:[
+    {q:'¿Qué es una curva de rendimiento invertida?', opts:['Cuando todos los bonos rinden igual','Cuando los bonos de plazo corto rinden más que los de plazo largo','Cuando solo existen bonos de un plazo','Un tipo de bono específico'], correct:1},
     {q:'¿Qué pasa con el rendimiento efectivo si un bono se coloca con descuento sobre el nominal?', opts:['Disminuye','Aumenta por encima del cupón nominal','Se mantiene igual al cupón','No tiene relación con el precio'], correct:1},
     {q:'¿Qué mide la razón Deuda/EBITDA?', opts:['La rentabilidad de la empresa','Cuántos años de EBITDA se necesitarían para pagar toda la deuda','El margen neto','El valor de mercado de la empresa'], correct:1},
     {q:'¿Qué mide el múltiplo P/E?', opts:['La deuda de una empresa','Cuánto paga el mercado por cada dólar de utilidad de la empresa','El margen bruto','El tipo de cambio'], correct:1},
