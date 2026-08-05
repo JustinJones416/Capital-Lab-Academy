@@ -6149,10 +6149,10 @@ function dibujarCapituloLibro(){
     <div class="eyebrow" style="color:${s?.color||'var(--gold)'};"><i class="ti ti-book"></i> ${s?.title||''} · Capítulo ${st.capituloActual+1} de ${st.capitulos.length}</div>
     <div style="background:var(--c3);border-radius:6px;height:6px;margin:10px 0 18px;overflow:hidden;"><div style="background:${s?.color||'var(--gold)'};height:100%;width:${Math.round((st.capituloActual)/st.capitulos.length*100)}%;"></div></div>
   </div>
-  <div class="card" style="font-family:Georgia,serif;">
+  <div class="card" style="font-family:var(--font-body);">
     ${st.esNarrativo
-      ? `<h2 style="font-size:22px;margin-bottom:14px;">${cap.titulo}</h2><div style="font-size:15px;line-height:1.9;color:var(--t2);">${cap.texto}</div>`
-      : cap.map(t => `<div style="margin-bottom:24px;"><h2 style="font-size:19px;margin-bottom:8px;">${t.t}</h2><div style="font-size:14.5px;line-height:1.8;color:var(--t2);">${t.d}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--c3);margin:20px 0;">')}
+      ? `<h2 style="font-size:22px;margin-bottom:14px;font-family:var(--font-head);">${cap.titulo}</h2><div style="font-size:15px;line-height:1.9;color:var(--t2);">${cap.texto}</div>`
+      : cap.map(t => `<div style="margin-bottom:24px;"><h2 style="font-size:19px;margin-bottom:8px;font-family:var(--font-head);">${t.t}</h2><div style="font-size:14.5px;line-height:1.8;color:var(--t2);">${t.d}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--c3);margin:20px 0;">')}
   </div>
   <button class="btn" style="width:100%;justify-content:center;margin-top:16px;" onclick="iniciarAutoevaluacionCapitulo()"><i class="ti ti-clipboard-check"></i> ${esUltimo?'Autoevaluación final de la materia':'Autoevaluación de este capítulo'} <i class="ti ti-arrow-right"></i></button>`;
 }
@@ -6353,7 +6353,7 @@ function abrirBancoFormulas(subjectId){
     <h2><i class="ti ti-math-function" style="color:var(--gold)"></i> Banco de fórmulas — ${s?.title||''}</h2>
     ${formulas.map(f => `<div class="card" style="margin-bottom:12px;">
       <b style="font-size:13.5px;">${f.nombre}</b>
-      <div style="background:var(--c2);border-radius:var(--r);padding:10px 12px;margin:8px 0;font-family:Georgia,serif;font-size:13.5px;text-align:center;color:var(--gold);">${f.formula}</div>
+      <div style="background:var(--c2);border-radius:var(--r);padding:10px 12px;margin:8px 0;font-family:var(--font-mono);font-size:13.5px;text-align:center;color:var(--gold);">${f.formula}</div>
       <div style="font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:6px;">${f.variables}</div>
       <div style="font-size:11.5px;color:var(--t3);border-top:1px solid var(--c3);padding-top:6px;"><b>Ejemplo:</b> ${f.ejemplo}</div>
     </div>`).join('')}
@@ -6891,6 +6891,34 @@ function findCase(caseId){ for(const subjId in SUBJECT_DATA){ const c=SUBJECT_DA
 // función simplemente devuelve las etapas en su orden normal — cero
 // cambio de comportamiento para lo que ya funciona.
 // ═══════════════════════════════════════════════════════
+// Arma un recordatorio compacto de lo que el estudiante ya respondió
+// en las etapas anteriores — pensado para cuando retoma un caso días
+// después y no se acuerda de sus propios hallazgos, o probó varios
+// casos entre sesiones. No es un atajo para copiar sin pensar: solo
+// muestra lo que la persona misma ya escribió o eligió.
+function generarRecapRespuestas(c, ans, ruta, currentStageIdx){
+  let html = '';
+  for(let i=0; i<currentStageIdx; i++){
+    const s = ruta[i];
+    if(!s.questions) continue;
+    const stAns = ans.stages[s.id] || {};
+    let bloque = '';
+    s.questions.forEach((q,qi) => {
+      const given = stAns[qi];
+      let respuestaTxt = '(sin responder)';
+      if(given!==undefined){
+        if(q.ramificaHacia) respuestaTxt = q.opts[given];
+        else if(q.type==='mc') respuestaTxt = q.opts[given];
+        else if(q.type==='multi') respuestaTxt = Array.isArray(given) && given.length ? given.map(idx=>q.opts[idx]).join(', ') : '(sin responder)';
+        else if(q.type==='orden') respuestaTxt = Array.isArray(given) && given.length===q.items.length ? given.map(idx=>q.items[idx]).join(' → ') : '(sin responder)';
+        else respuestaTxt = given;
+      }
+      bloque += `<div style="font-size:12px;color:var(--t2);margin-top:6px;">${q.q}<br><span style="color:var(--t1);font-weight:600;">→ ${respuestaTxt}</span></div>`;
+    });
+    if(bloque) html += `<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--c3);"><b style="font-size:12px;color:var(--ac);">${s.title}</b>${bloque}</div>`;
+  }
+  return html || '<div class="auth-hint">No hay etapas anteriores con preguntas para repasar.</div>';
+}
 function obtenerRutaDelCaso(c, ans){
   const tieneRamificacion = c.stages.some(s => s.questions?.some(q => q.ramificaHacia));
   if(!tieneRamificacion) return c.stages;
@@ -7208,6 +7236,12 @@ function renderCase(){
         <div class="verdict-input">
           ${stage.verdictOptions.map(v=>`<div class="verdict-opt ${savedVerdict===v.v?'selected':''}" onclick="setVerdict('${v.v}')"><i class="ti ${savedVerdict===v.v?'ti-circle-check-filled':'ti-circle'}" style="color:${savedVerdict===v.v?'var(--ac)':'var(--t3)'}"></i><div><b>${v.label}</b><span>${v.desc}</span></div></div>`).join('')}
         </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:space-between;" onclick="this.nextElementSibling.classList.toggle('hidden');this.querySelector('.ti-chevron-down,.ti-chevron-up').classList.toggle('ti-chevron-down');this.querySelector('.ti-chevron-down,.ti-chevron-up').classList.toggle('ti-chevron-up');">
+          <span><i class="ti ti-history"></i> Repasar lo que respondiste en etapas anteriores</span><i class="ti ti-chevron-down"></i>
+        </button>
+        <div class="hidden" style="margin-top:12px;">${generarRecapRespuestas(c, ans, ruta, currentStage)}</div>
       </div>
       <div class="card open-box">
         <div class="card-title"><i class="ti ti-pencil"></i> Justificación de la decisión</div>
@@ -7527,7 +7561,7 @@ function descargarCasoEnPDF(caseId){
   if(!found){ toast('No se encontró ese caso.'); return; }
   const c = found.case;
   const s = SUBJECTS.find(x=>x.id===found.subjId);
-  let cuerpo = `<h1>${c.title}</h1><div class="sub">Expediente ${c.expediente} · ${s?.title||''} · ${new Date().toLocaleDateString('es-PA')}</div>
+  let cuerpo = `<h1 style="color:#111;">${c.title}</h1><div class="sub">Expediente ${c.expediente} · ${s?.title||''} · ${new Date().toLocaleDateString('es-PA')}</div>
     <div class="preg"><b>Tu rol:</b> ${c.role}</div>
     <div class="preg">${c.brief}</div>`;
   if(c.character){
@@ -7553,7 +7587,7 @@ function exportCase(caseId){
   studentName=name; localStorage.setItem('academy_student_name',name);
   const ans=ensureAnswers(caseId);
   const ruta = obtenerRutaDelCaso(c, ans);
-  let cuerpo = `<h1>${c.title}</h1><div class="sub">${name} · ${SUBJECTS.find(s=>s.id===found.subjId).title} · ${new Date().toLocaleDateString('es-PA')}</div>`;
+  let cuerpo = `<h1 style="color:#111;">${c.title}</h1><div class="sub">${name} · ${SUBJECTS.find(s=>s.id===found.subjId).title} · ${new Date().toLocaleDateString('es-PA')}</div>`;
   ruta.forEach(s=>{
     cuerpo += `<h2>${s.title}</h2>`;
     const stAns=ans.stages[s.id]||{};
@@ -8542,14 +8576,15 @@ async function abrirVentanaImpresion(tituloDoc, cuerpoHtml){
   pantallaCarga.innerHTML = `<i class="ti ti-loader-2" style="font-size:32px;color:var(--gold);animation:girar 1s linear infinite;"></i><div>Generando tu PDF…</div><style>@keyframes girar{to{transform:rotate(360deg)}}</style>`;
   document.body.appendChild(pantallaCarga);
   const contenedor = document.createElement('div');
+  contenedor.id = 'pdf-export-render';
   contenedor.style.cssText = 'position:fixed;left:0;top:0;width:720px;background:#fff;z-index:99998;';
   contenedor.innerHTML = `<style>
-    body,div{font-family:Georgia,serif;color:#111;}
-    h1{font-size:22px;margin-bottom:2px;} .sub{color:#555;font-size:12.5px;margin-bottom:22px;}
-    h2{font-size:16px;margin-top:26px;border-bottom:1px solid #ccc;padding-bottom:4px;}
-    .gloss-t{font-weight:700;margin-top:10px;} .gloss-d{color:#333;margin-bottom:2px;}
-    .caso{margin-top:22px;padding-top:14px;border-top:1px solid #ddd;}
-    .preg{margin:10px 0;font-size:13.5px;} .resp{color:#333;margin-left:12px;}
+    #pdf-export-render, #pdf-export-render div{font-family:Georgia,serif;color:#111;}
+    #pdf-export-render h1{font-size:22px;margin-bottom:2px;color:#111!important;} #pdf-export-render .sub{color:#555!important;font-size:12.5px;margin-bottom:22px;}
+    #pdf-export-render h2{font-size:16px;margin-top:26px;border-bottom:1px solid #ccc;padding-bottom:4px;color:#1a1a6e!important;}
+    #pdf-export-render .gloss-t{font-weight:700;margin-top:10px;color:#111!important;} #pdf-export-render .gloss-d{color:#333!important;margin-bottom:2px;}
+    #pdf-export-render .caso{margin-top:22px;padding-top:14px;border-top:1px solid #ddd;}
+    #pdf-export-render .preg{margin:10px 0;font-size:13.5px;color:#111!important;} #pdf-export-render .resp{color:#333!important;margin-left:12px;}
   </style><div style="padding:28px 24px;">${cuerpoHtml}</div>`;
   document.body.appendChild(contenedor);
   try {
@@ -8595,7 +8630,7 @@ function exportMyAnalysis(){
   closeExportModal();
   const name = currentUser?.nombre || studentName || 'Estudiante';
   let hasAny = false;
-  let cuerpo = `<h1>Mis casos completados</h1><div class="sub">${name}${currentUser?.grupo_nombre?' · '+currentUser.grupo_nombre:''} · ${new Date().toLocaleDateString('es-PA')}</div>`;
+  let cuerpo = `<h1 style="color:#111;">Mis casos completados</h1><div class="sub">${name}${currentUser?.grupo_nombre?' · '+currentUser.grupo_nombre:''} · ${new Date().toLocaleDateString('es-PA')}</div>`;
   SUBJECTS.forEach(s=>{
     const data = SUBJECT_DATA[s.id];
     if(!data) return;
@@ -10135,7 +10170,7 @@ async function generarPortafolio(){
     const mapaCompetencias = calcularMapaCompetencias();
     const fechaHoy = new Date().toLocaleDateString('es-PA',{day:'2-digit',month:'long',year:'numeric'});
 
-    let cuerpo = `<h1>Portafolio académico</h1>
+    let cuerpo = `<h1 style="color:#111;">Portafolio académico</h1>
       <div class="sub">${currentUser.nombre} · ${fechaHoy} · CapitalLab Academy</div>
       <h2>Resumen</h2>
       <div class="preg">Casos resueltos: <b>${casosResueltos.length}</b></div>
